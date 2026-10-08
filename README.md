@@ -1,5 +1,7 @@
 # Sapo do Chapéu de Palha
 
+[![Capa do jogo Sapo do Chapéu de Palha](./assets/social-preview.jpg)](https://natanashi.github.io/sapo_do_chapeu_de_palha/)
+
 Jogo de corrida para navegador, com suporte a computador e celular.
 
 ## Como jogar
