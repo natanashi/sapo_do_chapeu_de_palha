@@ -20,28 +20,40 @@
             <div class="scoreboard" aria-label="Placar da partida">
                 <p><span>Pontos</span><strong id="score">000</strong></p>
                 <p><span>Recorde</span><strong id="best-score">000</strong></p>
+                <p class="phase-score"><span>Fase</span><strong id="phase-number">1/3</strong></p>
+                <button class="pause-button" id="pause-button" type="button" disabled aria-label="Pausar jogo">Pausar</button>
             </div>
         </header>
 
         <section class="game-board" id="game-board" aria-label="Área do jogo" tabindex="0">
-            <img class="scenery" src="assets/img/cenario.gif" alt="" aria-hidden="true">
+            <div class="scenery-layer scenery-layer--a is-active" id="scenery-a" aria-hidden="true"></div>
+            <div class="scenery-layer scenery-layer--b" id="scenery-b" aria-hidden="true"></div>
             <div class="sun-haze" aria-hidden="true"></div>
             <img class="flying-frog" src="assets/img/duende.gif" alt="" aria-hidden="true">
             <div class="ground" aria-hidden="true"></div>
             <img class="runner" id="runner" src="assets/img/personagem.gif" alt="Sapo de chapéu de palha correndo">
-            <img class="obstacle" id="obstacle" src="assets/img/obstaculo.png" alt="Tronco no caminho">
+            <div class="obstacle-layer" id="obstacle-layer" aria-hidden="true"></div>
+
+            <div class="phase-banner" id="phase-banner" aria-hidden="true">
+                <span id="phase-kicker">Fase 1</span>
+                <strong id="phase-name">Vila do Sol</strong>
+            </div>
+
+            <div class="journey-progress" aria-label="Progresso até a próxima fase">
+                <span id="journey-progress"></span>
+            </div>
 
             <div class="game-overlay is-visible" id="game-overlay">
                 <div class="overlay-card">
                     <img class="start-frog" src="assets/img/start-frog.png" alt="Sapo do chapéu de palha pronto para correr">
                     <p class="overlay-kicker" id="overlay-kicker">Uma corrida pela vila</p>
                     <h2 id="overlay-title">Pronto para a aventura?</h2>
-                    <p class="overlay-message" id="overlay-message">Pule os troncos e tente superar seu recorde.</p>
-                    <button class="play-button" id="play-button" type="button" onclick="startGame()">
+                    <p class="overlay-message" id="overlay-message">Atravesse três regiões, desvie dos inimigos e tente superar seu recorde.</p>
+                    <button class="play-button" id="play-button" type="button" disabled>
                         <span class="play-icon" aria-hidden="true">▶</span>
                         <span id="play-label">Jogar agora</span>
                     </button>
-                    <p class="controls-hint"><kbd>Espaço</kbd> no computador <span aria-hidden="true">•</span> toque para pular no celular</p>
+                    <p class="controls-hint"><kbd>Espaço</kbd> para pular <span aria-hidden="true">•</span> <kbd>P</kbd> para pausar <span aria-hidden="true">•</span> toque no celular</p>
                 </div>
             </div>
 
@@ -54,7 +66,7 @@
                 Pular
             </button>
         </div>
-        <p class="desktop-help">Pressione <kbd>Espaço</kbd> ou <kbd>↑</kbd> para pular.</p>
+        <p class="desktop-help">Pressione <kbd>Espaço</kbd> ou <kbd>↑</kbd> para pular e <kbd>P</kbd> para pausar.</p>
     </main>
 </body>
 </html>
