@@ -2,7 +2,10 @@
 
 [![Capa do jogo Sapo do Chapéu de Palha](./assets/social-preview.jpg)](https://natanashi.github.io/sapo_do_chapeu_de_palha/)
 
-Jogo de corrida em pixel art para navegador, com suporte a computador e celular.
+> [!IMPORTANT]
+> Esta é uma **versão beta para navegador**. A versão oficial do jogo será lançada para **Steam** e **Play Store**.
+
+Jogo de corrida em pixel art para navegador, com suporte a computador e celular. Esta beta permite testar a jogabilidade, os cenários, os inimigos e a progressão enquanto a versão oficial continua em desenvolvimento.
 
 ## O que há no jogo
 
@@ -19,6 +22,10 @@ Jogo de corrida em pixel art para navegador, com suporte a computador e celular.
 - Desvie dos troncos e tente superar o recorde salvo no navegador.
 
 Jogue online: https://natanashi.github.io/sapo_do_chapeu_de_palha/
+
+## Lançamento oficial
+
+O projeto está em desenvolvimento. A versão oficial terá lançamento para **Steam** e **Play Store**. Esta página será atualizada conforme novas versões e informações forem disponibilizadas.
 
 ## Executar localmente
 
