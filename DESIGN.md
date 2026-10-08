@@ -21,7 +21,7 @@ typography:
   data:
     fontFamily: "'Courier New', monospace"
 rounded:
-  board: "24px"
+  board: "18px"
   control: "14px"
   compact: "12px"
 spacing:
@@ -32,12 +32,14 @@ components:
   gameBoard: {}
   primaryButton: {}
   jumpButton: {}
+  tongueButton: {}
+  flyingInsect: {}
   phaseBanner: {}
 ---
 
 ## Overview
 
-The game feels like a lively illustrated adventure map for players on phones and computers. Its signature is a straw-hat-yellow control language framed by deep forest green, echoing the protagonist without copying generic pirate UI. The surface is a hybrid: expressive around the game board and restrained inside the play area. A three-phase journey moves from sunny village to ancient forest and moonlit castle, with crossfades and parallax communicating progress without adding menu complexity.
+The game feels like a lively illustrated adventure map for players on phones and computers. Its signature is the frog's long tongue crossing the playfield to catch animated insects, supported by a straw-hat-yellow control language framed by deep forest green. The surface is a hybrid: expressive on the opening card and restrained while the player is running. A three-phase journey moves from sunny village to ancient forest and moonlit castle, with crossfades, continuous mirrored scenery and parallax communicating progress without visible image seams.
 
 Avoid glossy casino styling, neon cyberpunk palettes, generic glass dashboards, and excessive decorative motion.
 
@@ -53,26 +55,28 @@ Impact is used sparingly for the title and short game-state headlines. Trebuchet
 
 ## Layout
 
-Desktop uses a wide 16:9 board with the title, phase, score, record, and pause control above it. Narrow screens switch the board to a tall 4:5 stage and expose a full-width touch control below it. Safe-area insets and unusually narrow embedded browser views are supported without horizontal overflow. The phase progress line remains inside the board so it never competes with touch controls.
+The playfield occupies the available browser viewport up to a 1600 × 900 maximum instead of sitting inside a decorative page frame. The title, phase, score, record, pause and play controls live inside the stage as a game HUD. Narrow screens become a full-height portrait stage with two large touch targets anchored to opposite bottom corners. Safe-area insets and unusually narrow embedded browser views are supported without horizontal overflow. The phase progress line remains inside the board.
 
 ## Elevation & Depth
 
-Depth comes from the board frame, moving scenery, independently moving ground, and pressable button shadows. Static text and score surfaces remain quiet. Backdrop blur is limited to the opening layer and scoreboard, where it protects legibility over scenery.
+Depth comes from continuous mirrored scenery, independently moving ground, overlapping character layers and pressable button shadows. Static text and score surfaces remain quiet. Backdrop blur is limited to the opening layer and HUD, where it protects legibility over scenery.
 
 ## Shapes
 
-The board uses a large soft rectangle; controls use sturdy medium-radius geometry. The asymmetric lower-right radius on the start card gives it a map-page character and is the sole expressive shape flourish.
+Desktop uses a restrained soft rectangle around the stage; the mobile stage reaches the viewport edges. Controls use sturdy medium-radius geometry. The asymmetric lower-right radius on the start card gives it a map-page character and is the sole expressive shape flourish.
 
 ## Components
 
-All actions use native buttons with hover, active, focus-visible, disabled, and touch states. The overlay preserves one primary action and is reused for pause without resetting the current run. Mobile keeps the jump target at least 60px tall. Score blocks reserve stable width to prevent movement. Obstacles share one runtime system but keep distinct silhouettes, collision insets, speeds, and point values.
+All actions use native buttons with hover, active, focus-visible, disabled, and touch states. The overlay preserves one primary action and is reused for pause without resetting the current run. Mobile keeps both Jump and Tongue targets at least 60px tall. The tongue action has a short visible cooldown and a generated transparent attack sprite; flying insects use a four-frame transparent sprite sheet. Score blocks reserve stable width to prevent movement. Compact mossy rocks, wooden wheels and forest boars share one runtime system but keep distinct silhouettes, forgiving collision insets, speeds and point values. Moving moss platforms are non-damaging surfaces: the frog can land on their top, ride briefly and jump again. World motion uses one standard run speed modified deliberately by biome: neutral in the village, faster in the forest and slower at night.
 
 ## Do's and Don'ts
 
 - Do keep pixel artwork crisp with `image-rendering: pixelated`.
 - Do preserve transparent breathing room around animated sprites.
 - Do keep gameplay controls usable with keyboard, pointer, and touch.
-- Do use phase changes to increase variety and difficulty without changing the one-button jump model.
+- Do use the tongue only for capturable insects and keep its hit area visually aligned with the sprite.
+- Do mirror the second scenery panel so long-running backgrounds never expose a hard seam.
+- Do use phase changes to increase variety and difficulty without changing the two-action Jump and Tongue model.
 - Do reduce decorative parallax when the player requests reduced motion.
 - Don't add decorative particles behind the runner; they resemble sprite corruption.
 - Don't place important controls only inside the moving game area on mobile.

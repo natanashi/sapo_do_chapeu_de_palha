@@ -3,36 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#173f2a">
-    <meta name="description" content="Ajude o sapo do chapéu de palha a atravessar a vila neste jogo de corrida para navegador.">
-    <link rel="icon" type="image/png" href="assets/img/start-frog.png">
-    <link rel="stylesheet" href="assets/css/style.css">
-    <script src="assets/js/script.js" defer></script>
-    <title>Sapo do Chapéu de Palha</title>
+    <meta name="theme-color" content="#102d20">
+    <meta name="description" content="Ajude o Sapo do Chapéu de Palha a atravessar três regiões, saltar obstáculos e capturar insetos.">
+    <link rel="icon" type="image/png" href="assets/img/sapo-capa.png">
+    <link rel="preload" as="image" href="assets/img/cenario-vila.gif">
+    <link rel="stylesheet" href="assets/css/style.css?v=4">
+    <script src="assets/js/script.js?v=4" defer></script>
+    <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body>
     <main class="game-shell">
-        <header class="game-header">
-            <div>
-                <p class="eyebrow">Aventura na vila</p>
-                <h1>Sapo do Chapéu de Palha</h1>
-            </div>
-            <div class="scoreboard" aria-label="Placar da partida">
-                <p><span>Pontos</span><strong id="score">000</strong></p>
-                <p><span>Recorde</span><strong id="best-score">000</strong></p>
-                <p class="phase-score"><span>Fase</span><strong id="phase-number">1/3</strong></p>
-                <button class="pause-button" id="pause-button" type="button" disabled aria-label="Pausar jogo">Pausar</button>
-            </div>
-        </header>
-
         <section class="game-board" id="game-board" aria-label="Área do jogo" tabindex="0">
-            <div class="scenery-layer scenery-layer--a is-active" id="scenery-a" aria-hidden="true"></div>
-            <div class="scenery-layer scenery-layer--b" id="scenery-b" aria-hidden="true"></div>
+            <div class="scenery-layer scenery-layer--a is-active" id="scenery-a" aria-hidden="true">
+                <span class="scenery-panel"></span>
+                <span class="scenery-panel scenery-panel--mirror"></span>
+                <span class="scenery-panel"></span>
+            </div>
+            <div class="scenery-layer scenery-layer--b" id="scenery-b" aria-hidden="true">
+                <span class="scenery-panel"></span>
+                <span class="scenery-panel scenery-panel--mirror"></span>
+                <span class="scenery-panel"></span>
+            </div>
+
             <div class="sun-haze" aria-hidden="true"></div>
-            <img class="flying-frog" src="assets/img/duende.gif" alt="" aria-hidden="true">
-            <div class="ground" aria-hidden="true"></div>
-            <img class="runner" id="runner" src="assets/img/personagem.gif" alt="Sapo de chapéu de palha correndo">
+            <img class="cloud-frog" src="assets/img/sapo-na-nuvem.gif" alt="" aria-hidden="true">
+
+            <div class="ground" aria-hidden="true">
+                <div class="ground-track" id="ground-track">
+                    <span class="ground-panel"></span>
+                    <span class="ground-panel ground-panel--mirror"></span>
+                    <span class="ground-panel"></span>
+                </div>
+            </div>
+
+            <header class="game-hud">
+                <div class="game-title">
+                    <p>Sapo do Chapéu de Palha</p>
+                    <span id="region-name">Vila do Sol</span>
+                </div>
+                <div class="scoreboard" aria-label="Placar da partida">
+                    <p><span>Pontos</span><strong id="score">000</strong></p>
+                    <p><span>Recorde</span><strong id="best-score">000</strong></p>
+                    <p class="phase-score"><span>Fase</span><strong id="phase-number">1/3</strong></p>
+                    <button class="pause-button" id="pause-button" type="button" disabled aria-label="Pausar jogo">Pausar</button>
+                </div>
+            </header>
+
+            <div class="platform-layer" id="platform-layer" aria-hidden="true"></div>
+            <div class="runner-layer" aria-hidden="true">
+                <img class="runner" id="runner" src="assets/img/sapo-correndo.gif" alt="">
+                <img class="runner-attack" id="runner-attack" src="assets/img/sapo-ataque-lingua.png" alt="">
+            </div>
             <div class="obstacle-layer" id="obstacle-layer" aria-hidden="true"></div>
+            <div class="collectible-layer" id="collectible-layer" aria-hidden="true"></div>
 
             <div class="phase-banner" id="phase-banner" aria-hidden="true">
                 <span id="phase-kicker">Fase 1</span>
@@ -43,30 +66,35 @@
                 <span id="journey-progress"></span>
             </div>
 
+            <div class="game-controls" aria-label="Controles do jogo">
+                <button class="action-button action-button--jump" id="jump-button" type="button" disabled>
+                    <span class="action-symbol" aria-hidden="true">↑</span>
+                    <span>Pular <kbd>Espaço</kbd></span>
+                </button>
+                <button class="action-button action-button--tongue" id="tongue-button" type="button" disabled>
+                    <span class="action-symbol" aria-hidden="true">↝</span>
+                    <span>Língua <kbd>X</kbd></span>
+                </button>
+            </div>
+
             <div class="game-overlay is-visible" id="game-overlay">
                 <div class="overlay-card">
-                    <img class="start-frog" src="assets/img/start-frog.png" alt="Sapo do chapéu de palha pronto para correr">
-                    <p class="overlay-kicker" id="overlay-kicker">Uma corrida pela vila</p>
-                    <h2 id="overlay-title">Pronto para a aventura?</h2>
-                    <p class="overlay-message" id="overlay-message">Atravesse três regiões, desvie dos inimigos e tente superar seu recorde.</p>
-                    <button class="play-button" id="play-button" type="button" disabled>
-                        <span class="play-icon" aria-hidden="true">▶</span>
-                        <span id="play-label">Jogar agora</span>
-                    </button>
-                    <p class="controls-hint"><kbd>Espaço</kbd> para pular <span aria-hidden="true">•</span> <kbd>P</kbd> para pausar <span aria-hidden="true">•</span> toque no celular</p>
+                    <img class="start-frog" src="assets/img/sapo-capa.png" alt="Sapo do chapéu de palha pronto para correr">
+                    <div class="overlay-copy">
+                        <p class="overlay-kicker" id="overlay-kicker">Beta para navegador</p>
+                        <h1 id="overlay-title">Uma nova corrida começa aqui</h1>
+                        <p class="overlay-message" id="overlay-message">Salte pedras, rodas e javalis, aterrisse nas plataformas e use a língua para capturar insetos.</p>
+                        <button class="play-button" id="play-button" type="button" disabled>
+                            <span class="play-icon" aria-hidden="true">▶</span>
+                            <span id="play-label">Carregando...</span>
+                        </button>
+                        <p class="controls-hint"><kbd>Espaço</kbd> pula <span aria-hidden="true">·</span> <kbd>X</kbd> lança a língua <span aria-hidden="true">·</span> <kbd>P</kbd> pausa</p>
+                    </div>
                 </div>
             </div>
 
             <p class="status" id="game-status" role="status" aria-live="polite"></p>
         </section>
-
-        <div class="mobile-controls">
-            <button class="jump-button" id="jump-button" type="button" disabled>
-                <span aria-hidden="true">↑</span>
-                Pular
-            </button>
-        </div>
-        <p class="desktop-help">Pressione <kbd>Espaço</kbd> ou <kbd>↑</kbd> para pular e <kbd>P</kbd> para pausar.</p>
     </main>
 </body>
 </html>

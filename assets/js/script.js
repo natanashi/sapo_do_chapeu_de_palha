@@ -1,14 +1,21 @@
 const board = document.querySelector('#game-board');
+const runnerLayer = document.querySelector('.runner-layer');
 const runner = document.querySelector('#runner');
+const runnerAttack = document.querySelector('#runner-attack');
 const obstacleLayer = document.querySelector('#obstacle-layer');
+const platformLayer = document.querySelector('#platform-layer');
+const collectibleLayer = document.querySelector('#collectible-layer');
+const groundTrack = document.querySelector('#ground-track');
 const overlay = document.querySelector('#game-overlay');
 const playButton = document.querySelector('#play-button');
 const playLabel = document.querySelector('#play-label');
 const pauseButton = document.querySelector('#pause-button');
 const jumpButton = document.querySelector('#jump-button');
+const tongueButton = document.querySelector('#tongue-button');
 const scoreDisplay = document.querySelector('#score');
 const bestScoreDisplay = document.querySelector('#best-score');
 const phaseNumberDisplay = document.querySelector('#phase-number');
+const regionNameDisplay = document.querySelector('#region-name');
 const overlayKicker = document.querySelector('#overlay-kicker');
 const overlayTitle = document.querySelector('#overlay-title');
 const overlayMessage = document.querySelector('#overlay-message');
@@ -21,61 +28,125 @@ const sceneLayers = [document.querySelector('#scenery-a'), document.querySelecto
 
 const jumpAudio = new Audio('assets/aud/pulo.mp3');
 const loseAudio = new Audio('assets/aud/risada_duende.mp3');
-const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 const PHASES = [
     {
         name: 'Vila do Sol',
         threshold: 0,
-        background: 'assets/img/cenario.gif',
-        baseSpeed: 300,
-        gap: [1.45, 2.05],
-        obstacles: ['log'],
+        background: 'assets/img/cenario-vila.gif',
+        speedScale: 1,
+        paceLabel: 'Ritmo padrão',
+        obstacleGap: [1.65, 2.25],
+        insectGap: [1.8, 3],
+        obstacles: ['rock', 'wheel', 'rock'],
     },
     {
         name: 'Floresta Antiga',
-        threshold: 85,
+        threshold: 80,
         background: 'assets/img/cenario-floresta.jpg',
-        baseSpeed: 360,
-        gap: [1.15, 1.75],
-        obstacles: ['log', 'wheel'],
+        speedScale: 1.12,
+        paceLabel: 'Ritmo acelerado',
+        obstacleGap: [1.4, 2],
+        insectGap: [1.55, 2.7],
+        obstacles: ['rock', 'wheel', 'boar', 'wheel'],
     },
     {
         name: 'Castelo ao Luar',
-        threshold: 205,
+        threshold: 190,
         background: 'assets/img/cenario-castelo.jpg',
-        baseSpeed: 425,
-        gap: [0.95, 1.5],
-        obstacles: ['wheel', 'boar', 'log'],
+        speedScale: 0.88,
+        paceLabel: 'Ritmo noturno reduzido',
+        obstacleGap: [1.2, 1.78],
+        insectGap: [1.35, 2.35],
+        obstacles: ['wheel', 'wheel-heavy', 'boar', 'rock', 'wheel-heavy'],
     },
 ];
 
 const OBSTACLES = {
-    log: {
-        src: 'assets/img/obstaculo.png',
-        className: 'obstacle--log',
-        points: 14,
+    rock: {
+        src: 'assets/img/pedras-musgo.png',
+        className: 'obstacle--rock',
+        points: 12,
         speedScale: 1,
-        insetX: 0.2,
-        insetTop: 0.19,
-    },
-    wheel: {
-        src: 'assets/img/obstacle-wheel.png',
-        className: 'obstacle--wheel',
-        points: 18,
-        speedScale: 1.16,
-        insetX: 0.16,
-        insetTop: 0.12,
-    },
-    boar: {
-        src: 'assets/img/enemy-boar.png',
-        className: 'obstacle--boar',
-        points: 22,
-        speedScale: 1.08,
-        insetX: 0.22,
+        insetX: 0.17,
         insetTop: 0.2,
     },
+    wheel: {
+        src: 'assets/img/roda-madeira.png',
+        className: 'obstacle--wheel',
+        points: 18,
+        speedScale: 1.1,
+        insetX: 0.17,
+        insetTop: 0.13,
+        rotates: true,
+    },
+    'wheel-heavy': {
+        src: 'assets/img/roda-madeira.png',
+        className: 'obstacle--wheel-heavy',
+        points: 24,
+        speedScale: 1.2,
+        insetX: 0.16,
+        insetTop: 0.12,
+        rotates: true,
+    },
+    boar: {
+        src: 'assets/img/javali-floresta.png',
+        className: 'obstacle--boar',
+        points: 22,
+        speedScale: 1.06,
+        insetX: 0.2,
+        insetTop: 0.2,
+        bobs: true,
+    },
 };
+
+const ASSET_URLS = [
+    ...PHASES.map((phase) => phase.background),
+    ...Object.values(OBSTACLES).map((obstacle) => obstacle.src),
+    'assets/img/textura-solo.jpg',
+    'assets/img/sapo-correndo.gif',
+    'assets/img/sapo-ataque-lingua.png',
+    'assets/img/inseto-voando-sprites.png',
+    'assets/img/plataforma-musgo.png',
+];
+
+const state = {
+    mode: 'loading',
+    score: 0,
+    best: readBestScore(),
+    runnerY: 0,
+    velocityY: 0,
+    phaseIndex: 0,
+    activeScene: 0,
+    sceneTravel: 0,
+    groundTravel: 0,
+    obstacleCooldown: 1.75,
+    insectCooldown: 1.8,
+    platformCooldown: 1.15,
+    obstacles: [],
+    insects: [],
+    platforms: [],
+    standingPlatform: null,
+    dodgeCombo: 0,
+    catchCombo: 0,
+    attackUntil: 0,
+    attackReadyAt: 0,
+    previousTime: 0,
+    animationFrame: 0,
+    boardWidth: 0,
+    boardHeight: 0,
+};
+
+const BASE_RUN_SPEED = 285;
+const GRAVITY = 1850;
+const JUMP_FORCE = 820;
+const ATTACK_DURATION = 330;
+const ATTACK_COOLDOWN = 470;
+
+function clamp(value, minimum, maximum) {
+    return Math.min(maximum, Math.max(minimum, value));
+}
 
 function readBestScore() {
     try {
@@ -89,29 +160,9 @@ function saveBestScore(score) {
     try {
         localStorage.setItem('sapo-best-score', String(score));
     } catch {
-        // O jogo continua normalmente quando o navegador bloqueia armazenamento local.
+        // O jogo continua normalmente quando o navegador bloqueia o armazenamento local.
     }
 }
-
-const state = {
-    mode: 'idle',
-    score: 0,
-    best: readBestScore(),
-    runnerY: 0,
-    velocityY: 0,
-    phaseIndex: 0,
-    activeScene: 0,
-    sceneOffset: 0,
-    groundOffset: 0,
-    spawnCooldown: 1.1,
-    obstacles: [],
-    combo: 0,
-    previousTime: 0,
-    animationFrame: 0,
-};
-
-const GRAVITY = 1950;
-const JUMP_FORCE = 760;
 
 function formatScore(value) {
     return Math.max(0, Math.floor(value)).toString().padStart(3, '0');
@@ -121,13 +172,14 @@ function updateScore() {
     scoreDisplay.textContent = formatScore(state.score);
     bestScoreDisplay.textContent = formatScore(state.best);
     phaseNumberDisplay.textContent = `${state.phaseIndex + 1}/${PHASES.length}`;
+    regionNameDisplay.textContent = PHASES[state.phaseIndex].name;
 
     const currentThreshold = PHASES[state.phaseIndex].threshold;
     const nextThreshold = PHASES[state.phaseIndex + 1]?.threshold;
     const progress = nextThreshold
         ? ((state.score - currentThreshold) / (nextThreshold - currentThreshold)) * 100
         : 100;
-    journeyProgress.style.width = `${Math.min(100, Math.max(0, progress))}%`;
+    journeyProgress.style.width = `${clamp(progress, 0, 100)}%`;
 }
 
 function setStatus(message) {
@@ -146,6 +198,15 @@ function boardMetrics() {
     return board.getBoundingClientRect();
 }
 
+function worldSpeedScale() {
+    return clamp((state.boardWidth || boardMetrics().width) / 1100, 0.82, 1.24);
+}
+
+function currentWorldSpeed() {
+    const scoreBoost = Math.min(75, state.score * 0.3);
+    return (BASE_RUN_SPEED + scoreBoost) * PHASES[state.phaseIndex].speedScale * worldSpeedScale();
+}
+
 function showPhaseBanner(index) {
     phaseKicker.textContent = `Fase ${index + 1}`;
     phaseName.textContent = PHASES[index].name;
@@ -155,6 +216,7 @@ function showPhaseBanner(index) {
 
 function setScene(background, instant = false) {
     const backgroundUrl = new URL(background, document.baseURI).href;
+
     if (instant) {
         sceneLayers[0].style.setProperty('--scene-image', `url("${backgroundUrl}")`);
         sceneLayers[0].classList.add('is-active');
@@ -165,7 +227,6 @@ function setScene(background, instant = false) {
 
     const nextScene = state.activeScene === 0 ? 1 : 0;
     sceneLayers[nextScene].style.setProperty('--scene-image', `url("${backgroundUrl}")`);
-    sceneLayers[nextScene].style.setProperty('--scene-x', `${state.sceneOffset}px`);
     sceneLayers[nextScene].classList.add('is-active');
     sceneLayers[state.activeScene].classList.remove('is-active');
     state.activeScene = nextScene;
@@ -175,10 +236,12 @@ function applyPhase(index, announce = true) {
     state.phaseIndex = index;
     board.dataset.phase = String(index + 1);
     setScene(PHASES[index].background, !announce);
+
     if (announce) {
         showPhaseBanner(index);
-        setStatus(`Chegando à ${PHASES[index].name}`);
+        setStatus(`${PHASES[index].name} · ${PHASES[index].paceLabel}`);
     }
+
     updateScore();
 }
 
@@ -190,10 +253,17 @@ function resolvePhase() {
     if (nextPhase !== state.phaseIndex) applyPhase(nextPhase);
 }
 
-function clearObstacles() {
+function clearActors() {
     state.obstacles.forEach((obstacle) => obstacle.element.remove());
+    state.insects.forEach((insect) => insect.element.remove());
+    state.platforms.forEach((platform) => platform.element.remove());
     state.obstacles = [];
+    state.insects = [];
+    state.platforms = [];
+    state.standingPlatform = null;
     obstacleLayer.replaceChildren();
+    collectibleLayer.replaceChildren();
+    platformLayer.replaceChildren();
 }
 
 function chooseObstacleType() {
@@ -211,12 +281,11 @@ function spawnObstacle() {
     element.draggable = false;
     obstacleLayer.append(element);
 
-    const metrics = boardMetrics();
     const obstacle = {
         type,
         config,
         element,
-        x: metrics.width + Math.max(28, metrics.width * 0.04),
+        x: state.boardWidth + Math.max(42, state.boardWidth * 0.045),
         rotation: 0,
         scored: false,
     };
@@ -224,36 +293,111 @@ function spawnObstacle() {
     renderObstacle(obstacle, performance.now());
 }
 
+function spawnInsect() {
+    const element = document.createElement('div');
+    element.className = 'insect';
+    collectibleLayer.append(element);
+
+    const boardBox = boardMetrics();
+    const runnerBox = runner.getBoundingClientRect();
+    const insectBox = element.getBoundingClientRect();
+    const mouthY = runnerBox.top - boardBox.top + runnerBox.height * 0.46;
+    const randomOffset = (Math.random() - 0.42) * runnerBox.height * 1.35;
+    const y = clamp(
+        mouthY + randomOffset - insectBox.height / 2,
+        boardBox.height * 0.3,
+        boardBox.height * 0.7,
+    );
+
+    const insect = {
+        element,
+        x: boardBox.width + Math.max(48, boardBox.width * 0.05),
+        y,
+        speedScale: 0.84 + Math.random() * 0.18,
+        bobPhase: Math.random() * Math.PI * 2,
+        caught: false,
+    };
+    state.insects.push(insect);
+    renderInsect(insect, performance.now());
+}
+
+function spawnPlatform() {
+    const element = document.createElement('img');
+    element.src = 'assets/img/plataforma-musgo.png';
+    element.alt = '';
+    element.className = 'platform';
+    element.draggable = false;
+    platformLayer.append(element);
+
+    const platform = {
+        element,
+        x: state.boardWidth + Math.max(58, state.boardWidth * 0.06),
+        scored: false,
+    };
+    state.platforms.push(platform);
+    renderPlatform(platform);
+    state.obstacleCooldown = Math.max(state.obstacleCooldown, 2.2);
+}
+
 function obstacleSpeed(obstacle) {
-    const phase = PHASES[state.phaseIndex];
-    const scoreBoost = Math.min(165, state.score * 0.58);
-    return (phase.baseSpeed + scoreBoost) * obstacle.config.speedScale;
+    return currentWorldSpeed() * obstacle.config.speedScale;
 }
 
 function renderObstacle(obstacle, currentTime) {
     let extraTransform = '';
-    if (obstacle.type === 'wheel') {
+    if (obstacle.config.rotates) {
         extraTransform = ` rotate(${obstacle.rotation.toFixed(1)}deg)`;
-    } else if (obstacle.type === 'boar') {
-        extraTransform = ` translateY(${Math.sin(currentTime / 85) * 2.5}px)`;
+    } else if (obstacle.config.bobs) {
+        extraTransform = ` translateY(${Math.sin(currentTime / 86) * 3}px)`;
     }
     obstacle.element.style.transform = `translate3d(${obstacle.x.toFixed(2)}px, 0, 0)${extraTransform}`;
 }
 
+function renderInsect(insect, currentTime) {
+    const bob = Math.sin(currentTime / 150 + insect.bobPhase) * 8;
+    const x = `${insect.x.toFixed(2)}px`;
+    const y = `${(insect.y + bob).toFixed(2)}px`;
+    insect.element.style.setProperty('--insect-x', x);
+    insect.element.style.setProperty('--insect-y', y);
+    insect.element.style.transform = `translate3d(${x}, ${y}, 0)`;
+}
+
+function renderPlatform(platform) {
+    platform.element.style.transform = `translate3d(${platform.x.toFixed(2)}px, 0, 0)`;
+}
+
+function clearAttack() {
+    state.attackUntil = 0;
+    runner.classList.remove('is-attacking');
+    runnerAttack.classList.remove('is-visible');
+}
+
 function resetRun() {
     window.cancelAnimationFrame(state.animationFrame);
-    clearObstacles();
+    clearActors();
+    clearAttack();
     state.score = 0;
     state.runnerY = 0;
     state.velocityY = 0;
-    state.combo = 0;
-    state.sceneOffset = 0;
-    state.groundOffset = 0;
-    state.spawnCooldown = 1.15;
-    runner.classList.remove('is-hit');
-    runner.style.setProperty('--jump-y', '0');
+    state.dodgeCombo = 0;
+    state.catchCombo = 0;
+    state.sceneTravel = 0;
+    state.groundTravel = 0;
+    state.obstacleCooldown = 1.75;
+    state.insectCooldown = 1.7;
+    state.platformCooldown = 1.15;
+    state.standingPlatform = null;
+    state.attackReadyAt = 0;
+    runnerLayer.classList.remove('is-hit');
+    runnerLayer.style.setProperty('--jump-y', '0');
     applyPhase(0, false);
     updateWorldMotion();
+}
+
+function setPlayingControls(enabled) {
+    jumpButton.disabled = !enabled;
+    tongueButton.disabled = !enabled;
+    pauseButton.disabled = !enabled;
 }
 
 function startGame() {
@@ -261,8 +405,7 @@ function startGame() {
     state.mode = 'playing';
     state.previousTime = performance.now();
     overlay.classList.remove('is-visible');
-    jumpButton.disabled = false;
-    pauseButton.disabled = false;
+    setPlayingControls(true);
     pauseButton.textContent = 'Pausar';
     pauseButton.setAttribute('aria-label', 'Pausar jogo');
     updateScore();
@@ -276,7 +419,7 @@ function resumeGame() {
     state.mode = 'playing';
     state.previousTime = performance.now();
     overlay.classList.remove('is-visible');
-    jumpButton.disabled = false;
+    setPlayingControls(true);
     pauseButton.textContent = 'Pausar';
     pauseButton.setAttribute('aria-label', 'Pausar jogo');
     board.focus({ preventScroll: true });
@@ -287,44 +430,91 @@ function pauseGame() {
     if (state.mode !== 'playing') return;
     state.mode = 'paused';
     window.cancelAnimationFrame(state.animationFrame);
+    clearAttack();
     jumpButton.disabled = true;
+    tongueButton.disabled = true;
+    pauseButton.disabled = false;
     pauseButton.textContent = 'Continuar';
     pauseButton.setAttribute('aria-label', 'Continuar jogo');
     overlayKicker.textContent = PHASES[state.phaseIndex].name;
     overlayTitle.textContent = 'Corrida pausada';
-    overlayMessage.textContent = 'Quando estiver pronto, continue exatamente de onde parou.';
+    overlayMessage.textContent = 'Continue quando estiver pronto. Sua corrida está guardada exatamente neste ponto.';
     playLabel.textContent = 'Continuar';
     overlay.classList.add('is-visible');
     playButton.focus({ preventScroll: true });
 }
 
 function jump() {
-    if (state.mode !== 'playing' || state.runnerY > 3) return;
+    if (state.mode !== 'playing') return;
+    if (state.runnerY > 3 && !state.standingPlatform) return;
+    state.standingPlatform = null;
     state.velocityY = JUMP_FORCE;
     playSound(jumpAudio);
+}
+
+function attack() {
+    if (state.mode !== 'playing') return;
+    const now = performance.now();
+    if (now < state.attackReadyAt) return;
+
+    state.attackUntil = now + ATTACK_DURATION;
+    state.attackReadyAt = now + ATTACK_COOLDOWN;
+    runner.classList.add('is-attacking');
+    runnerAttack.classList.remove('is-visible');
+    void runnerAttack.offsetWidth;
+    runnerAttack.classList.add('is-visible');
 }
 
 function collisionDetected(obstacle) {
     const runnerBox = runner.getBoundingClientRect();
     const obstacleBox = obstacle.element.getBoundingClientRect();
-    const runnerInsetX = runnerBox.width * 0.25;
-    const runnerInsetTop = runnerBox.height * 0.16;
+    const runnerInsetX = runnerBox.width * 0.28;
+    const runnerInsetTop = runnerBox.height * 0.18;
     const obstacleInsetX = obstacleBox.width * obstacle.config.insetX;
     const obstacleInsetTop = obstacleBox.height * obstacle.config.insetTop;
 
     return (
-        runnerBox.right - runnerInsetX > obstacleBox.left + obstacleInsetX &&
-        runnerBox.left + runnerInsetX < obstacleBox.right - obstacleInsetX &&
-        runnerBox.bottom - runnerBox.height * 0.08 > obstacleBox.top + obstacleInsetTop &&
-        runnerBox.top + runnerInsetTop < obstacleBox.bottom
+        runnerBox.right - runnerInsetX > obstacleBox.left + obstacleInsetX
+        && runnerBox.left + runnerInsetX < obstacleBox.right - obstacleInsetX
+        && runnerBox.bottom - runnerBox.height * 0.08 > obstacleBox.top + obstacleInsetTop
+        && runnerBox.top + runnerInsetTop < obstacleBox.bottom
     );
+}
+
+function tongueHitsInsect(insect, currentTime) {
+    if (currentTime > state.attackUntil) return false;
+
+    const tongueBox = runnerAttack.getBoundingClientRect();
+    const insectBox = insect.element.getBoundingClientRect();
+    const tongueLeft = tongueBox.left + tongueBox.width * 0.22;
+    const tongueRight = tongueBox.right - tongueBox.width * 0.025;
+    const tongueTop = tongueBox.top + tongueBox.height * 0.38;
+    const tongueBottom = tongueBox.top + tongueBox.height * 0.69;
+
+    return (
+        insectBox.right > tongueLeft
+        && insectBox.left < tongueRight
+        && insectBox.bottom > tongueTop
+        && insectBox.top < tongueBottom
+    );
+}
+
+function catchInsect(insect) {
+    insect.caught = true;
+    state.catchCombo += 1;
+    const bonus = Math.min(20, Math.max(0, state.catchCombo - 1) * 3);
+    const points = 28 + bonus;
+    state.score += points;
+    insect.element.classList.add('is-caught');
+    window.setTimeout(() => insect.element.remove(), 260);
+    setStatus(state.catchCombo > 1 ? `Caçada x${state.catchCombo} · +${points}` : `Inseto capturado · +${points}`);
 }
 
 function endGame() {
     state.mode = 'ended';
-    jumpButton.disabled = true;
-    pauseButton.disabled = true;
-    runner.classList.add('is-hit');
+    setPlayingControls(false);
+    clearAttack();
+    runnerLayer.classList.add('is-hit');
     playSound(loseAudio);
 
     const finalScore = Math.floor(state.score);
@@ -339,17 +529,20 @@ function endGame() {
     updateScore();
     overlayTitle.textContent = `${formatScore(finalScore)} pontos`;
     overlayMessage.textContent = state.phaseIndex === PHASES.length - 1
-        ? 'Você chegou ao castelo. Agora tente correr ainda mais longe.'
-        : 'O caminho ficou difícil desta vez. Tente outra corrida e descubra a próxima fase.';
+        ? 'Você chegou ao castelo. Agora tente correr ainda mais longe e capture mais insetos.'
+        : 'O caminho ficou difícil desta vez. Tente outra corrida e descubra a próxima região.';
     playLabel.textContent = 'Jogar novamente';
     overlay.classList.add('is-visible');
     playButton.focus({ preventScroll: true });
 }
 
 function updateWorldMotion() {
-    const scenePosition = `${state.sceneOffset.toFixed(2)}px`;
-    sceneLayers.forEach((layer) => layer.style.setProperty('--scene-x', scenePosition));
-    board.style.setProperty('--ground-x', `${state.groundOffset.toFixed(2)}px`);
+    const width = Math.max(1, state.boardWidth || boardMetrics().width);
+    const cycle = width * 2;
+    const sceneX = -(state.sceneTravel % cycle);
+    const groundX = -(state.groundTravel % cycle);
+    sceneLayers.forEach((layer) => layer.style.setProperty('--scene-x', `${sceneX.toFixed(2)}px`));
+    groundTrack.style.setProperty('--ground-x', `${groundX.toFixed(2)}px`);
 }
 
 function updateObstacles(delta, currentTime) {
@@ -358,23 +551,23 @@ function updateObstacles(delta, currentTime) {
     state.obstacles.forEach((obstacle) => {
         const speed = obstacleSpeed(obstacle);
         obstacle.x -= speed * delta;
-        if (obstacle.type === 'wheel') obstacle.rotation -= speed * delta * 0.58;
+        if (obstacle.config.rotates) obstacle.rotation -= speed * delta * 0.52;
         renderObstacle(obstacle, currentTime);
 
         const obstacleBox = obstacle.element.getBoundingClientRect();
         if (!obstacle.scored && obstacleBox.right < runnerBox.left) {
             obstacle.scored = true;
-            state.combo += 1;
-            const comboBonus = Math.min(8, Math.floor(state.combo / 3) * 2);
+            state.dodgeCombo += 1;
+            const comboBonus = Math.min(10, Math.floor(state.dodgeCombo / 3) * 2);
             state.score += obstacle.config.points + comboBonus;
-            if (state.combo > 0 && state.combo % 3 === 0) {
-                setStatus(`Sequência x${state.combo} · +${obstacle.config.points + comboBonus}`);
+            if (state.dodgeCombo > 0 && state.dodgeCombo % 3 === 0) {
+                setStatus(`Sequência x${state.dodgeCombo} · +${obstacle.config.points + comboBonus}`);
             }
         }
     });
 
     state.obstacles = state.obstacles.filter((obstacle) => {
-        if (obstacle.x < -260) {
+        if (obstacle.x < -360) {
             obstacle.element.remove();
             return false;
         }
@@ -382,14 +575,124 @@ function updateObstacles(delta, currentTime) {
     });
 }
 
-function scheduleObstacles(delta) {
-    state.spawnCooldown -= delta;
-    if (state.spawnCooldown > 0) return;
+function runnerOverPlatform(platform, runnerBox = runner.getBoundingClientRect()) {
+    const platformBox = platform.element.getBoundingClientRect();
+    return (
+        runnerBox.right - runnerBox.width * 0.22 > platformBox.left + platformBox.width * 0.06
+        && runnerBox.left + runnerBox.width * 0.22 < platformBox.right - platformBox.width * 0.06
+    );
+}
 
-    spawnObstacle();
-    const [minimumGap, maximumGap] = PHASES[state.phaseIndex].gap;
-    const difficultyReduction = Math.min(0.2, state.score / 1500);
-    state.spawnCooldown = minimumGap + Math.random() * (maximumGap - minimumGap) - difficultyReduction;
+function updatePlatforms(delta) {
+    const runnerBox = runner.getBoundingClientRect();
+    const speed = currentWorldSpeed() * 0.96;
+
+    state.platforms.forEach((platform) => {
+        platform.x -= speed * delta;
+        renderPlatform(platform);
+
+        const platformBox = platform.element.getBoundingClientRect();
+        if (!platform.scored && platformBox.right < runnerBox.left) {
+            platform.scored = true;
+            state.score += 10;
+            setStatus('Plataforma superada · +10');
+        }
+    });
+
+    state.platforms = state.platforms.filter((platform) => {
+        if (platform.x < -340) {
+            if (state.standingPlatform === platform) state.standingPlatform = null;
+            platform.element.remove();
+            return false;
+        }
+        return true;
+    });
+}
+
+function updateRunnerPhysics(delta) {
+    const previousY = state.runnerY;
+    const runnerBox = runner.getBoundingClientRect();
+    const groundedBottom = runnerBox.bottom + previousY;
+
+    if (state.standingPlatform && state.platforms.includes(state.standingPlatform)) {
+        if (runnerOverPlatform(state.standingPlatform, runnerBox)) {
+            const platformTop = state.standingPlatform.element.getBoundingClientRect().top;
+            state.runnerY = Math.max(0, groundedBottom - platformTop);
+            state.velocityY = 0;
+        } else {
+            state.standingPlatform = null;
+        }
+    }
+
+    if (!state.standingPlatform) {
+        state.velocityY -= GRAVITY * delta;
+        state.runnerY = Math.max(0, state.runnerY + state.velocityY * delta);
+
+        if (state.velocityY <= 0) {
+            const landingPlatform = state.platforms
+                .filter((platform) => runnerOverPlatform(platform, runnerBox))
+                .map((platform) => ({
+                    platform,
+                    elevation: groundedBottom - platform.element.getBoundingClientRect().top,
+                }))
+                .filter(({ elevation }) => elevation > 12 && previousY >= elevation - 5 && state.runnerY <= elevation + 5)
+                .sort((a, b) => b.elevation - a.elevation)[0];
+
+            if (landingPlatform) {
+                state.runnerY = landingPlatform.elevation;
+                state.velocityY = 0;
+                state.standingPlatform = landingPlatform.platform;
+                setStatus('Aterrissagem perfeita');
+            }
+        }
+
+        if (state.runnerY === 0 && state.velocityY < 0) state.velocityY = 0;
+    }
+
+    runnerLayer.style.setProperty('--jump-y', state.runnerY.toFixed(2));
+}
+
+function updateInsects(delta, currentTime) {
+    state.insects.forEach((insect) => {
+        if (insect.caught) return;
+        insect.x -= currentWorldSpeed() * insect.speedScale * delta;
+        renderInsect(insect, currentTime);
+        if (tongueHitsInsect(insect, currentTime)) catchInsect(insect);
+    });
+
+    state.insects = state.insects.filter((insect) => {
+        if (insect.caught) return false;
+        if (insect.x < -150) {
+            insect.element.remove();
+            state.catchCombo = 0;
+            return false;
+        }
+        return true;
+    });
+}
+
+function scheduleActors(delta) {
+    state.obstacleCooldown -= delta;
+    state.insectCooldown -= delta;
+    state.platformCooldown -= delta;
+
+    if (state.obstacleCooldown <= 0) {
+        spawnObstacle();
+        const [minimumGap, maximumGap] = PHASES[state.phaseIndex].obstacleGap;
+        const difficultyReduction = Math.min(0.16, state.score / 1800);
+        state.obstacleCooldown = minimumGap + Math.random() * (maximumGap - minimumGap) - difficultyReduction;
+    }
+
+    if (state.insectCooldown <= 0) {
+        spawnInsect();
+        const [minimumGap, maximumGap] = PHASES[state.phaseIndex].insectGap;
+        state.insectCooldown = minimumGap + Math.random() * (maximumGap - minimumGap);
+    }
+
+    if (state.platformCooldown <= 0 && state.platforms.length === 0) {
+        spawnPlatform();
+        state.platformCooldown = 5.6 + Math.random() * 2.8;
+    }
 }
 
 function gameLoop(currentTime) {
@@ -398,24 +701,22 @@ function gameLoop(currentTime) {
     const delta = Math.min((currentTime - state.previousTime) / 1000, 0.032);
     state.previousTime = currentTime;
 
-    state.velocityY -= GRAVITY * delta;
-    state.runnerY = Math.max(0, state.runnerY + state.velocityY * delta);
-    if (state.runnerY === 0 && state.velocityY < 0) state.velocityY = 0;
-    runner.style.setProperty('--jump-y', state.runnerY.toFixed(2));
-
-    const worldSpeed = PHASES[state.phaseIndex].baseSpeed + Math.min(165, state.score * 0.58);
-    if (!reducedMotion) state.sceneOffset -= worldSpeed * 0.085 * delta;
-    state.groundOffset -= worldSpeed * 0.78 * delta;
+    const worldSpeed = currentWorldSpeed();
+    if (!reducedMotionQuery.matches) state.sceneTravel += worldSpeed * 0.075 * delta;
+    state.groundTravel += worldSpeed * 0.82 * delta;
     updateWorldMotion();
 
-    scheduleObstacles(delta);
+    scheduleActors(delta);
+    updatePlatforms(delta);
+    updateRunnerPhysics(delta);
     updateObstacles(delta, currentTime);
-    state.score += delta * 3.25;
+    updateInsects(delta, currentTime);
+    state.score += delta * 3.1;
     resolvePhase();
     updateScore();
 
     if (state.obstacles.some(collisionDetected)) {
-        state.combo = 0;
+        state.dodgeCombo = 0;
         endGame();
         return;
     }
@@ -432,6 +733,14 @@ function handleJumpInput(event) {
     jump();
 }
 
+function handleAttackInput(event) {
+    if (event.type === 'keydown') {
+        if (event.code !== 'KeyX' || event.repeat) return;
+        event.preventDefault();
+    }
+    attack();
+}
+
 function handleKeyboard(event) {
     if (['KeyP', 'Escape'].includes(event.code) && !event.repeat) {
         if (state.mode === 'playing') {
@@ -443,36 +752,93 @@ function handleKeyboard(event) {
         }
         return;
     }
+
+    if (event.code === 'KeyX') {
+        handleAttackInput(event);
+        return;
+    }
+
     handleJumpInput(event);
+}
+
+function preloadImage(source) {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.addEventListener('load', resolve, { once: true });
+        image.addEventListener('error', reject, { once: true });
+        image.src = source;
+    });
+}
+
+async function initializeGame() {
+    applyPhase(0, false);
+    updateScore();
+    const uniqueAssets = [...new Set(ASSET_URLS)];
+    const results = await Promise.allSettled(uniqueAssets.map(preloadImage));
+    const failedAssets = results.filter((result) => result.status === 'rejected').length;
+
+    state.mode = 'idle';
+    playButton.disabled = false;
+    playLabel.textContent = 'Jogar agora';
+    if (failedAssets > 0) {
+        overlayMessage.textContent = 'O jogo está pronto. Alguns elementos podem levar mais um instante para aparecer dependendo da conexão.';
+    }
+}
+
+function syncBoardSize(width, height) {
+    if (state.boardWidth > 0 && state.mode === 'playing') {
+        const widthRatio = width / state.boardWidth;
+        const heightRatio = height / state.boardHeight;
+        state.obstacles.forEach((obstacle) => { obstacle.x *= widthRatio; });
+        state.platforms.forEach((platform) => { platform.x *= widthRatio; });
+        state.runnerY *= heightRatio;
+        runnerLayer.style.setProperty('--jump-y', state.runnerY.toFixed(2));
+        state.insects.forEach((insect) => {
+            insect.x *= widthRatio;
+            insect.y *= heightRatio;
+        });
+    }
+    state.boardWidth = width;
+    state.boardHeight = height;
+    updateWorldMotion();
 }
 
 playButton.addEventListener('click', () => {
     if (state.mode === 'paused') resumeGame();
-    else startGame();
+    else if (state.mode !== 'loading') startGame();
 });
+
 pauseButton.addEventListener('click', () => {
     if (state.mode === 'paused') resumeGame();
     else pauseGame();
 });
+
 jumpButton.addEventListener('pointerdown', handleJumpInput);
+tongueButton.addEventListener('pointerdown', handleAttackInput);
+runnerAttack.addEventListener('animationend', clearAttack);
+
 board.addEventListener('pointerdown', (event) => {
     if (event.target.closest('button')) return;
     handleJumpInput(event);
 });
+
 document.addEventListener('keydown', handleKeyboard);
 document.addEventListener('visibilitychange', () => {
     if (document.hidden && state.mode === 'playing') pauseGame();
 });
 
-PHASES.slice(1).forEach((phase) => {
-    const image = new Image();
-    image.src = phase.background;
-});
-Object.values(OBSTACLES).forEach((obstacle) => {
-    const image = new Image();
-    image.src = obstacle.src;
-});
+if ('ResizeObserver' in window) {
+    const resizeObserver = new ResizeObserver(([entry]) => {
+        syncBoardSize(entry.contentRect.width, entry.contentRect.height);
+    });
+    resizeObserver.observe(board);
+} else {
+    const metrics = boardMetrics();
+    syncBoardSize(metrics.width, metrics.height);
+    window.addEventListener('resize', () => {
+        const nextMetrics = boardMetrics();
+        syncBoardSize(nextMetrics.width, nextMetrics.height);
+    });
+}
 
-applyPhase(0, false);
-updateScore();
-playButton.disabled = false;
+initializeGame();
