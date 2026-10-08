@@ -38,27 +38,27 @@ const PHASES = [
         speedScale: 1,
         paceLabel: 'Ritmo padrão',
         obstacleGap: [1.65, 2.25],
-        insectGap: [1.8, 3],
+        insectGap: [2.7, 4],
         obstacles: ['rock', 'wheel', 'rock'],
     },
     {
         name: 'Floresta Antiga',
-        threshold: 80,
+        threshold: 160,
         background: 'assets/img/cenario-floresta.jpg',
         speedScale: 1.12,
         paceLabel: 'Ritmo acelerado',
         obstacleGap: [1.4, 2],
-        insectGap: [1.55, 2.7],
+        insectGap: [2.4, 3.6],
         obstacles: ['rock', 'wheel', 'boar', 'wheel'],
     },
     {
         name: 'Castelo ao Luar',
-        threshold: 190,
+        threshold: 380,
         background: 'assets/img/cenario-castelo.jpg',
         speedScale: 0.88,
         paceLabel: 'Ritmo noturno reduzido',
         obstacleGap: [1.2, 1.78],
-        insectGap: [1.35, 2.35],
+        insectGap: [2.2, 3.3],
         obstacles: ['wheel', 'wheel-heavy', 'boar', 'rock', 'wheel-heavy'],
     },
 ];
@@ -91,13 +91,13 @@ const OBSTACLES = {
         rotates: true,
     },
     boar: {
-        src: 'assets/img/javali-floresta.png',
+        src: 'assets/img/javali-correndo-sprites.png',
         className: 'obstacle--boar',
         points: 22,
         speedScale: 1.06,
         insetX: 0.2,
         insetTop: 0.2,
-        bobs: true,
+        spriteSheet: true,
     },
 };
 
@@ -105,7 +105,7 @@ const ASSET_URLS = [
     ...PHASES.map((phase) => phase.background),
     ...Object.values(OBSTACLES).map((obstacle) => obstacle.src),
     'assets/img/textura-solo.jpg',
-    'assets/img/sapo-correndo.gif',
+    'assets/img/sapo-correndo-sprites.png',
     'assets/img/sapo-ataque-lingua.png',
     'assets/img/inseto-voando-sprites.png',
     'assets/img/plataforma-musgo.png',
@@ -122,7 +122,7 @@ const state = {
     sceneTravel: 0,
     groundTravel: 0,
     obstacleCooldown: 1.75,
-    insectCooldown: 1.8,
+    insectCooldown: 2.35,
     platformCooldown: 1.15,
     obstacles: [],
     insects: [],
@@ -274,11 +274,13 @@ function chooseObstacleType() {
 function spawnObstacle() {
     const type = chooseObstacleType();
     const config = OBSTACLES[type];
-    const element = document.createElement('img');
-    element.src = config.src;
-    element.alt = '';
+    const element = document.createElement(config.spriteSheet ? 'div' : 'img');
+    if (element instanceof HTMLImageElement) {
+        element.src = config.src;
+        element.alt = '';
+        element.draggable = false;
+    }
     element.className = `obstacle ${config.className}`;
-    element.draggable = false;
     obstacleLayer.append(element);
 
     const obstacle = {
@@ -293,32 +295,53 @@ function spawnObstacle() {
     renderObstacle(obstacle, performance.now());
 }
 
-function spawnInsect() {
-    const element = document.createElement('div');
-    element.className = 'insect';
-    collectibleLayer.append(element);
+function groundInsectLaneIsSafe() {
+    const minimumClearX = state.boardWidth * 0.08;
+    return !state.obstacles.some((obstacle) => obstacle.x > minimumClearX);
+}
 
+function incomingObstacleBlocksInsects() {
+    const reactionLine = state.boardWidth * 0.42;
+    return state.obstacles.some((obstacle) => obstacle.x > reactionLine);
+}
+
+function spawnInsectWave() {
     const boardBox = boardMetrics();
     const runnerBox = runner.getBoundingClientRect();
-    const insectBox = element.getBoundingClientRect();
-    const mouthY = runnerBox.top - boardBox.top + runnerBox.height * 0.46;
-    const randomOffset = (Math.random() - 0.42) * runnerBox.height * 1.35;
-    const y = clamp(
-        mouthY + randomOffset - insectBox.height / 2,
-        boardBox.height * 0.3,
-        boardBox.height * 0.7,
-    );
+    const sample = document.createElement('div');
+    sample.className = 'insect';
+    collectibleLayer.append(sample);
+    const insectBox = sample.getBoundingClientRect();
+    sample.remove();
 
-    const insect = {
-        element,
-        x: boardBox.width + Math.max(48, boardBox.width * 0.05),
-        y,
-        speedScale: 0.84 + Math.random() * 0.18,
-        bobPhase: Math.random() * Math.PI * 2,
-        caught: false,
-    };
-    state.insects.push(insect);
-    renderInsect(insect, performance.now());
+    const count = Math.random() < 0.62 ? 2 : 3;
+    const useGroundLane = Math.random() < 0.12 && groundInsectLaneIsSafe();
+    const mouthY = runnerBox.top - boardBox.top + runnerBox.height * 0.46;
+    const baseY = useGroundLane
+        ? clamp(mouthY - insectBox.height * 0.48, boardBox.height * 0.62, boardBox.height * 0.72)
+        : boardBox.height * (0.49 + Math.random() * 0.09);
+    const spacing = Math.max(58, insectBox.width * 0.82);
+    const waveSpeed = 0.86 + Math.random() * 0.12;
+    const yOffsets = count === 2 ? [-7, 7] : [0, -14, 10];
+
+    for (let index = 0; index < count; index += 1) {
+        const element = document.createElement('div');
+        element.className = `insect insect--${useGroundLane ? 'low' : 'high'}`;
+        collectibleLayer.append(element);
+
+        const insect = {
+            element,
+            x: boardBox.width + Math.max(48, boardBox.width * 0.05) + spacing * index,
+            y: baseY + yOffsets[index],
+            speedScale: waveSpeed,
+            bobPhase: index * 0.72 + Math.random() * 0.35,
+            caught: false,
+        };
+        state.insects.push(insect);
+        renderInsect(insect, performance.now());
+    }
+
+    state.obstacleCooldown = Math.max(state.obstacleCooldown, useGroundLane ? 3 : 1.55);
 }
 
 function spawnPlatform() {
@@ -347,8 +370,6 @@ function renderObstacle(obstacle, currentTime) {
     let extraTransform = '';
     if (obstacle.config.rotates) {
         extraTransform = ` rotate(${obstacle.rotation.toFixed(1)}deg)`;
-    } else if (obstacle.config.bobs) {
-        extraTransform = ` translateY(${Math.sin(currentTime / 86) * 3}px)`;
     }
     obstacle.element.style.transform = `translate3d(${obstacle.x.toFixed(2)}px, 0, 0)${extraTransform}`;
 }
@@ -384,7 +405,7 @@ function resetRun() {
     state.sceneTravel = 0;
     state.groundTravel = 0;
     state.obstacleCooldown = 1.75;
-    state.insectCooldown = 1.7;
+    state.insectCooldown = 2.35;
     state.platformCooldown = 1.15;
     state.standingPlatform = null;
     state.attackReadyAt = 0;
@@ -499,18 +520,36 @@ function tongueHitsInsect(insect, currentTime) {
     );
 }
 
+function insectHitsRunner(insect) {
+    if (insect.caught) return false;
+
+    const runnerBox = runner.getBoundingClientRect();
+    const insectBox = insect.element.getBoundingClientRect();
+    const runnerInsetX = runnerBox.width * 0.3;
+    const runnerInsetY = runnerBox.height * 0.2;
+    const insectInsetX = insectBox.width * 0.22;
+    const insectInsetY = insectBox.height * 0.2;
+
+    return (
+        runnerBox.right - runnerInsetX > insectBox.left + insectInsetX
+        && runnerBox.left + runnerInsetX < insectBox.right - insectInsetX
+        && runnerBox.bottom - runnerInsetY > insectBox.top + insectInsetY
+        && runnerBox.top + runnerInsetY < insectBox.bottom - insectInsetY
+    );
+}
+
 function catchInsect(insect) {
     insect.caught = true;
     state.catchCombo += 1;
-    const bonus = Math.min(20, Math.max(0, state.catchCombo - 1) * 3);
-    const points = 28 + bonus;
+    const bonus = Math.min(12, Math.max(0, state.catchCombo - 1) * 3);
+    const points = 16 + bonus;
     state.score += points;
     insect.element.classList.add('is-caught');
     window.setTimeout(() => insect.element.remove(), 260);
-    setStatus(state.catchCombo > 1 ? `Caçada x${state.catchCombo} · +${points}` : `Inseto capturado · +${points}`);
+    setStatus(state.catchCombo > 1 ? `Caçada x${state.catchCombo} · +${points}` : `Besouro capturado · +${points}`);
 }
 
-function endGame() {
+function endGame(hazard = 'obstacle') {
     state.mode = 'ended';
     setPlayingControls(false);
     clearAttack();
@@ -528,9 +567,11 @@ function endGame() {
 
     updateScore();
     overlayTitle.textContent = `${formatScore(finalScore)} pontos`;
-    overlayMessage.textContent = state.phaseIndex === PHASES.length - 1
-        ? 'Você chegou ao castelo. Agora tente correr ainda mais longe e capture mais insetos.'
-        : 'O caminho ficou difícil desta vez. Tente outra corrida e descubra a próxima região.';
+    overlayMessage.textContent = hazard === 'beetle'
+        ? 'Um besouro acertou o sapo. Pule para ajustar a altura e use a língua antes que o bando chegue perto.'
+        : state.phaseIndex === PHASES.length - 1
+            ? 'Você chegou ao castelo. Agora tente correr ainda mais longe e capture mais besouros.'
+            : 'O caminho ficou difícil desta vez. Tente outra corrida e descubra a próxima região.';
     playLabel.textContent = 'Jogar novamente';
     overlay.classList.add('is-visible');
     playButton.focus({ preventScroll: true });
@@ -684,9 +725,13 @@ function scheduleActors(delta) {
     }
 
     if (state.insectCooldown <= 0) {
-        spawnInsect();
-        const [minimumGap, maximumGap] = PHASES[state.phaseIndex].insectGap;
-        state.insectCooldown = minimumGap + Math.random() * (maximumGap - minimumGap);
+        if (incomingObstacleBlocksInsects()) {
+            state.insectCooldown = 0.42;
+        } else {
+            spawnInsectWave();
+            const [minimumGap, maximumGap] = PHASES[state.phaseIndex].insectGap;
+            state.insectCooldown = minimumGap + Math.random() * (maximumGap - minimumGap);
+        }
     }
 
     if (state.platformCooldown <= 0 && state.platforms.length === 0) {
@@ -718,6 +763,12 @@ function gameLoop(currentTime) {
     if (state.obstacles.some(collisionDetected)) {
         state.dodgeCombo = 0;
         endGame();
+        return;
+    }
+
+    if (state.insects.some(insectHitsRunner)) {
+        state.catchCombo = 0;
+        endGame('beetle');
         return;
     }
 

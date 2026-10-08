@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#102d20">
-    <meta name="description" content="Ajude o Sapo do Chapéu de Palha a atravessar três regiões, saltar obstáculos e capturar insetos.">
+    <meta name="description" content="Ajude o Sapo do Chapéu de Palha a atravessar três regiões, saltar obstáculos e capturar besouros antes que eles se aproximem.">
     <link rel="icon" type="image/png" href="assets/img/sapo-capa.png">
     <link rel="preload" as="image" href="assets/img/cenario-vila.gif">
-    <link rel="stylesheet" href="assets/css/style.css?v=4">
-    <script src="assets/js/script.js?v=4" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=5">
+    <script src="assets/js/script.js?v=5" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body>
@@ -51,7 +51,7 @@
 
             <div class="platform-layer" id="platform-layer" aria-hidden="true"></div>
             <div class="runner-layer" aria-hidden="true">
-                <img class="runner" id="runner" src="assets/img/sapo-correndo.gif" alt="">
+                <div class="runner" id="runner"></div>
                 <img class="runner-attack" id="runner-attack" src="assets/img/sapo-ataque-lingua.png" alt="">
             </div>
             <div class="obstacle-layer" id="obstacle-layer" aria-hidden="true"></div>
@@ -83,7 +83,7 @@
                     <div class="overlay-copy">
                         <p class="overlay-kicker" id="overlay-kicker">Beta para navegador</p>
                         <h1 id="overlay-title">Uma nova corrida começa aqui</h1>
-                        <p class="overlay-message" id="overlay-message">Salte pedras, rodas e javalis, aterrisse nas plataformas e use a língua para capturar insetos.</p>
+                        <p class="overlay-message" id="overlay-message">Salte pedras, rodas e javalis, aterrisse nas plataformas e capture os besouros antes que eles encostem no sapo.</p>
                         <button class="play-button" id="play-button" type="button" disabled>
                             <span class="play-icon" aria-hidden="true">▶</span>
                             <span id="play-label">Carregando...</span>

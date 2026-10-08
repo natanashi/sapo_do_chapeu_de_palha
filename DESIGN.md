@@ -33,7 +33,10 @@ components:
   primaryButton: {}
   jumpButton: {}
   tongueButton: {}
+  runningFrog: {}
   flyingInsect: {}
+  animatedBoar: {}
+  beetleWave: {}
   phaseBanner: {}
 ---
 
@@ -67,7 +70,7 @@ Desktop uses a restrained soft rectangle around the stage; the mobile stage reac
 
 ## Components
 
-All actions use native buttons with hover, active, focus-visible, disabled, and touch states. The overlay preserves one primary action and is reused for pause without resetting the current run. Mobile keeps both Jump and Tongue targets at least 60px tall. The tongue action has a short visible cooldown and a generated transparent attack sprite; flying insects use a four-frame transparent sprite sheet. Score blocks reserve stable width to prevent movement. Compact mossy rocks, wooden wheels and forest boars share one runtime system but keep distinct silhouettes, forgiving collision insets, speeds and point values. Moving moss platforms are non-damaging surfaces: the frog can land on their top, ride briefly and jump again. World motion uses one standard run speed modified deliberately by biome: neutral in the village, faster in the forest and slower at night.
+All actions use native buttons with hover, active, focus-visible, disabled, and touch states. The overlay preserves one primary action and is reused for pause without resetting the current run. Mobile keeps both Jump and Tongue targets at least 60px tall. The tongue action has a short visible cooldown and a generated transparent attack sprite. The running frog uses a four-frame transparent cycle whose white muzzle and nose remain visible in every pose. Forest boars use a separate four-frame gallop instead of artificial bobbing. Beetles are hostile: they arrive mostly in high two- or three-creature waves that invite a jump-and-tongue move; rare low waves are allowed only while the obstacle lane is clear. Score blocks reserve stable width to prevent movement. Compact mossy rocks, wooden wheels and forest boars share one runtime system but keep distinct silhouettes, forgiving collision insets, speeds and point values. Moving moss platforms are non-damaging surfaces: the frog can land on their top, ride briefly and jump again. World motion uses one standard run speed modified deliberately by biome: neutral in the village, faster in the forest and slower at night. Phase thresholds leave enough running time for each biome to establish its own rhythm.
 
 ## Do's and Don'ts
 
@@ -75,6 +78,8 @@ All actions use native buttons with hover, active, focus-visible, disabled, and 
 - Do preserve transparent breathing room around animated sprites.
 - Do keep gameplay controls usable with keyboard, pointer, and touch.
 - Do use the tongue only for capturable insects and keep its hit area visually aligned with the sprite.
+- Do keep the frog's cream-white nose readable in every running frame.
+- Do reserve a reaction gap around low beetle waves; high waves may form compact groups of two or three.
 - Do mirror the second scenery panel so long-running backgrounds never expose a hard seam.
 - Do use phase changes to increase variety and difficulty without changing the two-action Jump and Tongue model.
 - Do reduce decorative parallax when the player requests reduced motion.

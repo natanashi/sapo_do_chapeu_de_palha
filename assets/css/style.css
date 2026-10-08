@@ -285,10 +285,14 @@ button { cursor: pointer; }
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    background-image: url("../img/sapo-correndo-sprites.png");
+    background-position: 0 0;
+    background-repeat: no-repeat;
+    background-size: 400% 100%;
     opacity: 1;
     filter: drop-shadow(0 7px 3px rgba(17, 35, 18, 0.22));
     image-rendering: pixelated;
+    animation: frog-run 440ms linear infinite;
     transition: opacity 50ms linear;
 }
 
@@ -337,7 +341,15 @@ button { cursor: pointer; }
 .obstacle--rock { width: clamp(88px, 8vw, 124px); }
 .obstacle--wheel { width: clamp(98px, 9vw, 132px); }
 .obstacle--wheel-heavy { width: clamp(116px, 10vw, 148px); filter: hue-rotate(17deg) saturate(0.86) brightness(0.9) drop-shadow(0 7px 4px rgba(18, 34, 21, 0.25)); }
-.obstacle--boar { width: clamp(178px, 17vw, 260px); }
+.obstacle--boar {
+    width: clamp(178px, 17vw, 260px);
+    aspect-ratio: 640 / 360;
+    background-image: url("../img/javali-correndo-sprites.png");
+    background-position: 0 0;
+    background-repeat: no-repeat;
+    background-size: 400% 100%;
+    animation: boar-run 410ms linear infinite;
+}
 
 .platform {
     position: absolute;
@@ -614,6 +626,20 @@ kbd {
     75%, 100% { background-position: 100% 0; }
 }
 
+@keyframes frog-run {
+    0%, 24.99% { background-position: 0 0; }
+    25%, 49.99% { background-position: 33.333% 0; }
+    50%, 74.99% { background-position: 66.667% 0; }
+    75%, 100% { background-position: 100% 0; }
+}
+
+@keyframes boar-run {
+    0%, 24.99% { background-position: 0 0; }
+    25%, 49.99% { background-position: 33.333% 0; }
+    50%, 74.99% { background-position: 66.667% 0; }
+    75%, 100% { background-position: 100% 0; }
+}
+
 @keyframes insect-caught {
     to { opacity: 0; transform: translate3d(var(--insect-x, 0), var(--insect-y, 0), 0) scale(0.2) rotate(-24deg); }
 }
@@ -688,7 +714,9 @@ kbd {
 
 @media (prefers-reduced-motion: reduce) {
     .cloud-frog,
-    .insect { animation: none; }
+    .insect,
+    .runner,
+    .obstacle--boar { animation: none; }
     .scenery-layer { transition: none; }
     .game-overlay,
     .play-button,
