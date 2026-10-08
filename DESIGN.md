@@ -15,11 +15,13 @@ colors:
   lantern: "#ffb24a"
 typography:
   display:
-    fontFamily: "Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif"
+    fontFamily: "'Pixelify Sans', 'Courier New', monospace"
+  ui:
+    fontFamily: "'Pixelify Sans', 'Trebuchet MS', sans-serif"
   body:
     fontFamily: "'Trebuchet MS', Arial, sans-serif"
   data:
-    fontFamily: "'Courier New', monospace"
+    fontFamily: "'Pixelify Sans', 'Courier New', monospace"
 rounded:
   board: "18px"
   control: "14px"
@@ -54,7 +56,7 @@ Runtime ownership: the custom properties at the top of `assets/css/style.css` im
 
 ## Typography
 
-Impact is used sparingly for the title and short game-state headlines. Trebuchet MS carries instructions and controls. Courier New is exclusive to score data so digits remain stable while the game runs.
+Pixelify Sans is bundled locally under the SIL Open Font License and owns titles, game-state headlines, controls, HUD labels and tabular score digits. Its blocky construction recalls classic building games without copying their lettering, while softer terminals and the green-and-straw shadow treatment keep the voice specific to the frog world. Trebuchet MS remains the reading face for instructions and longer messages. Runtime mapping is centralized in `assets/css/style.css` through `--font-display`, `--font-ui`, `--font-body` and `--font-data`; the local font file prevents layout from depending on a third-party request.
 
 ## Layout
 
@@ -70,7 +72,7 @@ Desktop uses a restrained soft rectangle around the stage; the mobile stage reac
 
 ## Components
 
-All actions use native buttons with hover, active, focus-visible, disabled, and touch states. The overlay preserves one primary action and is reused for pause without resetting the current run. Mobile keeps both Jump and Tongue targets at least 60px tall. The tongue action has a short visible cooldown and a generated transparent attack sprite. The running frog uses a four-frame transparent cycle whose white muzzle and nose remain visible in every pose. Forest boars use a separate four-frame gallop instead of artificial bobbing. Beetles are hostile: they arrive mostly in high two- or three-creature waves that invite a jump-and-tongue move; rare low waves are allowed only while the obstacle lane is clear. Score blocks reserve stable width to prevent movement. Compact mossy rocks, wooden wheels and forest boars share one runtime system but keep distinct silhouettes, forgiving collision insets, speeds and point values. Moving moss platforms are non-damaging surfaces: the frog can land on their top, ride briefly and jump again. World motion uses one standard run speed modified deliberately by biome: neutral in the village, faster in the forest and slower at night. Phase thresholds leave enough running time for each biome to establish its own rhythm.
+All actions use native buttons with hover, active, focus-visible, disabled, and touch states. The overlay preserves one primary action and is reused for pause without resetting the current run. Mobile keeps both Jump and Tongue targets at least 60px tall. The tongue action has a short visible cooldown and a generated transparent attack sprite. The running frog uses a six-frame transparent cycle with clear rear-leg push-off, airborne tuck, forward swing and alternating extension; its white muzzle and nose remain visible in every pose. Forest boars use a separate four-frame gallop instead of artificial bobbing. Beetles are hostile: they arrive mostly in high two- or three-creature waves that invite a jump-and-tongue move; rare low waves are allowed only while the obstacle lane is clear. Score blocks reserve stable width to prevent movement. Compact mossy rocks, wooden wheels and forest boars share one runtime system but keep distinct silhouettes, forgiving collision insets, speeds and point values. Moving moss platforms are non-damaging surfaces: the frog can land on their top, ride briefly and jump again. World motion uses one standard run speed modified deliberately by biome: neutral in the village, faster in the forest and slower at night. Phase thresholds leave enough running time for each biome to establish its own rhythm.
 
 ## Do's and Don'ts
 
@@ -85,4 +87,4 @@ All actions use native buttons with hover, active, focus-visible, disabled, and 
 - Do reduce decorative parallax when the player requests reduced motion.
 - Don't add decorative particles behind the runner; they resemble sprite corruption.
 - Don't place important controls only inside the moving game area on mobile.
-- Don't introduce external font or framework dependencies for this static game.
+- Don't introduce runtime font or framework dependencies; approved open-source fonts must be stored locally with their license.

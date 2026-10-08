@@ -105,7 +105,7 @@ const ASSET_URLS = [
     ...PHASES.map((phase) => phase.background),
     ...Object.values(OBSTACLES).map((obstacle) => obstacle.src),
     'assets/img/textura-solo.jpg',
-    'assets/img/sapo-correndo-sprites.png',
+    'assets/img/sapo-correndo-natural-sprites.png',
     'assets/img/sapo-ataque-lingua.png',
     'assets/img/inseto-voando-sprites.png',
     'assets/img/plataforma-musgo.png',

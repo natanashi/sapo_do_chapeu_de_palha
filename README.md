@@ -13,7 +13,8 @@ Jogo de corrida em pixel art para navegador, com suporte a computador e celular.
 - Cenários contínuos e chão em movimento, sem emendas visíveis entre as imagens.
 - Pedras compactas, rodas e javalis animados com tamanhos possíveis de superar e pontuações diferentes.
 - Plataformas móveis nas quais o sapo pode aterrissar e saltar novamente.
-- Corrida do sapo em quatro quadros, com o rosto e o nariz consistentes durante todo o movimento.
+- Corrida natural do sapo em seis quadros, com impulso e troca das pernas traseiras, além do rosto e nariz consistentes.
+- Tipografia pixelada própria para o menu e o HUD, armazenada localmente e licenciada pela SIL Open Font License.
 - Ataque de língua para capturar bandos de dois ou três besouros animados antes que eles acertem o sapo.
 - Besouros normalmente voam no alto; aparições baixas só acontecem quando a pista está livre de obstáculos próximos.
 - Velocidade-base consistente, acelerada na floresta e reduzida no cenário noturno.
@@ -40,3 +41,7 @@ Abra o arquivo `index.html` em um navegador moderno.
 ## Publicação
 
 O projeto é totalmente estático e pode ser hospedado pelo GitHub Pages a partir da branch `main`.
+
+## Licença da fonte
+
+A fonte local **Pixelify Sans** é distribuída sob a SIL Open Font License 1.1. O texto completo está em [`assets/fonts/OFL-PixelifySans.txt`](./assets/fonts/OFL-PixelifySans.txt).
