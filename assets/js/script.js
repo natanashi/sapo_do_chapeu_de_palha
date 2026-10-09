@@ -159,8 +159,8 @@ const state = {
 const BASE_RUN_SPEED = 285;
 const GRAVITY = 1850;
 const JUMP_FORCE = 820;
-const ATTACK_DURATION = 360;
-const ATTACK_COOLDOWN = 500;
+const ATTACK_DURATION = 440;
+const ATTACK_COOLDOWN = 620;
 const JOURNEY_DURATION = 185;
 const RUNNER_MOTION_CLASSES = ['motion-takeoff', 'motion-rise', 'motion-apex', 'motion-fall', 'motion-land'];
 

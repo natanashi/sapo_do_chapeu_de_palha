@@ -345,7 +345,7 @@ button { cursor: pointer; }
     --mouth-x: 73%;
     --mouth-y: 64%;
 }
-.runner-attack.is-visible { animation: tongue-strike 360ms ease-out both; }
+.runner-attack.is-visible { animation: tongue-strike 440ms cubic-bezier(0.2, 0.82, 0.25, 1) both; }
 .runner-layer.is-hit { animation: hit-wobble 420ms ease-out both; }
 .runner-layer.is-hit .runner { filter: grayscale(0.35) drop-shadow(0 7px 3px rgba(17, 35, 18, 0.22)); }
 
@@ -715,10 +715,12 @@ kbd {
 .status:not(:empty) { animation: status-pop 1.35s ease both; }
 
 @keyframes tongue-strike {
-    0% { opacity: 0; transform: translateY(-50%) scaleX(0.035); }
-    12% { opacity: 1; transform: translateY(-50%) scaleX(0.18); }
-    38%, 62% { opacity: 1; transform: translateY(-50%) scaleX(1); }
-    100% { opacity: 0; transform: translateY(-50%) scaleX(0.035); }
+    0% { opacity: 0; transform: translateY(-50%) scaleX(0.02); }
+    8% { opacity: 1; transform: translateY(-50%) scaleX(0.04); }
+    30% { opacity: 1; transform: translateY(-50%) scaleX(1.02); }
+    36%, 58% { opacity: 1; transform: translateY(-50%) scaleX(1); }
+    78% { opacity: 1; transform: translateY(-50%) scaleX(0.55); }
+    100% { opacity: 0; transform: translateY(-50%) scaleX(0.02); }
 }
 
 @keyframes insect-flap {
@@ -790,7 +792,7 @@ kbd {
     .route-map__header { margin-bottom: 5px; }
     .route-map li { min-width: 38px; }
     .runner-layer { left: 6%; bottom: 14%; width: clamp(86px, 24vw, 116px); }
-    .runner-attack { left: 68%; width: clamp(220px, 66vw, 310px); }
+    .runner-attack { left: var(--mouth-x); width: clamp(220px, 66vw, 310px); }
     .obstacle { bottom: 14%; }
     .obstacle--rock { width: clamp(78px, 22vw, 104px); }
     .obstacle--wheel { width: clamp(86px, 23vw, 116px); }
