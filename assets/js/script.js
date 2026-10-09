@@ -105,8 +105,8 @@ const ASSET_URLS = [
     ...PHASES.map((phase) => phase.background),
     ...Object.values(OBSTACLES).map((obstacle) => obstacle.src),
     'assets/img/textura-solo.jpg',
-    'assets/img/sapo-correndo-natural-sprites.png',
-    'assets/img/sapo-ataque-lingua.png',
+    'assets/img/sapo-ciclo-natural-v2.png',
+    'assets/img/sapo-lingua-v2.png',
     'assets/img/inseto-voando-sprites.png',
     'assets/img/plataforma-musgo.png',
 ];
@@ -132,6 +132,9 @@ const state = {
     catchCombo: 0,
     attackUntil: 0,
     attackReadyAt: 0,
+    runnerMotion: 'run',
+    wasAirborne: false,
+    landingUntil: 0,
     previousTime: 0,
     animationFrame: 0,
     boardWidth: 0,
@@ -141,8 +144,9 @@ const state = {
 const BASE_RUN_SPEED = 285;
 const GRAVITY = 1850;
 const JUMP_FORCE = 820;
-const ATTACK_DURATION = 330;
-const ATTACK_COOLDOWN = 470;
+const ATTACK_DURATION = 360;
+const ATTACK_COOLDOWN = 500;
+const RUNNER_MOTION_CLASSES = ['motion-takeoff', 'motion-rise', 'motion-apex', 'motion-fall', 'motion-land'];
 
 function clamp(value, minimum, maximum) {
     return Math.min(maximum, Math.max(minimum, value));
@@ -390,7 +394,15 @@ function renderPlatform(platform) {
 function clearAttack() {
     state.attackUntil = 0;
     runner.classList.remove('is-attacking');
+    runnerLayer.classList.remove('is-attacking');
     runnerAttack.classList.remove('is-visible');
+}
+
+function setRunnerMotion(motion) {
+    if (state.runnerMotion === motion) return;
+    state.runnerMotion = motion;
+    runnerLayer.classList.remove(...RUNNER_MOTION_CLASSES);
+    if (motion !== 'run') runnerLayer.classList.add(`motion-${motion}`);
 }
 
 function resetRun() {
@@ -409,7 +421,10 @@ function resetRun() {
     state.platformCooldown = 1.15;
     state.standingPlatform = null;
     state.attackReadyAt = 0;
-    runnerLayer.classList.remove('is-hit');
+    state.wasAirborne = false;
+    state.landingUntil = 0;
+    state.runnerMotion = 'run';
+    runnerLayer.classList.remove('is-hit', 'is-airborne', ...RUNNER_MOTION_CLASSES);
     runnerLayer.style.setProperty('--jump-y', '0');
     applyPhase(0, false);
     updateWorldMotion();
@@ -470,6 +485,7 @@ function jump() {
     if (state.runnerY > 3 && !state.standingPlatform) return;
     state.standingPlatform = null;
     state.velocityY = JUMP_FORCE;
+    setRunnerMotion('takeoff');
     playSound(jumpAudio);
 }
 
@@ -481,6 +497,7 @@ function attack() {
     state.attackUntil = now + ATTACK_DURATION;
     state.attackReadyAt = now + ATTACK_COOLDOWN;
     runner.classList.add('is-attacking');
+    runnerLayer.classList.add('is-attacking');
     runnerAttack.classList.remove('is-visible');
     void runnerAttack.offsetWidth;
     runnerAttack.classList.add('is-visible');
@@ -650,7 +667,7 @@ function updatePlatforms(delta) {
     });
 }
 
-function updateRunnerPhysics(delta) {
+function updateRunnerPhysics(delta, currentTime) {
     const previousY = state.runnerY;
     const runnerBox = runner.getBoundingClientRect();
     const groundedBottom = runnerBox.bottom + previousY;
@@ -688,6 +705,25 @@ function updateRunnerPhysics(delta) {
         }
 
         if (state.runnerY === 0 && state.velocityY < 0) state.velocityY = 0;
+    }
+
+    const isAirborne = !state.standingPlatform && state.runnerY > 3;
+    runnerLayer.classList.toggle('is-airborne', isAirborne);
+
+    if (isAirborne) {
+        state.wasAirborne = true;
+        if (state.velocityY > JUMP_FORCE * 0.72) setRunnerMotion('takeoff');
+        else if (state.velocityY > 170) setRunnerMotion('rise');
+        else if (state.velocityY > -150) setRunnerMotion('apex');
+        else setRunnerMotion('fall');
+    } else if (state.wasAirborne) {
+        state.wasAirborne = false;
+        state.landingUntil = currentTime + 145;
+        setRunnerMotion('land');
+    } else if (currentTime < state.landingUntil) {
+        setRunnerMotion('land');
+    } else {
+        setRunnerMotion('run');
     }
 
     runnerLayer.style.setProperty('--jump-y', state.runnerY.toFixed(2));
@@ -753,7 +789,7 @@ function gameLoop(currentTime) {
 
     scheduleActors(delta);
     updatePlatforms(delta);
-    updateRunnerPhysics(delta);
+    updateRunnerPhysics(delta, currentTime);
     updateObstacles(delta, currentTime);
     updateInsects(delta, currentTime);
     state.score += delta * 3.1;

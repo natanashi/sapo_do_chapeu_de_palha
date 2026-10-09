@@ -303,33 +303,47 @@ button { cursor: pointer; }
     display: block;
     width: 100%;
     height: 100%;
-    background-image: url("../img/sapo-correndo-natural-sprites.png");
+    background-image: url("../img/sapo-ciclo-natural-v2.png");
     background-position: 0 0;
     background-repeat: no-repeat;
-    background-size: 300% 200%;
+    background-size: 400% 200%;
     opacity: 1;
     filter: drop-shadow(0 7px 3px rgba(17, 35, 18, 0.22));
     image-rendering: pixelated;
-    animation: frog-run 630ms linear infinite;
-    transition: opacity 50ms linear;
+    animation: frog-hop 760ms linear infinite;
 }
 
-.runner.is-attacking { opacity: 0; }
+.runner-layer.motion-takeoff .runner { animation: none; background-position: 66.667% 0; }
+.runner-layer.motion-rise .runner { animation: none; background-position: 100% 0; }
+.runner-layer.motion-apex .runner { animation: none; background-position: 0 100%; }
+.runner-layer.motion-fall .runner { animation: none; background-position: 33.333% 100%; }
+.runner-layer.motion-land .runner { animation: none; background-position: 66.667% 100%; }
+
+.runner.is-attacking {
+    animation: none;
+    background-position: 0 0;
+}
+
+.runner-layer.is-airborne .runner.is-attacking { background-position: 0 100%; }
 
 .runner-attack {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    width: auto;
+    z-index: 2;
+    top: 73%;
+    left: 69%;
+    width: clamp(250px, 28vw, 420px);
     max-width: none;
-    height: 100%;
+    height: auto;
     opacity: 0;
-    clip-path: inset(0 78% 0 0);
+    transform: translateY(-50%) scaleX(0.035);
+    transform-origin: left center;
     filter: drop-shadow(0 7px 3px rgba(17, 35, 18, 0.22));
     image-rendering: pixelated;
+    will-change: transform, opacity;
 }
 
-.runner-attack.is-visible { animation: tongue-strike 360ms steps(3, end) both; }
+.runner-layer.is-airborne .runner-attack { top: 56%; }
+.runner-attack.is-visible { animation: tongue-strike 360ms ease-out both; }
 .runner-layer.is-hit { animation: hit-wobble 420ms ease-out both; }
 .runner-layer.is-hit .runner { filter: grayscale(0.35) drop-shadow(0 7px 3px rgba(17, 35, 18, 0.22)); }
 
@@ -637,10 +651,10 @@ kbd {
 }
 
 @keyframes tongue-strike {
-    0% { clip-path: inset(0 78% 0 0); opacity: 0; }
-    18% { clip-path: inset(0 58% 0 0); opacity: 1; }
-    48%, 66% { clip-path: inset(0 0 0 0); opacity: 1; }
-    100% { clip-path: inset(0 78% 0 0); opacity: 0; }
+    0% { opacity: 0; transform: translateY(-50%) scaleX(0.035); }
+    12% { opacity: 1; transform: translateY(-50%) scaleX(0.18); }
+    38%, 62% { opacity: 1; transform: translateY(-50%) scaleX(1); }
+    100% { opacity: 0; transform: translateY(-50%) scaleX(0.035); }
 }
 
 @keyframes insect-flap {
@@ -650,13 +664,15 @@ kbd {
     75%, 100% { background-position: 100% 0; }
 }
 
-@keyframes frog-run {
-    0%, 16.65% { background-position: 0 0; }
-    16.66%, 33.31% { background-position: 50% 0; }
-    33.32%, 49.97% { background-position: 100% 0; }
-    49.98%, 66.63% { background-position: 0 100%; }
-    66.64%, 83.29% { background-position: 50% 100%; }
-    83.3%, 100% { background-position: 100% 100%; }
+@keyframes frog-hop {
+    0%, 13.99% { background-position: 0 0; }
+    14%, 24.99% { background-position: 33.333% 0; }
+    25%, 35.99% { background-position: 66.667% 0; }
+    36%, 47.99% { background-position: 100% 0; }
+    48%, 60.99% { background-position: 0 100%; }
+    61%, 72.99% { background-position: 33.333% 100%; }
+    73%, 85.99% { background-position: 66.667% 100%; }
+    86%, 100% { background-position: 100% 100%; }
 }
 
 @keyframes boar-run {
@@ -706,6 +722,7 @@ kbd {
     .scoreboard strong { font-size: 0.88rem; }
     .pause-button { min-height: 30px; font-size: 0.59rem; }
     .runner-layer { left: 6%; bottom: 14%; width: clamp(86px, 24vw, 116px); }
+    .runner-attack { left: 68%; width: clamp(220px, 66vw, 310px); }
     .obstacle { bottom: 14%; }
     .obstacle--rock { width: clamp(78px, 22vw, 104px); }
     .obstacle--wheel { width: clamp(86px, 23vw, 116px); }
