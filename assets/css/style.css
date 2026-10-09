@@ -302,7 +302,7 @@ button { cursor: pointer; }
 .runner-layer.motion-fall .runner { background-position: 33.333% 100%; }
 .runner-layer.motion-land .runner { background-position: 66.667% 100%; }
 
-.runner.is-attacking {
+.runner-layer .runner.is-attacking {
     background-image: url("../img/sapo-boca-aberta-sprites.png");
     background-size: 200% 100%;
     animation: none;

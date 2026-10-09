@@ -11,12 +11,14 @@ Jogo de corrida em pixel art para navegador, com suporte a computador e celular.
 
 - Quatro regiões inteiramente pela manhã: Vila do Sol, Campos do Orvalho, Floresta Antiga e Castelo da Manhã.
 - Jornada com duração mínima de 3 minutos e 5 segundos e um mapa no topo que mostra a posição do jogador em toda a rota.
-- Panoramas ultralargos criados para corrida lateral, com escala consistente, terreno plano e bordas preparadas para não revelar emendas.
+- Panoramas ultralargos criados para corrida lateral, com construções detalhadas e legíveis, terreno plano e bordas preparadas para não revelar emendas.
 - Pedras compactas, rodas e javalis animados com tamanhos possíveis de superar e pontuações diferentes.
 - Plataformas móveis nas quais o sapo pode aterrissar e saltar novamente.
 - Corrida ereta e cartunesca em oito quadros, com contato, descida, passagem e subida, alternando corretamente braços e pernas.
 - Pulo com poses próprias de saída, subida, ápice, queda e aterrissagem sincronizadas à velocidade vertical.
 - Ataque com a boca aberta em poses próprias para corrida e pulo; a língua sai da boca sem alterar o tamanho do sapo.
+- Folhas de sprites isoladas por estado, impedindo que quadros vizinhos apareçam durante ataques, decolagens e aterrissagens.
+- Pedras sincronizadas ao deslocamento do chão para parecerem apoiadas no terreno, sem deslizamento artificial.
 - Tipografia pixelada própria para o menu e o HUD, armazenada localmente e licenciada pela SIL Open Font License.
 - Ataque de língua para capturar bandos de dois ou três besouros animados antes que eles acertem o sapo.
 - Besouros normalmente voam no alto; aparições baixas só acontecem quando a pista está livre de obstáculos próximos.
