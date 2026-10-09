@@ -38,7 +38,8 @@ components:
   runningFrog: {}
   jumpStates: {}
   flyingInsect: {}
-  animatedBoar: {}
+  waveFlyingBeetle: {}
+  groundRunningBeetle: {}
   beetleWave: {}
   phaseBanner: {}
 ---
@@ -73,7 +74,7 @@ Desktop uses a restrained soft rectangle around the stage; the mobile stage reac
 
 ## Components
 
-All actions use native buttons with hover, active, focus-visible, disabled, and touch states. The overlay preserves one primary action and is reused for pause without resetting the current run. Mobile keeps both Jump and Tongue targets at least 60px tall. The tongue is a separate transparent overlay containing only the tongue, anchored by shared mouth coordinates and rendered behind the frog. Activating it temporarily swaps the runner to a same-scale, mouth-open pose selected for either grounded running or airborne jumping, then returns to the current motion sheet. Grounded and airborne poses each define their own mouth anchor so the tongue follows the character through vertical movement without a second mouth, jaw or lip appearing. Attack selectors must outrank every movement-sheet selector so a two-frame sheet can never expose neighboring frames from an eight-frame sheet. On the ground, the frog deliberately runs upright like a cartoon person; its professional eight-frame cycle follows contact, down, passing and up poses twice, with opposite arms and legs, planted-foot continuity and a visible bend-and-swing in each rear leg. A player-triggered jump changes to natural frog biomechanics and selects dedicated takeoff, rise, apex, fall and landing poses according to vertical velocity. All sheets preserve the same identity, scale, white muzzle, eye, nose and straw hat. Forest boars use a separate four-frame gallop instead of artificial bobbing. Beetles are hostile: they arrive mostly in high two- or three-creature waves that invite a jump-and-tongue move; rare low waves are allowed only while the obstacle lane is clear. Score blocks reserve stable width to prevent movement. Compact mossy rocks, wooden wheels and forest boars share one runtime system but keep distinct silhouettes, forgiving collision insets, speeds and point values. Static rocks move at exactly the same rate as the ground texture; wheels and boars may add their own visible locomotion. Moving moss platforms are non-damaging surfaces: the frog can land on their top, ride briefly and jump again. The complete route lasts 185 seconds, changes regions at fixed elapsed-time milestones and raises speed and spawn pressure gradually under capped limits so every obstacle remains avoidable.
+All actions use native buttons with hover, active, focus-visible, disabled, and touch states. The overlay preserves one primary action and is reused for pause without resetting the current run. Mobile keeps both Jump and Tongue targets at least 60px tall. The tongue is a separate transparent overlay containing only the tongue, anchored by shared mouth coordinates and rendered behind the frog. Activating it temporarily swaps the runner to a same-scale, mouth-open pose, then returns to the current motion sheet. Captured flying beetles lock to the exact hit point on the extended tongue, remain there during its held beat, follow the tongue geometry only when it retracts, and disappear at the mouth under a single bright swallowing accent. On the ground, the frog deliberately runs upright like a cartoon person; its professional eight-frame cycle follows contact, down, passing and up poses twice, with opposite arms and legs. A player-triggered jump changes to natural frog biomechanics and selects dedicated takeoff, rise, apex, fall and landing poses according to vertical velocity. All sheets preserve the same identity, scale, white muzzle, eye, nose and straw hat. Flying beetles are hostile and capturable: golden groups keep a compact flight line while teal-violet beetles use a larger readable vertical wave. Ground beetles are black, wingless, fast four-frame obstacles that must be jumped and never react to the tongue. Score blocks reserve stable width to prevent movement. Compact mossy rocks, wooden wheels and ground beetles share one runtime obstacle system but keep distinct silhouettes, forgiving collision insets, speeds and point values. Static rocks move at exactly the same rate as the ground texture; wheels and ground beetles add visible locomotion. Moving moss platforms are non-damaging surfaces: the frog can land on their top, ride briefly and jump again. The complete route lasts 185 seconds, changes regions at fixed elapsed-time milestones and raises speed and spawn pressure gradually under capped limits so every obstacle remains avoidable.
 
 ## Do's and Don'ts
 
@@ -81,6 +82,9 @@ All actions use native buttons with hover, active, focus-visible, disabled, and 
 - Do preserve transparent breathing room around animated sprites.
 - Do keep gameplay controls usable with keyboard, pointer, and touch.
 - Do use the tongue only for capturable insects and keep its hit area visually aligned with the sprite.
+- Do keep captured flying beetles fixed on the extended tongue before they travel back with its retraction.
+- Do keep the black ground beetle fast, visibly wingless and jump-only.
+- Do use a broad but predictable sine path for the teal-violet flying beetle.
 - Do keep the frog's cream-white nose readable in every running frame.
 - Do keep the frog's body scale fixed when the tongue overlay appears.
 - Do open the frog's mouth before the tongue extends and align the tongue origin with the cream muzzle in both ground and air poses.

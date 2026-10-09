@@ -336,7 +336,7 @@ button { cursor: pointer; }
     will-change: transform, opacity;
 }
 
-.runner-attack.is-visible { animation: tongue-strike 560ms cubic-bezier(0.2, 0.82, 0.25, 1) both; }
+.runner-attack.is-visible { animation: tongue-strike 700ms cubic-bezier(0.2, 0.82, 0.25, 1) both; }
 .runner-layer.is-swallowing .runner { animation: frog-swallow 360ms ease-out both; }
 .runner-layer.is-swallowing::after {
     content: '';
@@ -381,14 +381,16 @@ button { cursor: pointer; }
 .obstacle--rock { width: clamp(88px, 8vw, 124px); }
 .obstacle--wheel { width: clamp(98px, 9vw, 132px); }
 .obstacle--wheel-heavy { width: clamp(116px, 10vw, 148px); filter: hue-rotate(17deg) saturate(0.86) brightness(0.9) drop-shadow(0 7px 4px rgba(18, 34, 21, 0.25)); }
-.obstacle--boar {
-    width: clamp(178px, 17vw, 260px);
-    aspect-ratio: 640 / 360;
-    background-image: url("../img/javali-correndo-sprites.png");
-    background-position: 0 0;
+.obstacle--ground-beetle {
+    bottom: calc(13.5% + 18px);
+    width: clamp(112px, 10vw, 146px);
+    height: clamp(64px, 5.8vw, 82px);
+    background-image: url("../img/besouro-terrestre-correndo-sprites.png");
+    background-position: 0 54%;
     background-repeat: no-repeat;
-    background-size: 400% 100%;
-    animation: boar-run 410ms linear infinite;
+    background-size: 400% auto;
+    filter: drop-shadow(0 6px 3px rgba(8, 18, 29, 0.34));
+    animation: ground-beetle-run 240ms steps(1) infinite;
 }
 
 .platform {
@@ -418,11 +420,31 @@ button { cursor: pointer; }
     will-change: transform;
 }
 
+.insect--wave {
+    width: clamp(68px, 6.5vw, 96px);
+    aspect-ratio: 1.18;
+    background-image: url("../img/besouro-ondulante-voando-sprites.png");
+    background-position: 0 55%;
+    background-size: 400% auto;
+    filter: drop-shadow(0 0 7px rgba(71, 226, 221, 0.34)) drop-shadow(0 4px 4px rgba(18, 23, 63, 0.3));
+    animation-duration: 300ms;
+}
+
 .insect.is-caught {
     z-index: 9;
     animation: none;
     filter: drop-shadow(0 0 7px rgba(255, 235, 117, 0.95));
     transform-origin: 50% 50%;
+}
+
+.insect.is-caught::after {
+    content: '';
+    position: absolute;
+    inset: 30%;
+    border: 2px solid rgba(255, 242, 151, 0.9);
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(255, 237, 115, 0.9);
+    animation: tongue-catch-glow 220ms ease-in-out infinite alternate;
 }
 
 .capture-flash {
@@ -758,9 +780,9 @@ kbd {
 @keyframes tongue-strike {
     0% { opacity: 0; transform: translateY(-50%) scaleX(0.02); }
     8% { opacity: 1; transform: translateY(-50%) scaleX(0.04); }
-    30% { opacity: 1; transform: translateY(-50%) scaleX(1.02); }
-    36%, 58% { opacity: 1; transform: translateY(-50%) scaleX(1); }
-    78% { opacity: 1; transform: translateY(-50%) scaleX(0.55); }
+    28% { opacity: 1; transform: translateY(-50%) scaleX(1.02); }
+    34%, 62% { opacity: 1; transform: translateY(-50%) scaleX(1); }
+    80% { opacity: 1; transform: translateY(-50%) scaleX(0.55); }
     100% { opacity: 0; transform: translateY(-50%) scaleX(0.02); }
 }
 
@@ -789,10 +811,10 @@ kbd {
 }
 
 @keyframes insect-flap {
-    0%, 24.99% { background-position: 0 0; }
-    25%, 49.99% { background-position: 33.333% 0; }
-    50%, 74.99% { background-position: 66.667% 0; }
-    75%, 100% { background-position: 100% 0; }
+    0%, 24.99% { background-position-x: 0; }
+    25%, 49.99% { background-position-x: 33.333%; }
+    50%, 74.99% { background-position-x: 66.667%; }
+    75%, 100% { background-position-x: 100%; }
 }
 
 @keyframes frog-run-biped {
@@ -806,11 +828,16 @@ kbd {
     86%, 100% { background-position: 100% 100%; }
 }
 
-@keyframes boar-run {
-    0%, 24.99% { background-position: 0 0; }
-    25%, 49.99% { background-position: 33.333% 0; }
-    50%, 74.99% { background-position: 66.667% 0; }
-    75%, 100% { background-position: 100% 0; }
+@keyframes ground-beetle-run {
+    0%, 24.99% { background-position-x: 0; }
+    25%, 49.99% { background-position-x: 33.333%; }
+    50%, 74.99% { background-position-x: 66.667%; }
+    75%, 100% { background-position-x: 100%; }
+}
+
+@keyframes tongue-catch-glow {
+    from { opacity: 0.55; transform: scale(0.75); }
+    to { opacity: 1; transform: scale(1.35); }
 }
 
 @keyframes hit-wobble {
@@ -858,7 +885,11 @@ kbd {
     .obstacle--rock { width: clamp(78px, 22vw, 104px); }
     .obstacle--wheel { width: clamp(86px, 23vw, 116px); }
     .obstacle--wheel-heavy { width: clamp(102px, 27vw, 132px); }
-    .obstacle--boar { width: clamp(155px, 44vw, 218px); }
+    .obstacle--ground-beetle {
+        bottom: calc(14% + 12px);
+        width: clamp(104px, 30vw, 136px);
+        height: clamp(58px, 17vw, 76px);
+    }
     .platform { bottom: 21%; width: clamp(164px, 48vw, 212px); }
     .insect { width: clamp(58px, 17vw, 82px); }
     .phase-banner { top: 22%; padding: 8px 18px 10px; }
@@ -889,7 +920,7 @@ kbd {
 @media (prefers-reduced-motion: reduce) {
     .insect,
     .runner,
-    .obstacle--boar { animation: none; }
+    .obstacle--ground-beetle { animation: none; }
     .scenery-layer { transition: none; }
     .game-overlay,
     .play-button,

@@ -42,7 +42,7 @@ const PHASES = [
         paceLabel: 'Ritmo padrão',
         obstacleGap: [1.85, 2.45],
         insectGap: [3.1, 4.3],
-        obstacles: ['rock', 'wheel', 'rock'],
+        obstacles: ['rock', 'wheel', 'rock', 'ground-beetle'],
     },
     {
         name: 'Campos do Orvalho',
@@ -52,7 +52,7 @@ const PHASES = [
         paceLabel: 'Ritmo acelerando',
         obstacleGap: [1.82, 2.42],
         insectGap: [2.95, 4.05],
-        obstacles: ['rock', 'wheel', 'rock', 'wheel'],
+        obstacles: ['rock', 'wheel', 'ground-beetle', 'rock', 'wheel'],
     },
     {
         name: 'Floresta Antiga',
@@ -62,7 +62,7 @@ const PHASES = [
         paceLabel: 'Corrida veloz',
         obstacleGap: [1.75, 2.35],
         insectGap: [2.78, 3.85],
-        obstacles: ['rock', 'wheel', 'boar', 'wheel'],
+        obstacles: ['rock', 'wheel', 'ground-beetle', 'wheel'],
     },
     {
         name: 'Castelo da Manhã',
@@ -72,7 +72,7 @@ const PHASES = [
         paceLabel: 'Reta final em alta velocidade',
         obstacleGap: [1.68, 2.28],
         insectGap: [2.65, 3.7],
-        obstacles: ['wheel', 'boar', 'rock', 'wheel-heavy', 'rock'],
+        obstacles: ['wheel', 'ground-beetle', 'rock', 'wheel-heavy', 'ground-beetle'],
     },
 ];
 
@@ -103,13 +103,13 @@ const OBSTACLES = {
         insetTop: 0.12,
         rotates: true,
     },
-    boar: {
-        src: 'assets/img/javali-correndo-sprites.png',
-        className: 'obstacle--boar',
-        points: 22,
-        speedScale: 1.03,
-        insetX: 0.2,
-        insetTop: 0.2,
+    'ground-beetle': {
+        src: 'assets/img/besouro-terrestre-correndo-sprites.png',
+        className: 'obstacle--ground-beetle',
+        points: 24,
+        speedScale: 1.22,
+        insetX: 0.16,
+        insetTop: 0.18,
         spriteSheet: true,
     },
 };
@@ -123,6 +123,7 @@ const ASSET_URLS = [
     'assets/img/sapo-boca-aberta-sprites.png',
     'assets/img/sapo-lingua-limpa-v3.png',
     'assets/img/inseto-voando-sprites.png',
+    'assets/img/besouro-ondulante-voando-sprites.png',
     'assets/img/plataforma-musgo.png',
 ];
 
@@ -146,6 +147,7 @@ const state = {
     standingPlatform: null,
     dodgeCombo: 0,
     catchCombo: 0,
+    attackStartedAt: 0,
     attackUntil: 0,
     attackReadyAt: 0,
     runnerMotion: 'run',
@@ -162,9 +164,11 @@ const BASE_RUN_SPEED = 255;
 const RUN_SPEED_GAIN = 135;
 const GRAVITY = 1850;
 const JUMP_FORCE = 820;
-const ATTACK_DURATION = 560;
-const ATTACK_COOLDOWN = 720;
-const CATCH_PULL_DURATION = 380;
+const ATTACK_DURATION = 700;
+const ATTACK_COOLDOWN = 860;
+const ATTACK_CAPTURE_CLOSE = 360;
+const ATTACK_RETRACT_AT = 430;
+const ATTACK_SWALLOW_AT = 620;
 const JOURNEY_DURATION = 185;
 const RUNNER_MOTION_CLASSES = ['motion-takeoff', 'motion-rise', 'motion-apex', 'motion-fall', 'motion-land'];
 
@@ -350,24 +354,26 @@ function spawnInsectWave() {
     const boardBox = boardMetrics();
     const runnerBox = runner.getBoundingClientRect();
     const sample = document.createElement('div');
-    sample.className = 'insect';
+    const waveSpeciesChance = state.phaseIndex === 0 ? 0.2 : 0.38;
+    const isWaveSpecies = Math.random() < waveSpeciesChance;
+    sample.className = `insect${isWaveSpecies ? ' insect--wave' : ''}`;
     collectibleLayer.append(sample);
     const insectBox = sample.getBoundingClientRect();
     sample.remove();
 
-    const count = Math.random() < 0.62 ? 2 : 3;
-    const useGroundLane = Math.random() < 0.12 && groundInsectLaneIsSafe();
+    const count = isWaveSpecies ? 1 : (Math.random() < 0.62 ? 2 : 3);
+    const useGroundLane = !isWaveSpecies && Math.random() < 0.12 && groundInsectLaneIsSafe();
     const mouthY = runnerBox.top - boardBox.top + runnerBox.height * 0.46;
     const baseY = useGroundLane
         ? clamp(mouthY - insectBox.height * 0.48, boardBox.height * 0.62, boardBox.height * 0.72)
-        : boardBox.height * (0.49 + Math.random() * 0.09);
+        : boardBox.height * (isWaveSpecies ? 0.5 : 0.49 + Math.random() * 0.09);
     const spacing = Math.max(58, insectBox.width * 0.82);
-    const waveSpeed = 0.86 + Math.random() * 0.12;
-    const yOffsets = count === 2 ? [-7, 7] : [0, -14, 10];
+    const waveSpeed = isWaveSpecies ? 0.98 + Math.random() * 0.08 : 0.86 + Math.random() * 0.12;
+    const yOffsets = count === 1 ? [0] : count === 2 ? [-7, 7] : [0, -14, 10];
 
     for (let index = 0; index < count; index += 1) {
         const element = document.createElement('div');
-        element.className = `insect insect--${useGroundLane ? 'low' : 'high'}`;
+        element.className = `insect insect--${useGroundLane ? 'low' : 'high'}${isWaveSpecies ? ' insect--wave' : ''}`;
         collectibleLayer.append(element);
 
         const insect = {
@@ -376,6 +382,9 @@ function spawnInsectWave() {
             y: baseY + yOffsets[index],
             speedScale: waveSpeed,
             bobPhase: index * 0.72 + Math.random() * 0.35,
+            species: isWaveSpecies ? 'wave' : 'golden',
+            bobAmplitude: isWaveSpecies ? boardBox.height * 0.048 : 8,
+            bobSpeed: isWaveSpecies ? 235 : 150,
             caught: false,
         };
         state.insects.push(insect);
@@ -416,7 +425,7 @@ function renderObstacle(obstacle, currentTime) {
 }
 
 function renderInsect(insect, currentTime) {
-    const bob = Math.sin(currentTime / 150 + insect.bobPhase) * 8;
+    const bob = Math.sin(currentTime / insect.bobSpeed + insect.bobPhase) * insect.bobAmplitude;
     const x = `${insect.x.toFixed(2)}px`;
     const y = `${(insect.y + bob).toFixed(2)}px`;
     insect.element.style.setProperty('--insect-x', x);
@@ -441,6 +450,17 @@ function mouthPosition() {
     return {
         x: tongueBox.left - boardBox.left,
         y: tongueBox.top - boardBox.top + tongueBox.height * 0.5,
+    };
+}
+
+function tonguePosition() {
+    const boardBox = boardMetrics();
+    const tongueBox = runnerAttack.getBoundingClientRect();
+    return {
+        left: tongueBox.left - boardBox.left,
+        top: tongueBox.top - boardBox.top,
+        width: tongueBox.width,
+        height: tongueBox.height,
     };
 }
 
@@ -478,6 +498,7 @@ function resetRun() {
     state.platformCooldown = 1.15;
     state.standingPlatform = null;
     state.attackReadyAt = 0;
+    state.attackStartedAt = 0;
     state.wasAirborne = false;
     state.landingUntil = 0;
     state.swallowUntil = 0;
@@ -552,6 +573,7 @@ function attack() {
     const now = performance.now();
     if (now < state.attackReadyAt) return;
 
+    state.attackStartedAt = now;
     state.attackUntil = now + ATTACK_DURATION;
     state.attackReadyAt = now + ATTACK_COOLDOWN;
     runner.classList.add('is-attacking');
@@ -578,7 +600,10 @@ function collisionDetected(obstacle) {
 }
 
 function tongueHitsInsect(insect, currentTime) {
-    if (currentTime > state.attackUntil) return false;
+    if (
+        currentTime > state.attackUntil
+        || currentTime - state.attackStartedAt > ATTACK_CAPTURE_CLOSE
+    ) return false;
 
     const tongueBox = runnerAttack.getBoundingClientRect();
     const insectBox = insect.element.getBoundingClientRect();
@@ -615,15 +640,27 @@ function insectHitsRunner(insect) {
 
 function catchInsect(insect, currentTime) {
     insect.caught = true;
-    insect.caughtAt = currentTime;
+    insect.attackStartedAt = state.attackStartedAt;
     insect.swallowTriggered = false;
-    const boardBox = boardMetrics();
+    const tongueBox = runnerAttack.getBoundingClientRect();
     const insectBox = insect.element.getBoundingClientRect();
-    insect.catchX = insectBox.left - boardBox.left;
-    insect.catchY = insectBox.top - boardBox.top;
     insect.catchWidth = insectBox.width;
     insect.catchHeight = insectBox.height;
-    createCaptureFlash(insect.catchX + insectBox.width * 0.5, insect.catchY + insectBox.height * 0.5);
+    insect.attachRatio = clamp(
+        (insectBox.left + insectBox.width * 0.5 - tongueBox.left) / Math.max(1, tongueBox.width),
+        0.34,
+        0.94,
+    );
+    insect.attachYOffset = clamp(
+        insectBox.top + insectBox.height * 0.5 - (tongueBox.top + tongueBox.height * 0.53),
+        -7,
+        7,
+    );
+    const boardBox = boardMetrics();
+    createCaptureFlash(
+        insectBox.left - boardBox.left + insectBox.width * 0.5,
+        insectBox.top - boardBox.top + insectBox.height * 0.5,
+    );
     state.catchCombo += 1;
     const bonus = Math.min(12, Math.max(0, state.catchCombo - 1) * 3);
     const points = 16 + bonus;
@@ -633,28 +670,32 @@ function catchInsect(insect, currentTime) {
 }
 
 function updateCaughtInsect(insect, currentTime) {
-    const progress = clamp((currentTime - insect.caughtAt) / CATCH_PULL_DURATION, 0, 1);
-    const pullProgress = progress < 0.16 ? 0 : 1 - ((1 - progress) / 0.84) ** 3;
-    const target = mouthPosition();
-    const targetX = target.x - insect.catchWidth * 0.45;
-    const targetY = target.y - insect.catchHeight * 0.5;
-    const x = insect.catchX + (targetX - insect.catchX) * pullProgress;
-    const y = insect.catchY + (targetY - insect.catchY) * pullProgress;
-    const scale = 1 - pullProgress * 0.78;
-    const rotation = -18 * pullProgress;
+    const attackElapsed = currentTime - insect.attackStartedAt;
+    const retractProgress = clamp(
+        (attackElapsed - ATTACK_RETRACT_AT) / (ATTACK_DURATION - ATTACK_RETRACT_AT),
+        0,
+        1,
+    );
+    const tongue = tonguePosition();
+    const x = tongue.left + tongue.width * insect.attachRatio - insect.catchWidth * 0.5;
+    const y = tongue.top + tongue.height * 0.53 + insect.attachYOffset - insect.catchHeight * 0.5;
+    const scale = 0.78 - retractProgress * 0.18;
+    const rotation = Math.sin(currentTime / 45 + insect.attachRatio * 8) * (5 + retractProgress * 8);
 
     insect.element.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0) scale(${scale.toFixed(3)}) rotate(${rotation.toFixed(1)}deg)`;
-    insect.element.style.opacity = String(clamp(1 - Math.max(0, progress - 0.86) / 0.14, 0, 1));
+    insect.element.style.opacity = String(attackElapsed >= ATTACK_SWALLOW_AT ? clamp((ATTACK_DURATION - attackElapsed) / 60, 0, 1) : 1);
 
-    if (progress >= 0.72 && !insect.swallowTriggered) {
+    if (attackElapsed >= ATTACK_SWALLOW_AT && !insect.swallowTriggered) {
         insect.swallowTriggered = true;
         state.swallowUntil = Math.max(state.swallowUntil, currentTime + 360);
-        runnerLayer.classList.remove('is-swallowing');
-        void runnerLayer.offsetWidth;
-        runnerLayer.classList.add('is-swallowing');
+        const mouth = mouthPosition();
+        createCaptureFlash(mouth.x, mouth.y);
+        if (!runnerLayer.classList.contains('is-swallowing')) {
+            runnerLayer.classList.add('is-swallowing');
+        }
     }
 
-    return progress >= 1;
+    return attackElapsed >= ATTACK_DURATION + 40;
 }
 
 function endGame(hazard = 'obstacle') {
@@ -853,7 +894,7 @@ function updateInsects(delta, currentTime) {
     });
 
     state.insects = state.insects.filter((insect) => {
-        if (insect.caught) return currentTime - insect.caughtAt < CATCH_PULL_DURATION;
+        if (insect.caught) return currentTime - insect.attackStartedAt < ATTACK_DURATION + 40;
         if (insect.x < -150) {
             insect.element.remove();
             state.catchCombo = 0;
