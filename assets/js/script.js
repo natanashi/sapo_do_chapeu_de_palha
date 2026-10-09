@@ -356,6 +356,7 @@ function spawnInsectWave() {
     const sample = document.createElement('div');
     const waveSpeciesChance = state.phaseIndex === 0 ? 0.2 : 0.38;
     const isWaveSpecies = Math.random() < waveSpeciesChance;
+    const usesZigZag = isWaveSpecies && Math.random() < 0.46;
     sample.className = `insect${isWaveSpecies ? ' insect--wave' : ''}`;
     collectibleLayer.append(sample);
     const insectBox = sample.getBoundingClientRect();
@@ -364,16 +365,22 @@ function spawnInsectWave() {
     const count = isWaveSpecies ? 1 : (Math.random() < 0.62 ? 2 : 3);
     const useGroundLane = !isWaveSpecies && Math.random() < 0.12 && groundInsectLaneIsSafe();
     const mouthY = runnerBox.top - boardBox.top + runnerBox.height * 0.46;
+    const flightCeiling = boardBox.height * 0.36;
+    const flightFloor = boardBox.height * 0.86 - insectBox.height * 0.88;
+    const waveCenterY = (flightCeiling + flightFloor) * 0.5;
+    const waveAmplitude = Math.max(54, (flightFloor - flightCeiling) * 0.5);
     const baseY = useGroundLane
         ? clamp(mouthY - insectBox.height * 0.48, boardBox.height * 0.62, boardBox.height * 0.72)
-        : boardBox.height * (isWaveSpecies ? 0.5 : 0.49 + Math.random() * 0.09);
+        : isWaveSpecies
+            ? waveCenterY
+            : boardBox.height * (0.49 + Math.random() * 0.09);
     const spacing = Math.max(58, insectBox.width * 0.82);
     const waveSpeed = isWaveSpecies ? 0.98 + Math.random() * 0.08 : 0.86 + Math.random() * 0.12;
     const yOffsets = count === 1 ? [0] : count === 2 ? [-7, 7] : [0, -14, 10];
 
     for (let index = 0; index < count; index += 1) {
         const element = document.createElement('div');
-        element.className = `insect insect--${useGroundLane ? 'low' : 'high'}${isWaveSpecies ? ' insect--wave' : ''}`;
+        element.className = `insect insect--${useGroundLane ? 'low' : 'high'}${isWaveSpecies ? ' insect--wave' : ''}${usesZigZag ? ' insect--zigzag' : ''}`;
         collectibleLayer.append(element);
 
         const insect = {
@@ -383,15 +390,19 @@ function spawnInsectWave() {
             speedScale: waveSpeed,
             bobPhase: index * 0.72 + Math.random() * 0.35,
             species: isWaveSpecies ? 'wave' : 'golden',
-            bobAmplitude: isWaveSpecies ? boardBox.height * 0.048 : 8,
-            bobSpeed: isWaveSpecies ? 235 : 150,
+            flightPattern: usesZigZag ? 'zigzag' : isWaveSpecies ? 'deep-wave' : 'hover',
+            bobAmplitude: isWaveSpecies ? waveAmplitude : 8,
+            bobSpeed: isWaveSpecies ? (usesZigZag ? 150 : 215) : 150,
+            minimumY: isWaveSpecies ? flightCeiling : null,
+            maximumY: isWaveSpecies ? flightFloor : null,
+            horizontalDrift: usesZigZag ? Math.min(18, boardBox.width * 0.012) : 0,
             caught: false,
         };
         state.insects.push(insect);
         renderInsect(insect, performance.now());
     }
 
-    state.obstacleCooldown = Math.max(state.obstacleCooldown, useGroundLane ? 3 : 1.55);
+    state.obstacleCooldown = Math.max(state.obstacleCooldown, useGroundLane ? 3 : isWaveSpecies ? 1.85 : 1.55);
 }
 
 function spawnPlatform() {
@@ -425,9 +436,19 @@ function renderObstacle(obstacle, currentTime) {
 }
 
 function renderInsect(insect, currentTime) {
-    const bob = Math.sin(currentTime / insect.bobSpeed + insect.bobPhase) * insect.bobAmplitude;
-    const x = `${insect.x.toFixed(2)}px`;
-    const y = `${(insect.y + bob).toFixed(2)}px`;
+    const flightPhase = currentTime / insect.bobSpeed + insect.bobPhase;
+    const flightShape = insect.flightPattern === 'zigzag'
+        ? (2 / Math.PI) * Math.asin(Math.sin(flightPhase))
+        : Math.sin(flightPhase);
+    const bob = flightShape * insect.bobAmplitude;
+    const horizontalDrift = insect.flightPattern === 'zigzag'
+        ? Math.sin(flightPhase * 2 + 0.65) * insect.horizontalDrift
+        : 0;
+    const renderedY = insect.minimumY === null
+        ? insect.y + bob
+        : clamp(insect.y + bob, insect.minimumY, insect.maximumY);
+    const x = `${(insect.x + horizontalDrift).toFixed(2)}px`;
+    const y = `${renderedY.toFixed(2)}px`;
     insect.element.style.setProperty('--insect-x', x);
     insect.element.style.setProperty('--insect-y', y);
     insect.element.style.transform = `translate3d(${x}, ${y}, 0)`;
@@ -1048,6 +1069,10 @@ function syncBoardSize(width, height) {
         state.insects.forEach((insect) => {
             insect.x *= widthRatio;
             insect.y *= heightRatio;
+            insect.bobAmplitude *= heightRatio;
+            insect.horizontalDrift *= widthRatio;
+            if (insect.minimumY !== null) insect.minimumY *= heightRatio;
+            if (insect.maximumY !== null) insect.maximumY *= heightRatio;
         });
     }
     state.boardWidth = width;
