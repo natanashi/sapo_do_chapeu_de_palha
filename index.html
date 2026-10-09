@@ -7,8 +7,8 @@
     <meta name="description" content="Ajude o Sapo do Chapéu de Palha a atravessar quatro regiões da manhã, saltar obstáculos e capturar besouros antes que eles se aproximem.">
     <link rel="icon" type="image/png" href="assets/img/sapo-capa.png">
     <link rel="preload" as="image" href="assets/img/cenario-vila-panorama-v3.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=16">
-    <script src="assets/js/script.js?v=16" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=17">
+    <script src="assets/js/script.js?v=17" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body>
@@ -42,8 +42,9 @@
                 </div>
                 <div class="scoreboard" aria-label="Placar da partida">
                     <p><span>Pontos</span><strong id="score">000</strong></p>
-                    <p><span>Recorde</span><strong id="best-score">000</strong></p>
+                    <p class="best-score"><span>Recorde</span><strong id="best-score">000</strong></p>
                     <p class="phase-score"><span>Fase</span><strong id="phase-number">1/4</strong></p>
+                    <p class="pace-score"><span>Ritmo</span><strong id="pace-multiplier">1.00x</strong></p>
                     <button class="pause-button" id="pause-button" type="button" disabled aria-label="Pausar jogo">Pausar</button>
                 </div>
             </header>

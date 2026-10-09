@@ -15,6 +15,7 @@ const tongueButton = document.querySelector('#tongue-button');
 const scoreDisplay = document.querySelector('#score');
 const bestScoreDisplay = document.querySelector('#best-score');
 const phaseNumberDisplay = document.querySelector('#phase-number');
+const paceMultiplierDisplay = document.querySelector('#pace-multiplier');
 const regionNameDisplay = document.querySelector('#region-name');
 const overlayKicker = document.querySelector('#overlay-kicker');
 const overlayTitle = document.querySelector('#overlay-title');
@@ -47,9 +48,9 @@ const PHASES = [
         name: 'Campos do Orvalho',
         startsAt: 45,
         background: 'assets/img/cenario-campos-panorama-v3.png',
-        speedScale: 1.035,
-        paceLabel: 'Ritmo levemente acelerado',
-        obstacleGap: [1.72, 2.35],
+        speedScale: 1.06,
+        paceLabel: 'Ritmo acelerando',
+        obstacleGap: [1.82, 2.42],
         insectGap: [2.95, 4.05],
         obstacles: ['rock', 'wheel', 'rock', 'wheel'],
     },
@@ -57,9 +58,9 @@ const PHASES = [
         name: 'Floresta Antiga',
         startsAt: 90,
         background: 'assets/img/cenario-floresta-panorama-v3.png',
-        speedScale: 1.065,
-        paceLabel: 'Ritmo crescente',
-        obstacleGap: [1.58, 2.22],
+        speedScale: 1.12,
+        paceLabel: 'Corrida veloz',
+        obstacleGap: [1.75, 2.35],
         insectGap: [2.78, 3.85],
         obstacles: ['rock', 'wheel', 'boar', 'wheel'],
     },
@@ -67,9 +68,9 @@ const PHASES = [
         name: 'Castelo da Manhã',
         startsAt: 135,
         background: 'assets/img/cenario-castelo-panorama-v3.png',
-        speedScale: 1.095,
-        paceLabel: 'Reta final',
-        obstacleGap: [1.48, 2.12],
+        speedScale: 1.18,
+        paceLabel: 'Reta final em alta velocidade',
+        obstacleGap: [1.68, 2.28],
         insectGap: [2.65, 3.7],
         obstacles: ['wheel', 'boar', 'rock', 'wheel-heavy', 'rock'],
     },
@@ -88,7 +89,7 @@ const OBSTACLES = {
         src: 'assets/img/roda-madeira.png',
         className: 'obstacle--wheel',
         points: 18,
-        speedScale: 1.1,
+        speedScale: 1.07,
         insetX: 0.17,
         insetTop: 0.13,
         rotates: true,
@@ -97,7 +98,7 @@ const OBSTACLES = {
         src: 'assets/img/roda-madeira.png',
         className: 'obstacle--wheel-heavy',
         points: 24,
-        speedScale: 1.2,
+        speedScale: 1.12,
         insetX: 0.16,
         insetTop: 0.12,
         rotates: true,
@@ -106,7 +107,7 @@ const OBSTACLES = {
         src: 'assets/img/javali-correndo-sprites.png',
         className: 'obstacle--boar',
         points: 22,
-        speedScale: 1.06,
+        speedScale: 1.03,
         insetX: 0.2,
         insetTop: 0.2,
         spriteSheet: true,
@@ -150,17 +151,20 @@ const state = {
     runnerMotion: 'run',
     wasAirborne: false,
     landingUntil: 0,
+    swallowUntil: 0,
     previousTime: 0,
     animationFrame: 0,
     boardWidth: 0,
     boardHeight: 0,
 };
 
-const BASE_RUN_SPEED = 285;
+const BASE_RUN_SPEED = 255;
+const RUN_SPEED_GAIN = 135;
 const GRAVITY = 1850;
 const JUMP_FORCE = 820;
-const ATTACK_DURATION = 440;
-const ATTACK_COOLDOWN = 620;
+const ATTACK_DURATION = 560;
+const ATTACK_COOLDOWN = 720;
+const CATCH_PULL_DURATION = 380;
 const JOURNEY_DURATION = 185;
 const RUNNER_MOTION_CLASSES = ['motion-takeoff', 'motion-rise', 'motion-apex', 'motion-fall', 'motion-land'];
 
@@ -199,6 +203,7 @@ function updateScore() {
     scoreDisplay.textContent = formatScore(state.score);
     bestScoreDisplay.textContent = formatScore(state.best);
     phaseNumberDisplay.textContent = `${state.phaseIndex + 1}/${PHASES.length}`;
+    paceMultiplierDisplay.textContent = `${currentPaceMultiplier().toFixed(2)}x`;
     regionNameDisplay.textContent = PHASES[state.phaseIndex].name;
 
     const progress = (state.elapsedTime / JOURNEY_DURATION) * 100;
@@ -233,8 +238,14 @@ function worldSpeedScale() {
 }
 
 function currentWorldSpeed() {
-    const timeBoost = Math.min(32, state.elapsedTime * 0.16);
+    const journeyProgress = clamp(state.elapsedTime / JOURNEY_DURATION, 0, 1);
+    const timeBoost = RUN_SPEED_GAIN * journeyProgress;
     return (BASE_RUN_SPEED + timeBoost) * PHASES[state.phaseIndex].speedScale * worldSpeedScale();
+}
+
+function currentPaceMultiplier() {
+    const journeyProgress = clamp(state.elapsedTime / JOURNEY_DURATION, 0, 1);
+    return ((BASE_RUN_SPEED + RUN_SPEED_GAIN * journeyProgress) * PHASES[state.phaseIndex].speedScale) / BASE_RUN_SPEED;
 }
 
 function showPhaseBanner(index) {
@@ -424,6 +435,25 @@ function clearAttack() {
     runnerAttack.classList.remove('is-visible');
 }
 
+function mouthPosition() {
+    const boardBox = boardMetrics();
+    const tongueBox = runnerAttack.getBoundingClientRect();
+    return {
+        x: tongueBox.left - boardBox.left,
+        y: tongueBox.top - boardBox.top + tongueBox.height * 0.5,
+    };
+}
+
+function createCaptureFlash(x, y) {
+    const flash = document.createElement('span');
+    flash.className = 'capture-flash';
+    flash.style.setProperty('--capture-x', `${x.toFixed(2)}px`);
+    flash.style.setProperty('--capture-y', `${y.toFixed(2)}px`);
+    flash.append(document.createElement('i'), document.createElement('i'), document.createElement('i'));
+    collectibleLayer.append(flash);
+    window.setTimeout(() => flash.remove(), 520);
+}
+
 function setRunnerMotion(motion) {
     if (state.runnerMotion === motion) return;
     state.runnerMotion = motion;
@@ -450,8 +480,9 @@ function resetRun() {
     state.attackReadyAt = 0;
     state.wasAirborne = false;
     state.landingUntil = 0;
+    state.swallowUntil = 0;
     state.runnerMotion = 'run';
-    runnerLayer.classList.remove('is-hit', 'is-airborne', ...RUNNER_MOTION_CLASSES);
+    runnerLayer.classList.remove('is-hit', 'is-airborne', 'is-swallowing', ...RUNNER_MOTION_CLASSES);
     runnerLayer.style.setProperty('--jump-y', '0');
     applyPhase(0, false);
     updateWorldMotion();
@@ -582,15 +613,48 @@ function insectHitsRunner(insect) {
     );
 }
 
-function catchInsect(insect) {
+function catchInsect(insect, currentTime) {
     insect.caught = true;
+    insect.caughtAt = currentTime;
+    insect.swallowTriggered = false;
+    const boardBox = boardMetrics();
+    const insectBox = insect.element.getBoundingClientRect();
+    insect.catchX = insectBox.left - boardBox.left;
+    insect.catchY = insectBox.top - boardBox.top;
+    insect.catchWidth = insectBox.width;
+    insect.catchHeight = insectBox.height;
+    createCaptureFlash(insect.catchX + insectBox.width * 0.5, insect.catchY + insectBox.height * 0.5);
     state.catchCombo += 1;
     const bonus = Math.min(12, Math.max(0, state.catchCombo - 1) * 3);
     const points = 16 + bonus;
     state.score += points;
     insect.element.classList.add('is-caught');
-    window.setTimeout(() => insect.element.remove(), 260);
     setStatus(state.catchCombo > 1 ? `Caçada x${state.catchCombo} · +${points}` : `Besouro capturado · +${points}`);
+}
+
+function updateCaughtInsect(insect, currentTime) {
+    const progress = clamp((currentTime - insect.caughtAt) / CATCH_PULL_DURATION, 0, 1);
+    const pullProgress = progress < 0.16 ? 0 : 1 - ((1 - progress) / 0.84) ** 3;
+    const target = mouthPosition();
+    const targetX = target.x - insect.catchWidth * 0.45;
+    const targetY = target.y - insect.catchHeight * 0.5;
+    const x = insect.catchX + (targetX - insect.catchX) * pullProgress;
+    const y = insect.catchY + (targetY - insect.catchY) * pullProgress;
+    const scale = 1 - pullProgress * 0.78;
+    const rotation = -18 * pullProgress;
+
+    insect.element.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0) scale(${scale.toFixed(3)}) rotate(${rotation.toFixed(1)}deg)`;
+    insect.element.style.opacity = String(clamp(1 - Math.max(0, progress - 0.86) / 0.14, 0, 1));
+
+    if (progress >= 0.72 && !insect.swallowTriggered) {
+        insect.swallowTriggered = true;
+        state.swallowUntil = Math.max(state.swallowUntil, currentTime + 360);
+        runnerLayer.classList.remove('is-swallowing');
+        void runnerLayer.offsetWidth;
+        runnerLayer.classList.add('is-swallowing');
+    }
+
+    return progress >= 1;
 }
 
 function endGame(hazard = 'obstacle') {
@@ -779,14 +843,17 @@ function updateRunnerPhysics(delta, currentTime) {
 
 function updateInsects(delta, currentTime) {
     state.insects.forEach((insect) => {
-        if (insect.caught) return;
+        if (insect.caught) {
+            if (updateCaughtInsect(insect, currentTime)) insect.element.remove();
+            return;
+        }
         insect.x -= currentWorldSpeed() * insect.speedScale * delta;
         renderInsect(insect, currentTime);
-        if (tongueHitsInsect(insect, currentTime)) catchInsect(insect);
+        if (tongueHitsInsect(insect, currentTime)) catchInsect(insect, currentTime);
     });
 
     state.insects = state.insects.filter((insect) => {
-        if (insect.caught) return false;
+        if (insect.caught) return currentTime - insect.caughtAt < CATCH_PULL_DURATION;
         if (insect.x < -150) {
             insect.element.remove();
             state.catchCombo = 0;
@@ -804,7 +871,7 @@ function scheduleActors(delta) {
     if (state.obstacleCooldown <= 0) {
         spawnObstacle();
         const [minimumGap, maximumGap] = PHASES[state.phaseIndex].obstacleGap;
-        const difficultyReduction = Math.min(0.18, state.elapsedTime / 900);
+        const difficultyReduction = Math.min(0.1, state.elapsedTime / 1500);
         state.obstacleCooldown = minimumGap + Math.random() * (maximumGap - minimumGap) - difficultyReduction;
     }
 
@@ -831,6 +898,9 @@ function gameLoop(currentTime) {
     state.previousTime = currentTime;
 
     const worldSpeed = currentWorldSpeed();
+    const runCycle = clamp(680 / currentPaceMultiplier(), 410, 680);
+    runnerLayer.style.setProperty('--run-cycle', `${runCycle.toFixed(0)}ms`);
+    if (currentTime >= state.swallowUntil) runnerLayer.classList.remove('is-swallowing');
     if (!reducedMotionQuery.matches) state.sceneTravel += worldSpeed * 0.075 * delta;
     state.groundTravel += worldSpeed * delta;
     updateWorldMotion();

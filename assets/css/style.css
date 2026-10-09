@@ -295,7 +295,7 @@ button { cursor: pointer; }
     opacity: 1;
     filter: drop-shadow(0 7px 3px rgba(17, 35, 18, 0.22));
     image-rendering: pixelated;
-    animation: frog-run-biped 680ms linear infinite;
+    animation: frog-run-biped var(--run-cycle, 680ms) linear infinite;
 }
 
 .runner-layer.motion-takeoff .runner,
@@ -320,11 +320,6 @@ button { cursor: pointer; }
     background-position: 7.143% 50%;
 }
 
-.runner-layer.is-airborne .runner.is-attacking {
-    background-image: url("../img/sapo-boca-aberta-sprites.png");
-    background-position: 92.857% 50%;
-}
-
 .runner-attack {
     position: absolute;
     z-index: 1;
@@ -341,11 +336,22 @@ button { cursor: pointer; }
     will-change: transform, opacity;
 }
 
-.runner-layer.is-airborne {
-    --mouth-x: 73%;
-    --mouth-y: 64%;
+.runner-attack.is-visible { animation: tongue-strike 560ms cubic-bezier(0.2, 0.82, 0.25, 1) both; }
+.runner-layer.is-swallowing .runner { animation: frog-swallow 360ms ease-out both; }
+.runner-layer.is-swallowing::after {
+    content: '';
+    position: absolute;
+    z-index: 4;
+    top: calc(var(--mouth-y) - 13px);
+    left: calc(var(--mouth-x) - 8px);
+    width: 25px;
+    aspect-ratio: 1;
+    border: 4px solid rgba(255, 236, 123, 0.96);
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px rgba(255, 126, 146, 0.34), 0 0 18px rgba(255, 236, 123, 0.86);
+    pointer-events: none;
+    animation: swallow-spark 360ms ease-out both;
 }
-.runner-attack.is-visible { animation: tongue-strike 440ms cubic-bezier(0.2, 0.82, 0.25, 1) both; }
 .runner-layer.is-hit { animation: hit-wobble 420ms ease-out both; }
 .runner-layer.is-hit .runner { filter: grayscale(0.35) drop-shadow(0 7px 3px rgba(17, 35, 18, 0.22)); }
 
@@ -412,7 +418,42 @@ button { cursor: pointer; }
     will-change: transform;
 }
 
-.insect.is-caught { animation: insect-caught 240ms ease-in forwards; }
+.insect.is-caught {
+    z-index: 9;
+    animation: none;
+    filter: drop-shadow(0 0 7px rgba(255, 235, 117, 0.95));
+    transform-origin: 50% 50%;
+}
+
+.capture-flash {
+    position: absolute;
+    z-index: 8;
+    top: 0;
+    left: 0;
+    width: 34px;
+    aspect-ratio: 1;
+    border: 4px solid rgba(255, 245, 151, 0.95);
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate3d(calc(var(--capture-x) - 17px), calc(var(--capture-y) - 17px), 0);
+    animation: capture-ring 480ms ease-out both;
+}
+
+.capture-flash i {
+    position: absolute;
+    top: 11px;
+    left: 11px;
+    width: 7px;
+    height: 7px;
+    border-radius: 2px;
+    background: #fff2a3;
+    box-shadow: 0 0 8px rgba(255, 241, 149, 0.9);
+}
+
+.capture-flash i:nth-child(1) { --spark-x: 33px; --spark-y: -19px; }
+.capture-flash i:nth-child(2) { --spark-x: 42px; --spark-y: 16px; }
+.capture-flash i:nth-child(3) { --spark-x: -24px; --spark-y: 29px; }
+.capture-flash i { animation: capture-pixel 480ms ease-out both; }
 
 .phase-banner {
     position: absolute;
@@ -723,6 +764,30 @@ kbd {
     100% { opacity: 0; transform: translateY(-50%) scaleX(0.02); }
 }
 
+@keyframes capture-ring {
+    0% { opacity: 0; transform: translate3d(calc(var(--capture-x) - 17px), calc(var(--capture-y) - 17px), 0) scale(0.3); }
+    24% { opacity: 1; transform: translate3d(calc(var(--capture-x) - 17px), calc(var(--capture-y) - 17px), 0) scale(1.05); }
+    100% { opacity: 0; transform: translate3d(calc(var(--capture-x) - 17px), calc(var(--capture-y) - 17px), 0) scale(1.7); }
+}
+
+@keyframes capture-pixel {
+    0% { opacity: 0; transform: translate(0, 0) scale(0.4) rotate(0deg); }
+    30% { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--spark-x), var(--spark-y)) scale(0.2) rotate(135deg); }
+}
+
+@keyframes frog-swallow {
+    0%, 54%, 100% { transform: scale(1); }
+    68% { transform: scale(1.07, 0.93) translateX(2px); }
+    84% { transform: scale(0.96, 1.06) translateX(-1px); }
+}
+
+@keyframes swallow-spark {
+    0%, 50% { opacity: 0; transform: scale(0.2) rotate(0deg); }
+    68% { opacity: 1; transform: scale(1.05) rotate(35deg); }
+    100% { opacity: 0; transform: scale(1.7) rotate(90deg); }
+}
+
 @keyframes insect-flap {
     0%, 24.99% { background-position: 0 0; }
     25%, 49.99% { background-position: 33.333% 0; }
@@ -748,10 +813,6 @@ kbd {
     75%, 100% { background-position: 100% 0; }
 }
 
-@keyframes insect-caught {
-    to { opacity: 0; transform: translate3d(var(--insect-x, 0), var(--insect-y, 0), 0) scale(0.2) rotate(-24deg); }
-}
-
 @keyframes hit-wobble {
     0% { transform: translateY(calc(var(--jump-y, 0) * -1px)) rotate(0deg); }
     35% { transform: translateY(calc(var(--jump-y, 0) * -1px)) rotate(-12deg) scale(0.96); }
@@ -772,7 +833,7 @@ kbd {
 @media (max-width: 840px) {
     .game-hud { gap: 8px; }
     .game-title { max-width: 44%; padding: 8px 10px 9px; }
-    .scoreboard { display: grid; grid-template-columns: repeat(3, minmax(54px, 1fr)); gap: 4px; }
+    .scoreboard { display: grid; grid-template-columns: repeat(4, minmax(50px, 1fr)); gap: 4px; }
     .scoreboard p { min-width: 0; padding: 6px 7px; }
     .pause-button { grid-column: 1 / -1; min-height: 32px; }
 }
@@ -816,6 +877,7 @@ kbd {
 @media (max-width: 430px) and (max-height: 720px) {
     .game-title span,
     .phase-score,
+    .best-score,
     .controls-hint { display: none; }
     .scoreboard { grid-template-columns: repeat(2, minmax(52px, 1fr)); }
     .overlay-card { min-height: calc(100svh - 16px); }

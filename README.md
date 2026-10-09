@@ -16,13 +16,14 @@ Jogo de corrida em pixel art para navegador, com suporte a computador e celular.
 - Plataformas móveis nas quais o sapo pode aterrissar e saltar novamente.
 - Corrida ereta e cartunesca em oito quadros, com contato, descida, passagem e subida, alternando corretamente braços e pernas.
 - Pulo com poses próprias de saída, subida, ápice, queda e aterrissagem sincronizadas à velocidade vertical.
-- Ataque com a boca aberta em poses próprias para corrida e pulo; a língua limpa nasce atrás do personagem, permanece presa ao ponto exato da boca em qualquer tela e sincroniza extensão, captura e recolhimento sem duplicar lábios ou alterar o tamanho do sapo.
+- Ataque com a boca aberta sem trocar a proporção do corpo durante o pulo; a língua limpa nasce atrás do personagem e permanece presa ao ponto exato da boca em qualquer tela.
+- Ao acertar um bando, cada besouro fica preso à língua, é puxado até a boca em movimento e termina com um efeito visual de captura e engolida.
 - Folhas de sprites isoladas por estado, impedindo que quadros vizinhos apareçam durante ataques, decolagens e aterrissagens.
 - Pedras sincronizadas ao deslocamento do chão para parecerem apoiadas no terreno, sem deslizamento artificial.
 - Tipografia pixelada própria para o menu e o HUD, armazenada localmente e licenciada pela SIL Open Font License.
 - Ataque de língua para capturar bandos de dois ou três besouros animados antes que eles acertem o sapo.
 - Besouros normalmente voam no alto; aparições baixas só acontecem quando a pista está livre de obstáculos próximos.
-- Velocidade-base consistente, com aumento suave entre as regiões e limites de dificuldade para manter todos os obstáculos superáveis.
+- Velocidade crescente do início ao fim, com mudanças perceptíveis em cada região, indicador de ritmo no HUD e intervalos protegidos para manter todos os obstáculos superáveis.
 - Bônus por sequência, recorde salvo e pausa sem perder a corrida.
 
 ## Como jogar
