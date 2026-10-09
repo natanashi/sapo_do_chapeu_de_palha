@@ -65,7 +65,7 @@ The playfield occupies the available browser viewport up to a 1600 × 900 maximu
 
 ## Elevation & Depth
 
-Depth comes from continuous three-to-one panoramic scenery, world-synchronized ground, overlapping character layers and pressable button shadows. Each panorama keeps more than half its composition as sky, uses readable midground architecture instead of miniature dots and places its complete lower grass verge exactly at the shared track baseline. No scenery content may be hidden behind the track. Static text and score surfaces remain quiet. Backdrop blur is limited to the opening layer and HUD, where it protects legibility over scenery.
+Depth comes from continuous three-to-one panoramic scenery, world-synchronized ground, overlapping character layers and pressable button shadows. Each panorama keeps more than half its composition as sky, uses readable midground architecture instead of miniature dots and sits slightly above the track so landmarks remain clear behind the runner. A short generated grass verge bridges the lifted panorama to the shared track baseline, so no scenery content is hidden and no sky gap can open. Static text and score surfaces remain quiet. Backdrop blur is limited to the opening layer and HUD, where it protects legibility over scenery.
 
 ## Shapes
 
@@ -90,6 +90,7 @@ All actions use native buttons with hover, active, focus-visible, disabled, and 
 - Do mirror the second scenery panel so long-running backgrounds never expose a hard seam.
 - Do compose scenery as a 3:1 side-scroller panorama with readable midground landmarks, matching edge heights and a flat verge aligned to the runtime ground.
 - Do derive both the scenery baseline and track height from the same `--ground-height` token on every responsive breakpoint.
+- Do lift the panorama with `--scene-lift` and fill that exact interval with the scenery verge; never move the bitmap upward without bridging the exposed area.
 - Do show the full panorama width on landscape screens and use the reduced-scale center crop on portrait screens; never use `cover` for gameplay scenery.
 - Do use phase changes to increase variety and difficulty without changing the two-action Jump and Tongue model.
 - Do keep static rocks locked to the ground scroll speed; movement faster than the ground requires a visible rolling or running animation.

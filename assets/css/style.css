@@ -68,6 +68,7 @@ button { cursor: pointer; }
 .game-board {
     --ground-height: 19%;
     --ground-verge: #41773d;
+    --scene-lift: 3%;
     isolation: isolate;
     position: relative;
     width: 100%;
@@ -104,10 +105,14 @@ button { cursor: pointer; }
 .scenery-panel {
     flex: 0 0 calc(100% / 3);
     background-color: var(--sky-morning);
-    background-image: var(--scene-image);
-    background-position: center bottom var(--ground-height);
+    background-image:
+        var(--scene-image),
+        linear-gradient(180deg, #4a853f 0%, var(--ground-verge) 100%);
+    background-position:
+        center bottom calc(var(--ground-height) + var(--scene-lift)),
+        center bottom var(--ground-height);
     background-repeat: no-repeat;
-    background-size: 100% auto;
+    background-size: 100% auto, 100% var(--scene-lift);
     image-rendering: pixelated;
 }
 
@@ -767,7 +772,7 @@ kbd {
     .game-shell { width: 100vw; height: 100svh; min-height: 0; padding: 0; }
     .game-board { border-radius: 0; box-shadow: none; }
     .game-hud { top: max(11px, env(safe-area-inset-top)); right: 10px; left: 10px; }
-    .scenery-panel { background-position: center bottom var(--ground-height); background-size: auto 82%; }
+    .scenery-panel { background-size: auto 82%, 100% var(--scene-lift); }
     .game-title { max-width: 42%; border-radius: 11px; }
     .game-title p { font-size: clamp(0.92rem, 4.1vw, 1.25rem); white-space: normal; }
     .game-title span { font-size: 0.5rem; }
