@@ -303,28 +303,40 @@ button { cursor: pointer; }
     display: block;
     width: 100%;
     height: 100%;
-    background-image: url("../img/sapo-ciclo-natural-v2.png");
+    background-image: url("../img/sapo-corrida-bipede-v3.png");
     background-position: 0 0;
     background-repeat: no-repeat;
     background-size: 400% 200%;
     opacity: 1;
     filter: drop-shadow(0 7px 3px rgba(17, 35, 18, 0.22));
     image-rendering: pixelated;
-    animation: frog-hop 760ms linear infinite;
+    animation: frog-run-biped 680ms linear infinite;
 }
 
-.runner-layer.motion-takeoff .runner { animation: none; background-position: 66.667% 0; }
-.runner-layer.motion-rise .runner { animation: none; background-position: 100% 0; }
-.runner-layer.motion-apex .runner { animation: none; background-position: 0 100%; }
-.runner-layer.motion-fall .runner { animation: none; background-position: 33.333% 100%; }
-.runner-layer.motion-land .runner { animation: none; background-position: 66.667% 100%; }
+.runner-layer.motion-takeoff .runner,
+.runner-layer.motion-rise .runner,
+.runner-layer.motion-apex .runner,
+.runner-layer.motion-fall .runner,
+.runner-layer.motion-land .runner {
+    background-image: url("../img/sapo-ciclo-natural-v2.png");
+    animation: none;
+}
+
+.runner-layer.motion-takeoff .runner { background-position: 66.667% 0; }
+.runner-layer.motion-rise .runner { background-position: 100% 0; }
+.runner-layer.motion-apex .runner { background-position: 0 100%; }
+.runner-layer.motion-fall .runner { background-position: 33.333% 100%; }
+.runner-layer.motion-land .runner { background-position: 66.667% 100%; }
 
 .runner.is-attacking {
     animation: none;
     background-position: 0 0;
 }
 
-.runner-layer.is-airborne .runner.is-attacking { background-position: 0 100%; }
+.runner-layer.is-airborne .runner.is-attacking {
+    background-image: url("../img/sapo-ciclo-natural-v2.png");
+    background-position: 0 100%;
+}
 
 .runner-attack {
     position: absolute;
@@ -664,7 +676,7 @@ kbd {
     75%, 100% { background-position: 100% 0; }
 }
 
-@keyframes frog-hop {
+@keyframes frog-run-biped {
     0%, 13.99% { background-position: 0 0; }
     14%, 24.99% { background-position: 33.333% 0; }
     25%, 35.99% { background-position: 66.667% 0; }
