@@ -17,7 +17,7 @@
     --parchment: #fff4cf;
     --ink: #1c251d;
     --danger: #b94232;
-    --sky-morning: #9edcf2;
+    --sky-morning: #35aef2;
     --sunlight: #ffd77a;
     --focus: #ffffff;
     --shadow: rgba(7, 24, 14, 0.34);
@@ -101,10 +101,11 @@ button { cursor: pointer; }
 
 .scenery-panel {
     flex: 0 0 calc(100% / 3);
+    background-color: var(--sky-morning);
     background-image: var(--scene-image);
-    background-position: center bottom;
+    background-position: center bottom 12%;
     background-repeat: no-repeat;
-    background-size: cover;
+    background-size: 100% auto;
     image-rendering: pixelated;
 }
 
@@ -122,25 +123,6 @@ button { cursor: pointer; }
 .game-board[data-phase="2"] .sun-haze { background: linear-gradient(180deg, rgba(255, 242, 184, 0.05), rgba(44, 105, 48, 0.16)); }
 .game-board[data-phase="3"] .sun-haze { background: linear-gradient(180deg, rgba(188, 245, 197, 0.03), rgba(8, 61, 34, 0.22)); }
 .game-board[data-phase="4"] .sun-haze { background: linear-gradient(180deg, rgba(255, 235, 172, 0.07), rgba(31, 82, 44, 0.18)); }
-
-.cloud-frog {
-    position: absolute;
-    z-index: 2;
-    top: 9%;
-    right: 7%;
-    width: clamp(100px, 11vw, 176px);
-    height: auto;
-    opacity: 0.92;
-    filter: drop-shadow(0 7px 5px rgba(28, 62, 33, 0.16));
-    image-rendering: pixelated;
-    pointer-events: none;
-    animation: cloud-drift 7s ease-in-out infinite alternate;
-    transition: opacity 500ms ease;
-}
-
-.game-board[data-phase="2"] .cloud-frog,
-.game-board[data-phase="3"] .cloud-frog,
-.game-board[data-phase="4"] .cloud-frog { opacity: 0.55; }
 
 .ground {
     position: absolute;
@@ -718,11 +700,6 @@ kbd {
 
 .status:not(:empty) { animation: status-pop 1.35s ease both; }
 
-@keyframes cloud-drift {
-    from { transform: translate3d(0, -3px, 0); }
-    to { transform: translate3d(-28px, 9px, 0); }
-}
-
 @keyframes tongue-strike {
     0% { opacity: 0; transform: translateY(-50%) scaleX(0.035); }
     12% { opacity: 1; transform: translateY(-50%) scaleX(0.18); }
@@ -788,6 +765,7 @@ kbd {
     .game-shell { width: 100vw; height: 100svh; min-height: 0; padding: 0; }
     .game-board { border-radius: 0; box-shadow: none; }
     .game-hud { top: max(11px, env(safe-area-inset-top)); right: 10px; left: 10px; }
+    .scenery-panel { background-position: center bottom 4%; background-size: auto 82%; }
     .game-title { max-width: 42%; border-radius: 11px; }
     .game-title p { font-size: clamp(0.92rem, 4.1vw, 1.25rem); white-space: normal; }
     .game-title span { font-size: 0.5rem; }
@@ -806,7 +784,6 @@ kbd {
     .obstacle--boar { width: clamp(155px, 44vw, 218px); }
     .platform { bottom: 21%; width: clamp(164px, 48vw, 212px); }
     .insect { width: clamp(58px, 17vw, 82px); }
-    .cloud-frog { top: 18%; width: clamp(86px, 26vw, 124px); }
     .phase-banner { top: 22%; padding: 8px 18px 10px; }
     .status { top: 20%; max-width: calc(100% - 28px); text-align: center; }
     .game-controls { right: max(10px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); left: max(10px, env(safe-area-inset-left)); }
@@ -832,7 +809,6 @@ kbd {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .cloud-frog,
     .insect,
     .runner,
     .obstacle--boar { animation: none; }

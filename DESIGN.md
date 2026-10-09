@@ -11,7 +11,7 @@ colors:
   parchment: "#fff4cf"
   ink: "#1c251d"
   danger: "#b94232"
-  sky-morning: "#9edcf2"
+  sky-morning: "#35aef2"
   sunlight: "#ffd77a"
 typography:
   display:
@@ -47,7 +47,7 @@ components:
 
 The game feels like a lively illustrated adventure map for players on phones and computers. Its signature is the frog opening its mouth before the long tongue crosses the playfield to catch animated insects, supported by a straw-hat-yellow control language framed by deep forest green. The surface is a hybrid: expressive on the opening card and restrained while the player is running. A four-phase morning journey moves from sunny village through dew-covered fields and ancient forest to a daylight castle, with crossfades, continuous mirrored scenery, parallax and a compact route map communicating progress without visible image seams.
 
-Avoid glossy casino styling, neon cyberpunk palettes, generic glass dashboards, and excessive decorative motion.
+Avoid glossy casino styling, neon cyberpunk palettes, generic glass dashboards, excessive decorative motion, and sticker-like decorative characters floating above the scenery.
 
 ## Colors
 
@@ -65,7 +65,7 @@ The playfield occupies the available browser viewport up to a 1600 × 900 maximu
 
 ## Elevation & Depth
 
-Depth comes from continuous mirrored scenery, independently moving ground, overlapping character layers and pressable button shadows. Static text and score surfaces remain quiet. Backdrop blur is limited to the opening layer and HUD, where it protects legibility over scenery.
+Depth comes from continuous three-to-one panoramic scenery, independently moving ground, overlapping character layers and pressable button shadows. Each panorama keeps more than half its composition as sky, limits landmarks to the distant middle plane and meets the track on one level baseline. Static text and score surfaces remain quiet. Backdrop blur is limited to the opening layer and HUD, where it protects legibility over scenery.
 
 ## Shapes
 
@@ -88,6 +88,8 @@ All actions use native buttons with hover, active, focus-visible, disabled, and 
 - Do use the jump sprite states to match takeoff, ascent, apex, descent and landing velocity.
 - Do reserve a reaction gap around low beetle waves; high waves may form compact groups of two or three.
 - Do mirror the second scenery panel so long-running backgrounds never expose a hard seam.
+- Do compose scenery as a 3:1 side-scroller panorama with small distant landmarks, matching edge heights and a flat verge aligned to the runtime ground.
+- Do show the full panorama width on landscape screens and use the reduced-scale center crop on portrait screens; never use `cover` for gameplay scenery.
 - Do use phase changes to increase variety and difficulty without changing the two-action Jump and Tongue model.
 - Do keep all four regions in clear morning light and derive route progress from elapsed time.
 - Do reduce decorative parallax when the player requests reduced motion.

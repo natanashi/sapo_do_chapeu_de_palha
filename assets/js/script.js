@@ -36,7 +36,7 @@ const PHASES = [
     {
         name: 'Vila do Sol',
         startsAt: 0,
-        background: 'assets/img/cenario-vila.gif',
+        background: 'assets/img/cenario-vila-panorama-v2.png',
         speedScale: 1,
         paceLabel: 'Ritmo padrão',
         obstacleGap: [1.85, 2.45],
@@ -46,7 +46,7 @@ const PHASES = [
     {
         name: 'Campos do Orvalho',
         startsAt: 45,
-        background: 'assets/img/cenario-campos-manha.png',
+        background: 'assets/img/cenario-campos-panorama-v2.png',
         speedScale: 1.035,
         paceLabel: 'Ritmo levemente acelerado',
         obstacleGap: [1.72, 2.35],
@@ -56,7 +56,7 @@ const PHASES = [
     {
         name: 'Floresta Antiga',
         startsAt: 90,
-        background: 'assets/img/cenario-floresta.jpg',
+        background: 'assets/img/cenario-floresta-panorama-v2.png',
         speedScale: 1.065,
         paceLabel: 'Ritmo crescente',
         obstacleGap: [1.58, 2.22],
@@ -66,7 +66,7 @@ const PHASES = [
     {
         name: 'Castelo da Manhã',
         startsAt: 135,
-        background: 'assets/img/cenario-castelo-manha.png',
+        background: 'assets/img/cenario-castelo-panorama-v2.png',
         speedScale: 1.095,
         paceLabel: 'Reta final',
         obstacleGap: [1.48, 2.12],

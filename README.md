@@ -11,7 +11,7 @@ Jogo de corrida em pixel art para navegador, com suporte a computador e celular.
 
 - Quatro regiões inteiramente pela manhã: Vila do Sol, Campos do Orvalho, Floresta Antiga e Castelo da Manhã.
 - Jornada com duração mínima de 3 minutos e 5 segundos e um mapa no topo que mostra a posição do jogador em toda a rota.
-- Cenários contínuos e chão em movimento, sem emendas visíveis entre as imagens.
+- Panoramas ultralargos criados para corrida lateral, com escala consistente, terreno plano e bordas preparadas para não revelar emendas.
 - Pedras compactas, rodas e javalis animados com tamanhos possíveis de superar e pontuações diferentes.
 - Plataformas móveis nas quais o sapo pode aterrissar e saltar novamente.
 - Corrida ereta e cartunesca em oito quadros, com contato, descida, passagem e subida, alternando corretamente braços e pernas.
