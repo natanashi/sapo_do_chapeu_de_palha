@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#102d20">
-    <meta name="description" content="Ajude o Sapo do Chapéu de Palha a atravessar três regiões, saltar obstáculos e capturar besouros antes que eles se aproximem.">
+    <meta name="description" content="Ajude o Sapo do Chapéu de Palha a atravessar quatro regiões da manhã, saltar obstáculos e capturar besouros antes que eles se aproximem.">
     <link rel="icon" type="image/png" href="assets/img/sapo-capa.png">
     <link rel="preload" as="image" href="assets/img/cenario-vila.gif">
-    <link rel="stylesheet" href="assets/css/style.css?v=8">
-    <script src="assets/js/script.js?v=8" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=9">
+    <script src="assets/js/script.js?v=9" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body>
@@ -44,10 +44,27 @@
                 <div class="scoreboard" aria-label="Placar da partida">
                     <p><span>Pontos</span><strong id="score">000</strong></p>
                     <p><span>Recorde</span><strong id="best-score">000</strong></p>
-                    <p class="phase-score"><span>Fase</span><strong id="phase-number">1/3</strong></p>
+                    <p class="phase-score"><span>Fase</span><strong id="phase-number">1/4</strong></p>
                     <button class="pause-button" id="pause-button" type="button" disabled aria-label="Pausar jogo">Pausar</button>
                 </div>
             </header>
+
+            <div class="route-map" aria-label="Mapa da jornada pelas quatro regiões">
+                <div class="route-map__header">
+                    <span>Jornada da manhã</span>
+                    <strong id="route-time">0:00 / 3:05</strong>
+                </div>
+                <div class="route-map__track">
+                    <span class="route-map__base" aria-hidden="true"></span>
+                    <span class="route-map__fill" id="journey-progress" aria-hidden="true"></span>
+                    <ol>
+                        <li class="is-active" data-route-stop="0"><i></i><span>Vila</span></li>
+                        <li data-route-stop="1"><i></i><span>Campos</span></li>
+                        <li data-route-stop="2"><i></i><span>Floresta</span></li>
+                        <li data-route-stop="3"><i></i><span>Castelo</span></li>
+                    </ol>
+                </div>
+            </div>
 
             <div class="platform-layer" id="platform-layer" aria-hidden="true"></div>
             <div class="runner-layer" aria-hidden="true">
@@ -60,10 +77,6 @@
             <div class="phase-banner" id="phase-banner" aria-hidden="true">
                 <span id="phase-kicker">Fase 1</span>
                 <strong id="phase-name">Vila do Sol</strong>
-            </div>
-
-            <div class="journey-progress" aria-label="Progresso até a próxima fase">
-                <span id="journey-progress"></span>
             </div>
 
             <div class="game-controls" aria-label="Controles do jogo">

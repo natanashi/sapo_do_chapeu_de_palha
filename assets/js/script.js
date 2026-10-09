@@ -24,6 +24,8 @@ const phaseBanner = document.querySelector('#phase-banner');
 const phaseKicker = document.querySelector('#phase-kicker');
 const phaseName = document.querySelector('#phase-name');
 const journeyProgress = document.querySelector('#journey-progress');
+const routeTimeDisplay = document.querySelector('#route-time');
+const routeMapStops = [...document.querySelectorAll('[data-route-stop]')];
 const sceneLayers = [document.querySelector('#scenery-a'), document.querySelector('#scenery-b')];
 
 const jumpAudio = new Audio('assets/aud/pulo.mp3');
@@ -33,33 +35,43 @@ const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
 const PHASES = [
     {
         name: 'Vila do Sol',
-        threshold: 0,
+        startsAt: 0,
         background: 'assets/img/cenario-vila.gif',
         speedScale: 1,
         paceLabel: 'Ritmo padrão',
-        obstacleGap: [1.65, 2.25],
-        insectGap: [2.7, 4],
+        obstacleGap: [1.85, 2.45],
+        insectGap: [3.1, 4.3],
         obstacles: ['rock', 'wheel', 'rock'],
     },
     {
+        name: 'Campos do Orvalho',
+        startsAt: 45,
+        background: 'assets/img/cenario-campos-manha.png',
+        speedScale: 1.035,
+        paceLabel: 'Ritmo levemente acelerado',
+        obstacleGap: [1.72, 2.35],
+        insectGap: [2.95, 4.05],
+        obstacles: ['rock', 'wheel', 'rock', 'wheel'],
+    },
+    {
         name: 'Floresta Antiga',
-        threshold: 160,
+        startsAt: 90,
         background: 'assets/img/cenario-floresta.jpg',
-        speedScale: 1.12,
-        paceLabel: 'Ritmo acelerado',
-        obstacleGap: [1.4, 2],
-        insectGap: [2.4, 3.6],
+        speedScale: 1.065,
+        paceLabel: 'Ritmo crescente',
+        obstacleGap: [1.58, 2.22],
+        insectGap: [2.78, 3.85],
         obstacles: ['rock', 'wheel', 'boar', 'wheel'],
     },
     {
-        name: 'Castelo ao Luar',
-        threshold: 380,
-        background: 'assets/img/cenario-castelo.jpg',
-        speedScale: 0.88,
-        paceLabel: 'Ritmo noturno reduzido',
-        obstacleGap: [1.2, 1.78],
-        insectGap: [2.2, 3.3],
-        obstacles: ['wheel', 'wheel-heavy', 'boar', 'rock', 'wheel-heavy'],
+        name: 'Castelo da Manhã',
+        startsAt: 135,
+        background: 'assets/img/cenario-castelo-manha.png',
+        speedScale: 1.095,
+        paceLabel: 'Reta final',
+        obstacleGap: [1.48, 2.12],
+        insectGap: [2.65, 3.7],
+        obstacles: ['wheel', 'boar', 'rock', 'wheel-heavy', 'rock'],
     },
 ];
 
@@ -107,6 +119,7 @@ const ASSET_URLS = [
     'assets/img/textura-solo.jpg',
     'assets/img/sapo-corrida-bipede-v3.png',
     'assets/img/sapo-ciclo-natural-v2.png',
+    'assets/img/sapo-boca-aberta-sprites.png',
     'assets/img/sapo-lingua-v2.png',
     'assets/img/inseto-voando-sprites.png',
     'assets/img/plataforma-musgo.png',
@@ -115,6 +128,7 @@ const ASSET_URLS = [
 const state = {
     mode: 'loading',
     score: 0,
+    elapsedTime: 0,
     best: readBestScore(),
     runnerY: 0,
     velocityY: 0,
@@ -147,6 +161,7 @@ const GRAVITY = 1850;
 const JUMP_FORCE = 820;
 const ATTACK_DURATION = 360;
 const ATTACK_COOLDOWN = 500;
+const JOURNEY_DURATION = 185;
 const RUNNER_MOTION_CLASSES = ['motion-takeoff', 'motion-rise', 'motion-apex', 'motion-fall', 'motion-land'];
 
 function clamp(value, minimum, maximum) {
@@ -173,18 +188,28 @@ function formatScore(value) {
     return Math.max(0, Math.floor(value)).toString().padStart(3, '0');
 }
 
+function formatTime(value) {
+    const totalSeconds = Math.max(0, Math.floor(value));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = String(totalSeconds % 60).padStart(2, '0');
+    return `${minutes}:${seconds}`;
+}
+
 function updateScore() {
     scoreDisplay.textContent = formatScore(state.score);
     bestScoreDisplay.textContent = formatScore(state.best);
     phaseNumberDisplay.textContent = `${state.phaseIndex + 1}/${PHASES.length}`;
     regionNameDisplay.textContent = PHASES[state.phaseIndex].name;
 
-    const currentThreshold = PHASES[state.phaseIndex].threshold;
-    const nextThreshold = PHASES[state.phaseIndex + 1]?.threshold;
-    const progress = nextThreshold
-        ? ((state.score - currentThreshold) / (nextThreshold - currentThreshold)) * 100
-        : 100;
+    const progress = (state.elapsedTime / JOURNEY_DURATION) * 100;
     journeyProgress.style.width = `${clamp(progress, 0, 100)}%`;
+    routeTimeDisplay.textContent = `${formatTime(state.elapsedTime)} / ${formatTime(JOURNEY_DURATION)}`;
+    routeMapStops.forEach((stop, index) => {
+        stop.classList.toggle('is-passed', index < state.phaseIndex);
+        stop.classList.toggle('is-active', index === state.phaseIndex);
+        if (index === state.phaseIndex) stop.setAttribute('aria-current', 'step');
+        else stop.removeAttribute('aria-current');
+    });
 }
 
 function setStatus(message) {
@@ -208,8 +233,8 @@ function worldSpeedScale() {
 }
 
 function currentWorldSpeed() {
-    const scoreBoost = Math.min(75, state.score * 0.3);
-    return (BASE_RUN_SPEED + scoreBoost) * PHASES[state.phaseIndex].speedScale * worldSpeedScale();
+    const timeBoost = Math.min(32, state.elapsedTime * 0.16);
+    return (BASE_RUN_SPEED + timeBoost) * PHASES[state.phaseIndex].speedScale * worldSpeedScale();
 }
 
 function showPhaseBanner(index) {
@@ -253,7 +278,7 @@ function applyPhase(index, announce = true) {
 function resolvePhase() {
     let nextPhase = 0;
     PHASES.forEach((phase, index) => {
-        if (state.score >= phase.threshold) nextPhase = index;
+        if (state.elapsedTime >= phase.startsAt) nextPhase = index;
     });
     if (nextPhase !== state.phaseIndex) applyPhase(nextPhase);
 }
@@ -411,6 +436,7 @@ function resetRun() {
     clearActors();
     clearAttack();
     state.score = 0;
+    state.elapsedTime = 0;
     state.runnerY = 0;
     state.velocityY = 0;
     state.dodgeCombo = 0;
@@ -595,6 +621,27 @@ function endGame(hazard = 'obstacle') {
     playButton.focus({ preventScroll: true });
 }
 
+function completeJourney() {
+    state.mode = 'completed';
+    state.elapsedTime = JOURNEY_DURATION;
+    setPlayingControls(false);
+    clearAttack();
+
+    const finalScore = Math.floor(state.score);
+    if (finalScore > state.best) {
+        state.best = finalScore;
+        saveBestScore(state.best);
+    }
+
+    updateScore();
+    overlayKicker.textContent = 'Jornada concluída';
+    overlayTitle.textContent = '4 mapas completos';
+    overlayMessage.textContent = `Você atravessou toda a rota da manhã em ${formatTime(JOURNEY_DURATION)}. Tente novamente para capturar mais besouros e superar seus ${formatScore(finalScore)} pontos.`;
+    playLabel.textContent = 'Correr novamente';
+    overlay.classList.add('is-visible');
+    playButton.focus({ preventScroll: true });
+}
+
 function updateWorldMotion() {
     const width = Math.max(1, state.boardWidth || boardMetrics().width);
     const cycle = width * 2;
@@ -757,7 +804,7 @@ function scheduleActors(delta) {
     if (state.obstacleCooldown <= 0) {
         spawnObstacle();
         const [minimumGap, maximumGap] = PHASES[state.phaseIndex].obstacleGap;
-        const difficultyReduction = Math.min(0.16, state.score / 1800);
+        const difficultyReduction = Math.min(0.18, state.elapsedTime / 900);
         state.obstacleCooldown = minimumGap + Math.random() * (maximumGap - minimumGap) - difficultyReduction;
     }
 
@@ -794,8 +841,14 @@ function gameLoop(currentTime) {
     updateObstacles(delta, currentTime);
     updateInsects(delta, currentTime);
     state.score += delta * 3.1;
+    state.elapsedTime += delta;
     resolvePhase();
     updateScore();
+
+    if (state.elapsedTime >= JOURNEY_DURATION) {
+        completeJourney();
+        return;
+    }
 
     if (state.obstacles.some(collisionDetected)) {
         state.dodgeCombo = 0;

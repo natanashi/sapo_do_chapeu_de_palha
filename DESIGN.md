@@ -11,8 +11,8 @@ colors:
   parchment: "#fff4cf"
   ink: "#1c251d"
   danger: "#b94232"
-  sky-night: "#243b8f"
-  lantern: "#ffb24a"
+  sky-morning: "#9edcf2"
+  sunlight: "#ffd77a"
 typography:
   display:
     fontFamily: "'Pixelify Sans', 'Courier New', monospace"
@@ -45,13 +45,13 @@ components:
 
 ## Overview
 
-The game feels like a lively illustrated adventure map for players on phones and computers. Its signature is the frog's long tongue crossing the playfield to catch animated insects, supported by a straw-hat-yellow control language framed by deep forest green. The surface is a hybrid: expressive on the opening card and restrained while the player is running. A three-phase journey moves from sunny village to ancient forest and moonlit castle, with crossfades, continuous mirrored scenery and parallax communicating progress without visible image seams.
+The game feels like a lively illustrated adventure map for players on phones and computers. Its signature is the frog opening its mouth before the long tongue crosses the playfield to catch animated insects, supported by a straw-hat-yellow control language framed by deep forest green. The surface is a hybrid: expressive on the opening card and restrained while the player is running. A four-phase morning journey moves from sunny village through dew-covered fields and ancient forest to a daylight castle, with crossfades, continuous mirrored scenery, parallax and a compact route map communicating progress without visible image seams.
 
 Avoid glossy casino styling, neon cyberpunk palettes, generic glass dashboards, and excessive decorative motion.
 
 ## Colors
 
-Forest tones own the application shell and primary actions. Straw yellow signals playable actions and score accents. Parchment is reserved for the game frame, phase banner, and start card. Danger red is semantic and should only appear for failure or risk. Sky Night and Lantern belong only to the final castle phase, preserving contrast while raising the sense of difficulty.
+Forest tones own the application shell and primary actions. Straw yellow signals playable actions and score accents. Parchment is reserved for the game frame, phase banner, and start card. Danger red is semantic and should only appear for failure or risk. Morning sky blue and sunlight yellow keep every region bright while the scenery, pacing and obstacle mix create contrast.
 
 Runtime ownership: the custom properties at the top of `assets/css/style.css` implement these values directly. `DESIGN.md` is the normative source; changes to a durable token must update both files together.
 
@@ -61,7 +61,7 @@ Pixelify Sans is bundled locally under the SIL Open Font License and owns titles
 
 ## Layout
 
-The playfield occupies the available browser viewport up to a 1600 × 900 maximum instead of sitting inside a decorative page frame. The title, phase, score, record, pause and play controls live inside the stage as a game HUD. Narrow screens become a full-height portrait stage with two large touch targets anchored to opposite bottom corners. Safe-area insets and unusually narrow embedded browser views are supported without horizontal overflow. The phase progress line remains inside the board.
+The playfield occupies the available browser viewport up to a 1600 × 900 maximum instead of sitting inside a decorative page frame. The title, phase, score, record, pause and play controls live inside the stage as a game HUD. A compact map below the HUD shows four named stops, total route progress and elapsed time. Narrow screens become a full-height portrait stage with two large touch targets anchored to opposite bottom corners. Safe-area insets and unusually narrow embedded browser views are supported without horizontal overflow.
 
 ## Elevation & Depth
 
@@ -73,7 +73,7 @@ Desktop uses a restrained soft rectangle around the stage; the mobile stage reac
 
 ## Components
 
-All actions use native buttons with hover, active, focus-visible, disabled, and touch states. The overlay preserves one primary action and is reused for pause without resetting the current run. Mobile keeps both Jump and Tongue targets at least 60px tall. The tongue is a separate transparent overlay anchored to the mouth, so attacking never replaces or rescales the frog. On the ground, the frog deliberately runs upright like a cartoon person; its professional eight-frame cycle follows contact, down, passing and up poses twice, with opposite arms and legs, planted-foot continuity and a visible bend-and-swing in each rear leg. A player-triggered jump changes to natural frog biomechanics and selects dedicated takeoff, rise, apex, fall and landing poses according to vertical velocity. Both state sheets preserve the same identity, scale, white muzzle, eye, nose and straw hat. Forest boars use a separate four-frame gallop instead of artificial bobbing. Beetles are hostile: they arrive mostly in high two- or three-creature waves that invite a jump-and-tongue move; rare low waves are allowed only while the obstacle lane is clear. Score blocks reserve stable width to prevent movement. Compact mossy rocks, wooden wheels and forest boars share one runtime system but keep distinct silhouettes, forgiving collision insets, speeds and point values. Moving moss platforms are non-damaging surfaces: the frog can land on their top, ride briefly and jump again. World motion uses one standard run speed modified deliberately by biome: neutral in the village, faster in the forest and slower at night. Phase thresholds leave enough running time for each biome to establish its own rhythm.
+All actions use native buttons with hover, active, focus-visible, disabled, and touch states. The overlay preserves one primary action and is reused for pause without resetting the current run. Mobile keeps both Jump and Tongue targets at least 60px tall. The tongue is a separate transparent overlay anchored to the mouth. Activating it temporarily swaps the runner to a same-scale, mouth-open pose selected for either grounded running or airborne jumping, then returns to the current motion sheet. On the ground, the frog deliberately runs upright like a cartoon person; its professional eight-frame cycle follows contact, down, passing and up poses twice, with opposite arms and legs, planted-foot continuity and a visible bend-and-swing in each rear leg. A player-triggered jump changes to natural frog biomechanics and selects dedicated takeoff, rise, apex, fall and landing poses according to vertical velocity. All sheets preserve the same identity, scale, white muzzle, eye, nose and straw hat. Forest boars use a separate four-frame gallop instead of artificial bobbing. Beetles are hostile: they arrive mostly in high two- or three-creature waves that invite a jump-and-tongue move; rare low waves are allowed only while the obstacle lane is clear. Score blocks reserve stable width to prevent movement. Compact mossy rocks, wooden wheels and forest boars share one runtime system but keep distinct silhouettes, forgiving collision insets, speeds and point values. Moving moss platforms are non-damaging surfaces: the frog can land on their top, ride briefly and jump again. The complete route lasts 185 seconds, changes regions at fixed elapsed-time milestones and raises speed and spawn pressure gradually under capped limits so every obstacle remains avoidable.
 
 ## Do's and Don'ts
 
@@ -83,11 +83,13 @@ All actions use native buttons with hover, active, focus-visible, disabled, and 
 - Do use the tongue only for capturable insects and keep its hit area visually aligned with the sprite.
 - Do keep the frog's cream-white nose readable in every running frame.
 - Do keep the frog's body scale fixed when the tongue overlay appears.
+- Do open the frog's mouth before the tongue extends and align the tongue origin with the cream muzzle in both ground and air poses.
 - Do keep the charming upright run on the ground and reserve natural frog poses for jumping.
 - Do use the jump sprite states to match takeoff, ascent, apex, descent and landing velocity.
 - Do reserve a reaction gap around low beetle waves; high waves may form compact groups of two or three.
 - Do mirror the second scenery panel so long-running backgrounds never expose a hard seam.
 - Do use phase changes to increase variety and difficulty without changing the two-action Jump and Tongue model.
+- Do keep all four regions in clear morning light and derive route progress from elapsed time.
 - Do reduce decorative parallax when the player requests reduced motion.
 - Don't add decorative particles behind the runner; they resemble sprite corruption.
 - Don't place important controls only inside the moving game area on mobile.

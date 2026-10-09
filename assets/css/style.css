@@ -17,8 +17,8 @@
     --parchment: #fff4cf;
     --ink: #1c251d;
     --danger: #b94232;
-    --sky-night: #243b8f;
-    --lantern: #ffb24a;
+    --sky-morning: #9edcf2;
+    --sunlight: #ffd77a;
     --focus: #ffffff;
     --shadow: rgba(7, 24, 14, 0.34);
     --board-radius: 18px;
@@ -72,7 +72,7 @@ button { cursor: pointer; }
     height: 100%;
     overflow: hidden;
     border-radius: var(--board-radius);
-    background: #69bde7;
+    background: var(--sky-morning);
     box-shadow: 0 18px 62px rgba(0, 0, 0, 0.38);
     touch-action: manipulation;
     user-select: none;
@@ -119,13 +119,9 @@ button { cursor: pointer; }
     transition: background 800ms ease;
 }
 
-.game-board[data-phase="2"] .sun-haze {
-    background: linear-gradient(180deg, rgba(168, 244, 185, 0.02), rgba(8, 61, 34, 0.24));
-}
-
-.game-board[data-phase="3"] .sun-haze {
-    background: linear-gradient(180deg, rgba(83, 90, 186, 0.14), rgba(8, 18, 54, 0.42));
-}
+.game-board[data-phase="2"] .sun-haze { background: linear-gradient(180deg, rgba(255, 242, 184, 0.05), rgba(44, 105, 48, 0.16)); }
+.game-board[data-phase="3"] .sun-haze { background: linear-gradient(180deg, rgba(188, 245, 197, 0.03), rgba(8, 61, 34, 0.22)); }
+.game-board[data-phase="4"] .sun-haze { background: linear-gradient(180deg, rgba(255, 235, 172, 0.07), rgba(31, 82, 44, 0.18)); }
 
 .cloud-frog {
     position: absolute;
@@ -143,7 +139,8 @@ button { cursor: pointer; }
 }
 
 .game-board[data-phase="2"] .cloud-frog,
-.game-board[data-phase="3"] .cloud-frog { opacity: 0; }
+.game-board[data-phase="3"] .cloud-frog,
+.game-board[data-phase="4"] .cloud-frog { opacity: 0.55; }
 
 .ground {
     position: absolute;
@@ -173,11 +170,6 @@ button { cursor: pointer; }
 }
 
 .ground-panel--mirror { transform: scaleX(-1); }
-
-.game-board[data-phase="3"] .ground {
-    border-top-color: #4a9c54;
-    filter: saturate(0.86) brightness(0.82) hue-rotate(15deg);
-}
 
 .game-hud {
     position: absolute;
@@ -329,20 +321,22 @@ button { cursor: pointer; }
 .runner-layer.motion-land .runner { background-position: 66.667% 100%; }
 
 .runner.is-attacking {
+    background-image: url("../img/sapo-boca-aberta-sprites.png");
+    background-size: 200% 100%;
     animation: none;
     background-position: 0 0;
 }
 
 .runner-layer.is-airborne .runner.is-attacking {
-    background-image: url("../img/sapo-ciclo-natural-v2.png");
-    background-position: 0 100%;
+    background-image: url("../img/sapo-boca-aberta-sprites.png");
+    background-position: 100% 0;
 }
 
 .runner-attack {
     position: absolute;
     z-index: 2;
-    top: 73%;
-    left: 69%;
+    top: 54%;
+    left: 70%;
     width: clamp(250px, 28vw, 420px);
     max-width: none;
     height: auto;
@@ -354,7 +348,7 @@ button { cursor: pointer; }
     will-change: transform, opacity;
 }
 
-.runner-layer.is-airborne .runner-attack { top: 56%; }
+.runner-layer.is-airborne .runner-attack { top: 60%; left: 75%; }
 .runner-attack.is-visible { animation: tongue-strike 360ms ease-out both; }
 .runner-layer.is-hit { animation: hit-wobble 420ms ease-out both; }
 .runner-layer.is-hit .runner { filter: grayscale(0.35) drop-shadow(0 7px 3px rgba(17, 35, 18, 0.22)); }
@@ -449,25 +443,92 @@ button { cursor: pointer; }
 .phase-banner span { color: var(--forest-600); font-size: 0.66rem; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; }
 .phase-banner strong { margin-top: 2px; font-family: var(--font-display); font-size: clamp(1.35rem, 3vw, 2.1rem); font-weight: 700; letter-spacing: -0.01em; text-shadow: 2px 2px 0 rgba(127, 207, 71, 0.22); }
 
-.journey-progress {
+.route-map {
     position: absolute;
-    z-index: 16;
-    top: 0;
-    right: 0;
-    left: 0;
-    height: 5px;
-    overflow: hidden;
-    background: rgba(4, 23, 13, 0.32);
+    z-index: 13;
+    top: clamp(82px, 9vw, 108px);
+    left: 50%;
+    width: min(58vw, 610px);
+    padding: 8px 14px 11px;
+    border: 1px solid rgba(255, 229, 145, 0.62);
+    border-radius: 13px;
+    color: white;
+    background: rgba(10, 46, 28, 0.82);
+    box-shadow: 0 8px 22px rgba(5, 26, 15, 0.18);
+    backdrop-filter: blur(7px);
+    transform: translateX(-50%);
 }
 
-.journey-progress span {
+.route-map__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 7px;
+    font-family: var(--font-ui);
+    font-size: clamp(0.58rem, 0.85vw, 0.72rem);
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.route-map__header span { color: var(--sunlight); text-transform: uppercase; }
+.route-map__header strong { font-variant-numeric: tabular-nums; }
+
+.route-map__track { position: relative; }
+
+.route-map__base,
+.route-map__fill {
+    position: absolute;
+    top: 5px;
+    left: 0;
     display: block;
+    height: 4px;
+    border-radius: 999px;
+}
+
+.route-map__base { width: 100%; background: rgba(255, 255, 255, 0.25); }
+
+.route-map__fill {
     width: 0;
-    height: 100%;
     background: linear-gradient(90deg, var(--straw-500), var(--straw-300));
     box-shadow: 0 0 12px rgba(255, 215, 122, 0.75);
     transition: width 180ms linear;
 }
+
+.route-map ol {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.route-map li {
+    display: grid;
+    min-width: 44px;
+    justify-items: center;
+    gap: 3px;
+    color: rgba(255, 255, 255, 0.7);
+    font-family: var(--font-ui);
+    font-size: clamp(0.5rem, 0.76vw, 0.64rem);
+    font-weight: 800;
+}
+
+.route-map li i {
+    display: block;
+    width: 14px;
+    height: 14px;
+    border: 3px solid rgba(255, 255, 255, 0.72);
+    border-radius: 50%;
+    background: var(--forest-800);
+    box-shadow: 0 0 0 2px rgba(16, 45, 32, 0.5);
+}
+
+.route-map li.is-passed,
+.route-map li.is-active { color: white; }
+.route-map li.is-passed i { border-color: var(--straw-300); background: var(--straw-500); }
+.route-map li.is-active i { border-color: white; background: var(--leaf-400); transform: scale(1.16); }
 
 .game-controls {
     position: absolute;
@@ -733,6 +794,9 @@ kbd {
     .scoreboard span { font-size: 0.49rem; letter-spacing: 0.04em; }
     .scoreboard strong { font-size: 0.88rem; }
     .pause-button { min-height: 30px; font-size: 0.59rem; }
+    .route-map { top: max(96px, calc(env(safe-area-inset-top) + 92px)); width: calc(100% - 24px); padding: 7px 10px 9px; }
+    .route-map__header { margin-bottom: 5px; }
+    .route-map li { min-width: 38px; }
     .runner-layer { left: 6%; bottom: 14%; width: clamp(86px, 24vw, 116px); }
     .runner-attack { left: 68%; width: clamp(220px, 66vw, 310px); }
     .obstacle { bottom: 14%; }
@@ -777,7 +841,7 @@ kbd {
     .play-button,
     .action-button,
     .pause-button,
-    .journey-progress span { transition: none; }
+    .route-map__fill { transition: none; }
 }
 
 @media (forced-colors: active) {
