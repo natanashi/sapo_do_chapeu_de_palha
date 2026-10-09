@@ -16,7 +16,7 @@ Jogo de corrida em pixel art para navegador, com suporte a computador e celular.
 - Plataformas móveis nas quais o sapo pode aterrissar e saltar novamente.
 - Corrida ereta e cartunesca em oito quadros, com contato, descida, passagem e subida, alternando corretamente braços e pernas.
 - Pulo com poses próprias de saída, subida, ápice, queda e aterrissagem sincronizadas à velocidade vertical.
-- Ataque com a boca aberta em poses próprias para corrida e pulo; a língua sai da boca sem alterar o tamanho do sapo.
+- Ataque com a boca aberta em poses próprias para corrida e pulo; a língua limpa nasce atrás do personagem e permanece presa ao ponto exato da boca, sem duplicar lábios ou alterar o tamanho do sapo.
 - Folhas de sprites isoladas por estado, impedindo que quadros vizinhos apareçam durante ataques, decolagens e aterrissagens.
 - Pedras sincronizadas ao deslocamento do chão para parecerem apoiadas no terreno, sem deslizamento artificial.
 - Tipografia pixelada própria para o menu e o HUD, armazenada localmente e licenciada pela SIL Open Font License.

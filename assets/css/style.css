@@ -268,6 +268,8 @@ button { cursor: pointer; }
 .pause-button:focus-visible { outline: 3px solid var(--straw-300); outline-offset: 3px; }
 
 .runner-layer {
+    --mouth-x: 71%;
+    --mouth-y: 60%;
     position: absolute;
     z-index: 8;
     left: clamp(28px, 8%, 126px);
@@ -282,6 +284,8 @@ button { cursor: pointer; }
 
 .runner {
     display: block;
+    position: relative;
+    z-index: 2;
     width: 100%;
     height: 100%;
     background-image: url("../img/sapo-corrida-bipede-v3.png");
@@ -311,21 +315,21 @@ button { cursor: pointer; }
 
 .runner-layer .runner.is-attacking {
     background-image: url("../img/sapo-boca-aberta-sprites.png");
-    background-size: 200% 100%;
+    background-size: 240% 120%;
     animation: none;
-    background-position: 0 0;
+    background-position: 7.143% 50%;
 }
 
 .runner-layer.is-airborne .runner.is-attacking {
     background-image: url("../img/sapo-boca-aberta-sprites.png");
-    background-position: 100% 0;
+    background-position: 92.857% 50%;
 }
 
 .runner-attack {
     position: absolute;
-    z-index: 2;
-    top: 54%;
-    left: 70%;
+    z-index: 1;
+    top: var(--mouth-y);
+    left: var(--mouth-x);
     width: clamp(250px, 28vw, 420px);
     max-width: none;
     height: auto;
@@ -337,7 +341,10 @@ button { cursor: pointer; }
     will-change: transform, opacity;
 }
 
-.runner-layer.is-airborne .runner-attack { top: 60%; left: 75%; }
+.runner-layer.is-airborne {
+    --mouth-x: 73%;
+    --mouth-y: 64%;
+}
 .runner-attack.is-visible { animation: tongue-strike 360ms ease-out both; }
 .runner-layer.is-hit { animation: hit-wobble 420ms ease-out both; }
 .runner-layer.is-hit .runner { filter: grayscale(0.35) drop-shadow(0 7px 3px rgba(17, 35, 18, 0.22)); }

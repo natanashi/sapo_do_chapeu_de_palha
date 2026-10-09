@@ -120,7 +120,7 @@ const ASSET_URLS = [
     'assets/img/sapo-corrida-bipede-v3.png',
     'assets/img/sapo-ciclo-natural-v2.png',
     'assets/img/sapo-boca-aberta-sprites.png',
-    'assets/img/sapo-lingua-v2.png',
+    'assets/img/sapo-lingua-limpa-v3.png',
     'assets/img/inseto-voando-sprites.png',
     'assets/img/plataforma-musgo.png',
 ];
