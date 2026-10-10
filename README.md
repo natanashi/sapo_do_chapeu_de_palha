@@ -19,6 +19,7 @@ Jogo de corrida em pixel art para navegador, com suporte a computador e celular.
 - Ataque com a boca aberta sem trocar a proporção do corpo durante o pulo; a língua limpa nasce atrás do personagem e permanece presa ao ponto exato da boca em qualquer tela.
 - Ao acertar um bando, cada besouro permanece preso no ponto atingido enquanto a língua está estendida; só acompanha o recolhimento até a boca e então termina com brilho e animação de engolida.
 - O besouro voador azul-violeta atravessa uma faixa ampla entre o alto e o chão; parte deles usa uma rota curta em zigue-zague, exigindo observar a trajetória antes de pular ou correr por baixo.
+- Trilha original `Sapinho: Aventura no Sonho` em reprodução contínua durante a corrida, sincronizada com pausa, retomada e fim de partida.
 - Folhas de sprites isoladas por estado, impedindo que quadros vizinhos apareçam durante ataques, decolagens e aterrissagens.
 - Pedras sincronizadas ao deslocamento do chão para parecerem apoiadas no terreno, sem deslizamento artificial.
 - Tipografia pixelada própria para o menu e o HUD, armazenada localmente e licenciada pela SIL Open Font License.

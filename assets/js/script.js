@@ -31,6 +31,8 @@ const sceneLayers = [document.querySelector('#scenery-a'), document.querySelecto
 
 const jumpAudio = new Audio('assets/aud/pulo.mp3');
 const loseAudio = new Audio('assets/aud/risada_duende.mp3');
+const backgroundMusic = document.querySelector('#background-music');
+backgroundMusic.volume = 0.28;
 const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 const PHASES = [
@@ -231,6 +233,16 @@ function setStatus(message) {
 function playSound(audio) {
     audio.currentTime = 0;
     audio.play().catch(() => {});
+}
+
+function playBackgroundMusic(restart = false) {
+    if (restart) backgroundMusic.currentTime = 0;
+    backgroundMusic.play().catch(() => {});
+}
+
+function pauseBackgroundMusic(reset = false) {
+    backgroundMusic.pause();
+    if (reset) backgroundMusic.currentTime = 0;
 }
 
 function boardMetrics() {
@@ -539,6 +551,7 @@ function setPlayingControls(enabled) {
 function startGame() {
     resetRun();
     state.mode = 'playing';
+    playBackgroundMusic(true);
     state.previousTime = performance.now();
     overlay.classList.remove('is-visible');
     setPlayingControls(true);
@@ -553,6 +566,7 @@ function startGame() {
 function resumeGame() {
     if (state.mode !== 'paused') return;
     state.mode = 'playing';
+    playBackgroundMusic();
     state.previousTime = performance.now();
     overlay.classList.remove('is-visible');
     setPlayingControls(true);
@@ -565,6 +579,7 @@ function resumeGame() {
 function pauseGame() {
     if (state.mode !== 'playing') return;
     state.mode = 'paused';
+    pauseBackgroundMusic();
     window.cancelAnimationFrame(state.animationFrame);
     clearAttack();
     jumpButton.disabled = true;
@@ -721,6 +736,7 @@ function updateCaughtInsect(insect, currentTime) {
 
 function endGame(hazard = 'obstacle') {
     state.mode = 'ended';
+    pauseBackgroundMusic(true);
     setPlayingControls(false);
     clearAttack();
     runnerLayer.classList.add('is-hit');
@@ -749,6 +765,7 @@ function endGame(hazard = 'obstacle') {
 
 function completeJourney() {
     state.mode = 'completed';
+    pauseBackgroundMusic(true);
     state.elapsedTime = JOURNEY_DURATION;
     setPlayingControls(false);
     clearAttack();
