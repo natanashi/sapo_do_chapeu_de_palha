@@ -44,39 +44,39 @@ const PHASES = [
         background: 'assets/img/cenario-vila-panorama-v3.png',
         speedScale: 1,
         paceLabel: 'Ritmo padrão',
-        obstacleGap: [1.85, 2.45],
-        insectGap: [3.1, 4.3],
-        obstacles: ['rock', 'wheel', 'rock', 'ground-beetle'],
+        obstacleGap: [1.65, 2.2],
+        insectGap: [2.65, 3.75],
+        obstacles: ['rock', 'wheel', 'rock', 'ground-beetle', 'ground-beetle'],
     },
     {
         name: 'Campos do Orvalho',
         startsAt: 45,
         background: 'assets/img/cenario-campos-panorama-v3.png',
-        speedScale: 1.06,
+        speedScale: 1.08,
         paceLabel: 'Ritmo acelerando',
-        obstacleGap: [1.82, 2.42],
-        insectGap: [2.95, 4.05],
-        obstacles: ['rock', 'wheel', 'ground-beetle', 'rock', 'wheel'],
+        obstacleGap: [1.55, 2.1],
+        insectGap: [2.45, 3.45],
+        obstacles: ['rock', 'wheel', 'ground-beetle', 'rock', 'wheel', 'ground-beetle'],
     },
     {
         name: 'Floresta Antiga',
         startsAt: 90,
         background: 'assets/img/cenario-floresta-panorama-v3.png',
-        speedScale: 1.12,
+        speedScale: 1.16,
         paceLabel: 'Corrida veloz',
-        obstacleGap: [1.75, 2.35],
-        insectGap: [2.78, 3.85],
-        obstacles: ['rock', 'wheel', 'ground-beetle', 'wheel'],
+        obstacleGap: [1.45, 1.98],
+        insectGap: [2.22, 3.18],
+        obstacles: ['rock', 'wheel', 'ground-beetle', 'wheel', 'ground-beetle'],
     },
     {
         name: 'Castelo da Manhã',
         startsAt: 135,
         background: 'assets/img/cenario-castelo-panorama-v3.png',
-        speedScale: 1.18,
+        speedScale: 1.24,
         paceLabel: 'Reta final em alta velocidade',
-        obstacleGap: [1.68, 2.28],
-        insectGap: [2.65, 3.7],
-        obstacles: ['wheel', 'ground-beetle', 'rock', 'wheel-heavy', 'ground-beetle'],
+        obstacleGap: [1.36, 1.88],
+        insectGap: [2.02, 2.9],
+        obstacles: ['wheel', 'ground-beetle', 'rock', 'wheel-heavy', 'ground-beetle', 'ground-beetle'],
     },
 ];
 
@@ -168,8 +168,8 @@ const state = {
     moveRight: false,
 };
 
-const BASE_RUN_SPEED = 255;
-const RUN_SPEED_GAIN = 135;
+const BASE_RUN_SPEED = 270;
+const RUN_SPEED_GAIN = 170;
 const GRAVITY = 1850;
 const JUMP_FORCE = 820;
 const ATTACK_DURATION = 700;
@@ -412,9 +412,10 @@ function spawnInsectWave() {
     const boardBox = boardMetrics();
     const runnerBox = runner.getBoundingClientRect();
     const sample = document.createElement('div');
-    const beeChance = 0.12 + state.phaseIndex * 0.035;
+    const pressure = clamp(state.elapsedTime / JOURNEY_DURATION, 0, 1);
+    const beeChance = 0.15 + state.phaseIndex * 0.045;
     const isBee = Math.random() < beeChance;
-    const waveSpeciesChance = state.phaseIndex === 0 ? 0.2 : 0.38;
+    const waveSpeciesChance = state.phaseIndex === 0 ? 0.26 : 0.42 + pressure * 0.08;
     const isWaveSpecies = !isBee && Math.random() < waveSpeciesChance;
     const usesZigZag = isWaveSpecies && Math.random() < 0.46;
     const speciesClass = isBee ? ' insect--bee' : isWaveSpecies ? ' insect--wave' : '';
@@ -423,7 +424,8 @@ function spawnInsectWave() {
     const insectBox = sample.getBoundingClientRect();
     sample.remove();
 
-    const count = isBee || isWaveSpecies ? 1 : (Math.random() < 0.62 ? 2 : 3);
+    const tripleWaveChance = 0.34 + pressure * 0.28;
+    const count = isBee || isWaveSpecies ? 1 : (Math.random() < tripleWaveChance ? 3 : 2);
     const useGroundLane = !isBee && !isWaveSpecies && Math.random() < 0.12 && groundInsectLaneIsSafe();
     const mouthY = runnerBox.top - boardBox.top + runnerBox.height * 0.46;
     const flightCeiling = boardBox.height * 0.36;
@@ -1085,8 +1087,9 @@ function scheduleActors(delta) {
     if (state.obstacleCooldown <= 0) {
         spawnObstacle();
         const [minimumGap, maximumGap] = PHASES[state.phaseIndex].obstacleGap;
-        const difficultyReduction = Math.min(0.1, state.elapsedTime / 1500);
-        state.obstacleCooldown = minimumGap + Math.random() * (maximumGap - minimumGap) - difficultyReduction;
+        const pressure = clamp(state.elapsedTime / JOURNEY_DURATION, 0, 1);
+        const difficultyReduction = pressure * 0.08;
+        state.obstacleCooldown = Math.max(1.28, minimumGap + Math.random() * (maximumGap - minimumGap) - difficultyReduction);
     }
 
     if (state.insectCooldown <= 0) {
@@ -1095,7 +1098,8 @@ function scheduleActors(delta) {
         } else {
             spawnInsectWave();
             const [minimumGap, maximumGap] = PHASES[state.phaseIndex].insectGap;
-            state.insectCooldown = minimumGap + Math.random() * (maximumGap - minimumGap);
+            const pressure = clamp(state.elapsedTime / JOURNEY_DURATION, 0, 1);
+            state.insectCooldown = Math.max(1.9, minimumGap + Math.random() * (maximumGap - minimumGap) - pressure * 0.12);
         }
     }
 

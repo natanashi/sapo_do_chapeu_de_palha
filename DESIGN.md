@@ -80,7 +80,7 @@ All actions use native buttons with hover, active, focus-visible, disabled, and 
 
 The original `Sapinho: Aventura no Sonho` track loops quietly beneath gameplay at 28% volume so jumps and collision cues remain clear. Music starts only from the player's Play gesture, pauses with the run or hidden tab, resumes from the same point, and resets when the run ends or restarts.
 
-Horizontal movement uses an actual bounded x-coordinate with keyboard A/D or Left/Right and held touch buttons. The frog keeps a fixed visual scale across running, jumping, attacking and swallowing; retreating reverses the footfall order without turning away from incoming threats. Mobile movement and action targets remain at least 54px tall. Animated sprite backgrounds crop slightly inside their cells so neighboring frames cannot bleed into the visible pose.
+Horizontal movement uses an actual bounded x-coordinate with keyboard A/D or Left/Right and held touch buttons. The frog keeps a fixed outer frame across running, jumping, attacking and swallowing; the mouth-open artwork receives a small internal crop correction so its visible body matches the running sprite without moving the feet from the ground line. Retreating reverses the footfall order without turning away from incoming threats. Mobile movement and action targets remain at least 54px tall. Animated sprite backgrounds crop slightly inside their cells so neighboring frames cannot bleed into the visible pose. Difficulty rises continuously through faster ground speed, shorter but capped spawn intervals, denser golden insect groups and a stronger late-game mix of ground beetles, wave beetles and bees. Reaction gaps remain bounded so each encounter stays avoidable.
 
 ## Do's and Don'ts
 

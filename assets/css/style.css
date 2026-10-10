@@ -319,9 +319,9 @@ button { cursor: pointer; }
 
 .runner-layer .runner.is-attacking {
     background-image: url("../img/sapo-boca-aberta-sprites.png");
-    background-size: 200% 100%;
+    background-size: 252% 126%;
     animation: none;
-    background-position: 0 0;
+    background-position: 8.6% 38%;
 }
 
 .runner-attack {
