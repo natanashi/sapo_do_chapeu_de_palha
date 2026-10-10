@@ -430,6 +430,44 @@ button { cursor: pointer; }
     animation-duration: 300ms;
 }
 
+.insect--bee {
+    width: clamp(72px, 6.8vw, 100px);
+    aspect-ratio: 1.22;
+    background-image: url("../img/abelha-investida-sprites.png");
+    background-position: 0 55%;
+    background-size: 400% auto;
+    filter: drop-shadow(0 0 6px rgba(255, 190, 31, 0.42)) drop-shadow(0 5px 4px rgba(61, 37, 12, 0.28));
+    animation-duration: 250ms;
+    transform-origin: 48% 54%;
+}
+
+.insect--bee::before {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+}
+
+.insect--bee.is-aiming::before {
+    inset: -15%;
+    border: 3px solid rgba(255, 224, 88, 0.9);
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px rgba(119, 67, 14, 0.26), 0 0 16px rgba(255, 208, 45, 0.76);
+    animation: bee-warning 220ms steps(2, end) infinite;
+}
+
+.insect--bee.is-diving::before {
+    z-index: -1;
+    top: 38%;
+    left: 68%;
+    width: 120%;
+    height: 24%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(255, 219, 81, 0.72), rgba(255, 219, 81, 0));
+    opacity: 0.88;
+    transform: skewX(-18deg);
+}
+
 .insect.is-caught {
     z-index: 9;
     animation: none;
@@ -817,6 +855,11 @@ kbd {
     75%, 100% { background-position-x: 100%; }
 }
 
+@keyframes bee-warning {
+    0%, 49% { opacity: 0.35; transform: scale(0.86); }
+    50%, 100% { opacity: 1; transform: scale(1.05); }
+}
+
 @keyframes frog-run-biped {
     0%, 13.99% { background-position: 0 0; }
     14%, 24.99% { background-position: 33.333% 0; }
@@ -892,6 +935,7 @@ kbd {
     }
     .platform { bottom: 21%; width: clamp(164px, 48vw, 212px); }
     .insect { width: clamp(58px, 17vw, 82px); }
+    .insect--bee { width: clamp(66px, 19vw, 88px); }
     .phase-banner { top: 22%; padding: 8px 18px 10px; }
     .status { top: 20%; max-width: calc(100% - 28px); text-align: center; }
     .game-controls { right: max(10px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); left: max(10px, env(safe-area-inset-left)); }
@@ -921,6 +965,7 @@ kbd {
     .insect,
     .runner,
     .obstacle--ground-beetle { animation: none; }
+    .insect--bee.is-aiming::before { animation: none; opacity: 0.9; }
     .scenery-layer { transition: none; }
     .game-overlay,
     .play-button,

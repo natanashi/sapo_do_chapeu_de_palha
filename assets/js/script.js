@@ -126,6 +126,7 @@ const ASSET_URLS = [
     'assets/img/sapo-lingua-limpa-v3.png',
     'assets/img/inseto-voando-sprites.png',
     'assets/img/besouro-ondulante-voando-sprites.png',
+    'assets/img/abelha-investida-sprites.png',
     'assets/img/plataforma-musgo.png',
 ];
 
@@ -366,33 +367,41 @@ function spawnInsectWave() {
     const boardBox = boardMetrics();
     const runnerBox = runner.getBoundingClientRect();
     const sample = document.createElement('div');
+    const beeChance = 0.12 + state.phaseIndex * 0.035;
+    const isBee = Math.random() < beeChance;
     const waveSpeciesChance = state.phaseIndex === 0 ? 0.2 : 0.38;
-    const isWaveSpecies = Math.random() < waveSpeciesChance;
+    const isWaveSpecies = !isBee && Math.random() < waveSpeciesChance;
     const usesZigZag = isWaveSpecies && Math.random() < 0.46;
-    sample.className = `insect${isWaveSpecies ? ' insect--wave' : ''}`;
+    const speciesClass = isBee ? ' insect--bee' : isWaveSpecies ? ' insect--wave' : '';
+    sample.className = `insect${speciesClass}`;
     collectibleLayer.append(sample);
     const insectBox = sample.getBoundingClientRect();
     sample.remove();
 
-    const count = isWaveSpecies ? 1 : (Math.random() < 0.62 ? 2 : 3);
-    const useGroundLane = !isWaveSpecies && Math.random() < 0.12 && groundInsectLaneIsSafe();
+    const count = isBee || isWaveSpecies ? 1 : (Math.random() < 0.62 ? 2 : 3);
+    const useGroundLane = !isBee && !isWaveSpecies && Math.random() < 0.12 && groundInsectLaneIsSafe();
     const mouthY = runnerBox.top - boardBox.top + runnerBox.height * 0.46;
     const flightCeiling = boardBox.height * 0.36;
     const flightFloor = boardBox.height * 0.86 - insectBox.height * 0.88;
     const waveCenterY = (flightCeiling + flightFloor) * 0.5;
     const waveAmplitude = Math.max(54, (flightFloor - flightCeiling) * 0.5);
+    const beeCeiling = boardBox.height * 0.31;
+    const beeFloor = boardBox.height * 0.55;
     const baseY = useGroundLane
         ? clamp(mouthY - insectBox.height * 0.48, boardBox.height * 0.62, boardBox.height * 0.72)
-        : isWaveSpecies
-            ? waveCenterY
-            : boardBox.height * (0.49 + Math.random() * 0.09);
+        : isBee
+            ? (beeCeiling + beeFloor) * 0.5
+            : isWaveSpecies
+                ? waveCenterY
+                : boardBox.height * (0.49 + Math.random() * 0.09);
     const spacing = Math.max(58, insectBox.width * 0.82);
-    const waveSpeed = isWaveSpecies ? 0.98 + Math.random() * 0.08 : 0.86 + Math.random() * 0.12;
+    const waveSpeed = isBee ? 0.8 : isWaveSpecies ? 0.98 + Math.random() * 0.08 : 0.86 + Math.random() * 0.12;
     const yOffsets = count === 1 ? [0] : count === 2 ? [-7, 7] : [0, -14, 10];
+    const spawnTime = performance.now();
 
     for (let index = 0; index < count; index += 1) {
         const element = document.createElement('div');
-        element.className = `insect insect--${useGroundLane ? 'low' : 'high'}${isWaveSpecies ? ' insect--wave' : ''}${usesZigZag ? ' insect--zigzag' : ''}`;
+        element.className = `insect insect--${useGroundLane ? 'low' : 'high'}${speciesClass}${usesZigZag ? ' insect--zigzag' : ''}`;
         collectibleLayer.append(element);
 
         const insect = {
@@ -401,20 +410,28 @@ function spawnInsectWave() {
             y: baseY + yOffsets[index],
             speedScale: waveSpeed,
             bobPhase: index * 0.72 + Math.random() * 0.35,
-            species: isWaveSpecies ? 'wave' : 'golden',
-            flightPattern: usesZigZag ? 'zigzag' : isWaveSpecies ? 'deep-wave' : 'hover',
-            bobAmplitude: isWaveSpecies ? waveAmplitude : 8,
-            bobSpeed: isWaveSpecies ? (usesZigZag ? 150 : 215) : 150,
-            minimumY: isWaveSpecies ? flightCeiling : null,
-            maximumY: isWaveSpecies ? flightFloor : null,
-            horizontalDrift: usesZigZag ? Math.min(18, boardBox.width * 0.012) : 0,
+            species: isBee ? 'bee' : isWaveSpecies ? 'wave' : 'golden',
+            flightPattern: isBee ? 'bee-zigzag' : usesZigZag ? 'zigzag' : isWaveSpecies ? 'deep-wave' : 'hover',
+            flightStage: isBee ? 'zigzag' : null,
+            flightStageStartedAt: spawnTime,
+            bobAmplitude: isBee ? Math.max(42, boardBox.height * 0.07) : isWaveSpecies ? waveAmplitude : 8,
+            bobSpeed: isBee ? 130 : isWaveSpecies ? (usesZigZag ? 150 : 215) : 150,
+            minimumY: isBee ? beeCeiling : isWaveSpecies ? flightCeiling : null,
+            maximumY: isBee ? beeFloor : isWaveSpecies ? flightFloor : null,
+            horizontalDrift: isBee ? Math.min(20, boardBox.width * 0.016) : usesZigZag ? Math.min(18, boardBox.width * 0.012) : 0,
+            renderedY: baseY + yOffsets[index],
+            aimY: null,
+            diveFromY: null,
+            diveTargetY: null,
+            diveStartX: null,
+            diveTargetX: null,
             caught: false,
         };
         state.insects.push(insect);
         renderInsect(insect, performance.now());
     }
 
-    state.obstacleCooldown = Math.max(state.obstacleCooldown, useGroundLane ? 3 : isWaveSpecies ? 1.85 : 1.55);
+    state.obstacleCooldown = Math.max(state.obstacleCooldown, isBee ? 3.2 : useGroundLane ? 3 : isWaveSpecies ? 1.85 : 1.55);
 }
 
 function spawnPlatform() {
@@ -449,21 +466,42 @@ function renderObstacle(obstacle, currentTime) {
 
 function renderInsect(insect, currentTime) {
     const flightPhase = currentTime / insect.bobSpeed + insect.bobPhase;
-    const flightShape = insect.flightPattern === 'zigzag'
+    const flightShape = insect.flightPattern === 'zigzag' || insect.flightPattern === 'bee-zigzag'
         ? (2 / Math.PI) * Math.asin(Math.sin(flightPhase))
         : Math.sin(flightPhase);
     const bob = flightShape * insect.bobAmplitude;
-    const horizontalDrift = insect.flightPattern === 'zigzag'
+    let horizontalDrift = insect.flightPattern === 'zigzag' || insect.flightPattern === 'bee-zigzag'
         ? Math.sin(flightPhase * 2 + 0.65) * insect.horizontalDrift
         : 0;
-    const renderedY = insect.minimumY === null
+    let rotation = 0;
+    let renderedY = insect.minimumY === null
         ? insect.y + bob
         : clamp(insect.y + bob, insect.minimumY, insect.maximumY);
+
+    if (insect.species === 'bee') {
+        if (insect.flightStage === 'aiming') {
+            renderedY = insect.aimY + Math.sin(flightPhase * 2.4) * 3;
+            horizontalDrift = 0;
+        } else if (insect.flightStage === 'diving') {
+            const diveDistance = Math.max(1, insect.diveStartX - insect.diveTargetX);
+            const diveProgress = clamp((insect.diveStartX - insect.x) / diveDistance, 0, 1);
+            const diveEase = diveProgress * diveProgress;
+            renderedY = insect.diveFromY + (insect.diveTargetY - insect.diveFromY) * diveEase;
+            horizontalDrift = 0;
+            rotation = -28 * diveEase;
+        } else if (insect.flightStage === 'escape') {
+            renderedY = insect.diveTargetY + Math.sin(flightPhase * 1.8) * 5;
+            horizontalDrift = 0;
+            rotation = -18;
+        }
+    }
+
+    insect.renderedY = renderedY;
     const x = `${(insect.x + horizontalDrift).toFixed(2)}px`;
     const y = `${renderedY.toFixed(2)}px`;
     insect.element.style.setProperty('--insect-x', x);
     insect.element.style.setProperty('--insect-y', y);
-    insect.element.style.transform = `translate3d(${x}, ${y}, 0)`;
+    insect.element.style.transform = `translate3d(${x}, ${y}, 0) rotate(${rotation.toFixed(1)}deg)`;
 }
 
 function renderPlatform(platform) {
@@ -699,10 +737,13 @@ function catchInsect(insect, currentTime) {
     );
     state.catchCombo += 1;
     const bonus = Math.min(12, Math.max(0, state.catchCombo - 1) * 3);
-    const points = 16 + bonus;
+    const basePoints = insect.species === 'bee' ? 24 : 16;
+    const points = basePoints + bonus;
     state.score += points;
+    insect.element.classList.remove('is-aiming', 'is-diving');
     insect.element.classList.add('is-caught');
-    setStatus(state.catchCombo > 1 ? `Caçada x${state.catchCombo} · +${points}` : `Besouro capturado · +${points}`);
+    const preyName = insect.species === 'bee' ? 'Abelha' : 'Besouro';
+    setStatus(state.catchCombo > 1 ? `Caçada x${state.catchCombo} · +${points}` : `${preyName} capturada · +${points}`);
 }
 
 function updateCaughtInsect(insect, currentTime) {
@@ -753,8 +794,10 @@ function endGame(hazard = 'obstacle') {
 
     updateScore();
     overlayTitle.textContent = `${formatScore(finalScore)} pontos`;
-    overlayMessage.textContent = hazard === 'beetle'
-        ? 'Um besouro acertou o sapo. Pule para ajustar a altura e use a língua antes que o bando chegue perto.'
+    overlayMessage.textContent = hazard === 'bee'
+        ? 'A abelha acertou o sapo com o ferrão. Observe a mira, pule da investida ou capture-a com a língua.'
+        : hazard === 'beetle'
+            ? 'Um besouro acertou o sapo. Pule para ajustar a altura e use a língua antes que o bando chegue perto.'
         : state.phaseIndex === PHASES.length - 1
             ? 'Você chegou ao castelo. Agora tente correr ainda mais longe e capture mais besouros.'
             : 'O caminho ficou difícil desta vez. Tente outra corrida e descubra a próxima região.';
@@ -926,7 +969,46 @@ function updateInsects(delta, currentTime) {
             if (updateCaughtInsect(insect, currentTime)) insect.element.remove();
             return;
         }
-        insect.x -= currentWorldSpeed() * insect.speedScale * delta;
+        if (insect.species === 'bee') {
+            const boardBox = boardMetrics();
+            if (insect.flightStage === 'zigzag' && insect.x <= boardBox.width * 0.72) {
+                insect.flightStage = 'aiming';
+                insect.flightStageStartedAt = currentTime;
+                insect.aimY = insect.renderedY;
+                insect.element.classList.add('is-aiming');
+            } else if (insect.flightStage === 'aiming' && currentTime - insect.flightStageStartedAt >= 440) {
+                const runnerBox = runner.getBoundingClientRect();
+                const insectBox = insect.element.getBoundingClientRect();
+                insect.flightStage = 'diving';
+                insect.flightStageStartedAt = currentTime;
+                insect.diveFromY = insect.renderedY;
+                insect.diveStartX = insect.x;
+                insect.diveTargetX = runnerBox.left - boardBox.left + runnerBox.width * 0.58;
+                insect.diveTargetY = clamp(
+                    runnerBox.top - boardBox.top + runnerBox.height * 0.52 - insectBox.height * 0.5,
+                    boardBox.height * 0.62,
+                    boardBox.height * 0.76,
+                );
+                insect.element.classList.remove('is-aiming');
+                insect.element.classList.add('is-diving');
+                setStatus('A abelha vai investir!');
+            } else if (insect.flightStage === 'diving' && insect.x <= insect.diveTargetX) {
+                insect.flightStage = 'escape';
+                insect.flightStageStartedAt = currentTime;
+                insect.element.classList.remove('is-diving');
+            }
+        }
+
+        const movementScale = insect.species !== 'bee'
+            ? insect.speedScale
+            : insect.flightStage === 'aiming'
+                ? 0.3
+                : insect.flightStage === 'diving'
+                    ? 1.82
+                    : insect.flightStage === 'escape'
+                        ? 1.28
+                        : insect.speedScale;
+        insect.x -= currentWorldSpeed() * movementScale * delta;
         renderInsect(insect, currentTime);
         if (tongueHitsInsect(insect, currentTime)) catchInsect(insect, currentTime);
     });
@@ -1005,9 +1087,10 @@ function gameLoop(currentTime) {
         return;
     }
 
-    if (state.insects.some(insectHitsRunner)) {
+    const collidingInsect = state.insects.find(insectHitsRunner);
+    if (collidingInsect) {
         state.catchCombo = 0;
-        endGame('beetle');
+        endGame(collidingInsect.species === 'bee' ? 'bee' : 'beetle');
         return;
     }
 
@@ -1090,6 +1173,12 @@ function syncBoardSize(width, height) {
             insect.horizontalDrift *= widthRatio;
             if (insect.minimumY !== null) insect.minimumY *= heightRatio;
             if (insect.maximumY !== null) insect.maximumY *= heightRatio;
+            if (insect.renderedY !== null) insect.renderedY *= heightRatio;
+            if (insect.aimY !== null) insect.aimY *= heightRatio;
+            if (insect.diveFromY !== null) insect.diveFromY *= heightRatio;
+            if (insect.diveTargetY !== null) insect.diveTargetY *= heightRatio;
+            if (insect.diveStartX !== null) insect.diveStartX *= widthRatio;
+            if (insect.diveTargetX !== null) insect.diveTargetX *= widthRatio;
         });
     }
     state.boardWidth = width;
