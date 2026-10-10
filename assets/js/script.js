@@ -976,16 +976,16 @@ function updateObstacles(delta, currentTime) {
             obstacle.config.leaps
             && !obstacle.hasLeaped
             && obstacle.movementStage === 'running'
-            && obstacle.x - state.runnerX <= clamp(state.boardWidth * 0.29, 255, 390)
+            && obstacle.x - state.runnerX <= clamp(state.boardWidth * 0.22, 205, 300)
         ) {
             obstacle.hasLeaped = true;
             obstacle.movementStage = 'leaping';
-            obstacle.velocityY = 455;
+            obstacle.velocityY = 560;
             obstacle.element.classList.add('is-leaping');
         }
 
         if (obstacle.movementStage === 'leaping') {
-            obstacle.velocityY -= 1580 * delta;
+            obstacle.velocityY -= 1550 * delta;
             obstacle.y = Math.max(0, obstacle.y + obstacle.velocityY * delta);
             if (obstacle.y === 0 && obstacle.velocityY < 0) {
                 obstacle.velocityY = 0;
@@ -1137,7 +1137,7 @@ function updateInsects(delta, currentTime) {
                 insect.flightStageStartedAt = currentTime;
                 insect.diveFromY = insect.renderedY;
                 insect.diveStartX = insect.x;
-                insect.diveTargetX = runnerBox.left - boardBox.left + runnerBox.width * 0.58;
+                insect.diveTargetX = runnerBox.left - boardBox.left - runnerBox.width * 1.15;
                 insect.diveTargetY = clamp(
                     runnerBox.top - boardBox.top + runnerBox.height * 0.52 - insectBox.height * 0.5,
                     boardBox.height * 0.62,
