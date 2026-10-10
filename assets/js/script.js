@@ -7,6 +7,12 @@ const platformLayer = document.querySelector('#platform-layer');
 const collectibleLayer = document.querySelector('#collectible-layer');
 const groundTrack = document.querySelector('#ground-track');
 const overlay = document.querySelector('#game-overlay');
+const mainMenuShell = document.querySelector('#main-menu-shell');
+const resultCard = document.querySelector('#result-card');
+const menuBackButton = document.querySelector('#menu-back');
+const menuScreens = [...document.querySelectorAll('[data-menu-screen]')];
+const storyMapButton = document.querySelector('#story-map-button');
+const storyMapStatus = document.querySelector('#story-map-status');
 const playButton = document.querySelector('#play-button');
 const playLabel = document.querySelector('#play-label');
 const pauseButton = document.querySelector('#pause-button');
@@ -638,6 +644,56 @@ function setPlayingControls(enabled) {
     if (!enabled) clearHorizontalInput();
 }
 
+const MENU_PARENTS = {
+    play: 'main',
+    maps: 'play',
+    museum: 'main',
+    skins: 'main',
+    settings: 'main',
+};
+
+let activeMenuScreen = 'main';
+
+function showMenuScreen(screenName, focusFirst = true) {
+    const nextScreen = menuScreens.find((screen) => screen.dataset.menuScreen === screenName);
+    if (!nextScreen) return;
+
+    activeMenuScreen = screenName;
+    menuScreens.forEach((screen) => {
+        const isActive = screen === nextScreen;
+        screen.hidden = !isActive;
+        screen.classList.toggle('is-active', isActive);
+    });
+    menuBackButton.classList.toggle('is-hidden', screenName === 'main');
+
+    if (focusFirst) {
+        const firstControl = nextScreen.querySelector('button:not(:disabled)');
+        (firstControl || menuBackButton).focus({ preventScroll: true });
+    }
+}
+
+function goBackMenu() {
+    showMenuScreen(MENU_PARENTS[activeMenuScreen] || 'main');
+}
+
+function showMainMenu() {
+    window.cancelAnimationFrame(state.animationFrame);
+    pauseBackgroundMusic(true);
+    clearAttack();
+    setPlayingControls(false);
+    state.mode = 'idle';
+    mainMenuShell.classList.remove('is-hidden');
+    resultCard.classList.add('is-hidden');
+    overlay.classList.add('is-visible');
+    showMenuScreen('main');
+}
+
+function showResultOverlay() {
+    mainMenuShell.classList.add('is-hidden');
+    resultCard.classList.remove('is-hidden');
+    overlay.classList.add('is-visible');
+}
+
 function startGame() {
     resetRun();
     state.mode = 'playing';
@@ -684,7 +740,7 @@ function pauseGame() {
     overlayTitle.textContent = 'Corrida pausada';
     overlayMessage.textContent = 'Continue quando estiver pronto. Sua corrida está guardada exatamente neste ponto.';
     playLabel.textContent = 'Continuar';
-    overlay.classList.add('is-visible');
+    showResultOverlay();
     playButton.focus({ preventScroll: true });
 }
 
@@ -857,7 +913,7 @@ function endGame(hazard = 'obstacle') {
             ? 'Você chegou ao castelo. Agora tente correr ainda mais longe e capture mais besouros.'
             : 'O caminho ficou difícil desta vez. Tente outra corrida e descubra a próxima região.';
     playLabel.textContent = 'Jogar novamente';
-    overlay.classList.add('is-visible');
+    showResultOverlay();
     playButton.focus({ preventScroll: true });
 }
 
@@ -879,7 +935,7 @@ function completeJourney() {
     overlayTitle.textContent = '4 mapas completos';
     overlayMessage.textContent = `Você atravessou toda a rota da manhã em ${formatTime(JOURNEY_DURATION)}. Tente novamente para capturar mais besouros e superar seus ${formatScore(finalScore)} pontos.`;
     playLabel.textContent = 'Correr novamente';
-    overlay.classList.add('is-visible');
+    showResultOverlay();
     playButton.focus({ preventScroll: true });
 }
 
@@ -1180,6 +1236,9 @@ function handleKeyboard(event) {
         } else if (state.mode === 'paused') {
             event.preventDefault();
             resumeGame();
+        } else if (event.code === 'Escape' && state.mode === 'idle' && activeMenuScreen !== 'main') {
+            event.preventDefault();
+            showMenuScreen(MENU_PARENTS[activeMenuScreen] || 'main');
         }
         return;
     }
@@ -1241,9 +1300,11 @@ async function initializeGame() {
 
     state.mode = 'idle';
     playButton.disabled = false;
-    playLabel.textContent = 'Jogar agora';
+    storyMapButton.disabled = false;
+    storyMapStatus.textContent = 'Pronto para jogar';
+    playLabel.textContent = 'Jogar novamente';
     if (failedAssets > 0) {
-        overlayMessage.textContent = 'O jogo está pronto. Alguns elementos podem levar mais um instante para aparecer dependendo da conexão.';
+        storyMapStatus.textContent = 'Pronto · alguns elementos ainda podem carregar';
     }
 }
 
@@ -1284,6 +1345,10 @@ function syncBoardSize(width, height) {
 playButton.addEventListener('click', () => {
     if (state.mode === 'paused') resumeGame();
     else if (state.mode !== 'loading') startGame();
+});
+
+storyMapButton.addEventListener('click', () => {
+    if (!storyMapButton.disabled && state.mode !== 'loading') startGame();
 });
 
 pauseButton.addEventListener('click', () => {

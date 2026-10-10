@@ -7,8 +7,8 @@
     <meta name="description" content="Ajude o Sapo do Chapéu de Palha a atravessar quatro regiões da manhã, saltar obstáculos e capturar besouros e abelhas antes que eles se aproximem.">
     <link rel="icon" type="image/png" href="assets/img/sapo-capa.png">
     <link rel="preload" as="image" href="assets/img/cenario-vila-panorama-v3.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=25">
-    <script src="assets/js/script.js?v=25" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=26">
+    <script src="assets/js/script.js?v=26" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body>
@@ -104,7 +104,128 @@
             </div>
 
             <div class="game-overlay is-visible" id="game-overlay">
-                <div class="overlay-card">
+                <div class="main-menu-shell" id="main-menu-shell">
+                    <header class="menu-brand">
+                        <p>Uma aventura além do brejo</p>
+                        <h1><span>Sapo do</span> Chapéu de Palha</h1>
+                        <span class="menu-brand__beta">Beta</span>
+                    </header>
+
+                    <div class="menu-book">
+                        <button class="menu-back is-hidden" id="menu-back" type="button" aria-label="Voltar para a tela anterior" onclick="goBackMenu()">
+                            <span aria-hidden="true">←</span> Voltar
+                        </button>
+
+                        <section class="menu-screen is-active" data-menu-screen="main" aria-labelledby="main-menu-title">
+                            <h2 id="main-menu-title" class="sr-only">Menu principal</h2>
+                            <nav class="main-menu-list" aria-label="Menu principal">
+                                <button class="wood-button wood-button--primary" type="button" data-menu-target="play" onclick="showMenuScreen('play')">
+                                    <span class="wood-button__mark" aria-hidden="true">▶</span>
+                                    <span><strong>Jogar</strong><small>Começar uma nova jornada</small></span>
+                                </button>
+                                <button class="wood-button" type="button" data-menu-target="museum" onclick="showMenuScreen('museum')">
+                                    <span class="wood-button__mark" aria-hidden="true">◆</span>
+                                    <span><strong>Museu</strong><small>Bichos e medalhas</small></span>
+                                </button>
+                                <button class="wood-button" type="button" data-menu-target="skins" onclick="showMenuScreen('skins')">
+                                    <span class="wood-button__mark" aria-hidden="true">♟</span>
+                                    <span><strong>Skins</strong><small>Chapéus e aparências</small></span>
+                                </button>
+                                <button class="wood-button" type="button" data-menu-target="settings" onclick="showMenuScreen('settings')">
+                                    <span class="wood-button__mark" aria-hidden="true">⚙</span>
+                                    <span><strong>Configurações</strong><small>Som e controles</small></span>
+                                </button>
+                            </nav>
+                        </section>
+
+                        <section class="menu-screen" data-menu-screen="play" aria-labelledby="play-menu-title" hidden>
+                            <div class="menu-section-heading">
+                                <span>Escolha seu caminho</span>
+                                <h2 id="play-menu-title">Modos de jogo</h2>
+                            </div>
+                            <div class="mode-grid">
+                                <button class="mode-card mode-card--story" type="button" data-menu-target="maps" onclick="showMenuScreen('maps')">
+                                    <span class="mode-card__flag">Disponível</span>
+                                    <strong>Modo história</strong>
+                                    <small>Atravesse as quatro regiões da manhã.</small>
+                                </button>
+                                <article class="mode-card is-locked" aria-label="Modo competitivo em construção">
+                                    <span class="mode-card__flag">Em construção</span>
+                                    <strong>Modo competitivo</strong>
+                                    <small>Desafios de pontuação chegarão depois.</small>
+                                </article>
+                                <article class="mode-card is-locked" aria-label="Modo online em construção">
+                                    <span class="mode-card__flag">Em construção</span>
+                                    <strong>Modo online</strong>
+                                    <small>Corridas com outros jogadores virão no futuro.</small>
+                                </article>
+                            </div>
+                        </section>
+
+                        <section class="menu-screen" data-menu-screen="maps" aria-labelledby="map-menu-title" hidden>
+                            <div class="menu-section-heading">
+                                <span>Modo história</span>
+                                <h2 id="map-menu-title">Mapa da jornada</h2>
+                                <p>Escolha uma fase para entrar na estrada.</p>
+                            </div>
+                            <div class="map-select">
+                                <button class="map-card" id="story-map-button" type="button" disabled>
+                                    <span class="map-card__picture" aria-hidden="true"></span>
+                                    <span class="map-card__copy">
+                                        <small>Mapa 01</small>
+                                        <strong>Rota da Manhã</strong>
+                                        <em id="story-map-status">Preparando o mapa...</em>
+                                    </span>
+                                </button>
+                                <div class="map-trail" aria-hidden="true">
+                                    <i></i><i></i><i></i><i></i>
+                                </div>
+                                <p class="map-note">Vila do Sol → Campos do Orvalho → Floresta Antiga → Castelo da Manhã</p>
+                            </div>
+                        </section>
+
+                        <section class="menu-screen" data-menu-screen="museum" aria-labelledby="museum-title" hidden>
+                            <div class="menu-section-heading">
+                                <span>Arquivo do brejo</span>
+                                <h2 id="museum-title">Museu</h2>
+                                <p>O catálogo está sendo preparado. Estes são os primeiros bichos registrados.</p>
+                            </div>
+                            <ul class="bestiary-list" aria-label="Bichos do jogo">
+                                <li><span class="bestiary-sprite bestiary-sprite--gold"></span><strong>Besouro-dourado</strong></li>
+                                <li><span class="bestiary-sprite bestiary-sprite--wave"></span><strong>Besouro-ondulante</strong></li>
+                                <li><span class="bestiary-sprite bestiary-sprite--ground"></span><strong>Besouro-terrestre</strong></li>
+                                <li><span class="bestiary-sprite bestiary-sprite--bee"></span><strong>Abelha-investida</strong></li>
+                            </ul>
+                            <div class="museum-medals">
+                                <div><span aria-hidden="true">?</span><strong>Medalhas</strong><small>Em construção</small></div>
+                                <i></i><i></i><i></i>
+                            </div>
+                        </section>
+
+                        <section class="menu-screen" data-menu-screen="skins" aria-labelledby="skins-title" hidden>
+                            <div class="construction-panel">
+                                <span class="construction-panel__icon" aria-hidden="true">♟</span>
+                                <small>Oficina do sapo</small>
+                                <h2 id="skins-title">Skins em construção</h2>
+                                <p>Novos chapéus e aparências ainda estão sendo costurados.</p>
+                            </div>
+                        </section>
+
+                        <section class="menu-screen" data-menu-screen="settings" aria-labelledby="settings-title" hidden>
+                            <div class="construction-panel">
+                                <span class="construction-panel__icon" aria-hidden="true">⚙</span>
+                                <small>Bancada de ajustes</small>
+                                <h2 id="settings-title">Configurações em construção</h2>
+                                <p>As opções de som, imagem e controles chegarão em uma próxima versão.</p>
+                            </div>
+                        </section>
+                    </div>
+
+                    <img class="menu-frog" src="assets/img/sapo-capa.png" alt="Sapo do chapéu de palha">
+                    <p class="menu-version">Versão beta para navegador</p>
+                </div>
+
+                <div class="overlay-card result-card is-hidden" id="result-card">
                     <img class="start-frog" src="assets/img/sapo-capa.png" alt="Sapo do chapéu de palha pronto para correr">
                     <div class="overlay-copy">
                         <p class="overlay-kicker" id="overlay-kicker">Beta para navegador</p>
@@ -114,6 +235,7 @@
                             <span class="play-icon" aria-hidden="true">▶</span>
                             <span id="play-label">Carregando...</span>
                         </button>
+                        <button class="result-menu-button" id="result-menu-button" type="button" onclick="showMainMenu()">Voltar ao menu</button>
                         <p class="controls-hint"><kbd>A</kbd>/<kbd>D</kbd> movimentam <span aria-hidden="true">·</span> <kbd>Espaço</kbd> pula <span aria-hidden="true">·</span> <kbd>X</kbd> lança a língua <span aria-hidden="true">·</span> <kbd>P</kbd> pausa</p>
                     </div>
                 </div>
