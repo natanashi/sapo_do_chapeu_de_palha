@@ -397,6 +397,22 @@ button { cursor: pointer; }
     animation: ground-beetle-run 240ms steps(1) infinite;
 }
 
+.obstacle--leaping-beetle {
+    bottom: calc(13.5% + 14px);
+    width: clamp(78px, 7.2vw, 104px);
+    aspect-ratio: 1;
+    background-image: url("../img/besouro-saltador-sprites.png");
+    background-position: 0 0;
+    background-repeat: no-repeat;
+    background-size: 400% 200%;
+    filter: drop-shadow(0 5px 3px rgba(5, 18, 15, 0.38));
+    animation: leaping-beetle-run 170ms steps(1) infinite;
+}
+
+.obstacle--leaping-beetle.is-leaping {
+    animation: leaping-beetle-attack 580ms steps(1) both;
+}
+
 .platform {
     position: absolute;
     bottom: 22%;
@@ -995,6 +1011,7 @@ kbd {
 .bestiary-sprite--gold { background-image: url("../img/inseto-voando-sprites.png"); background-size: 400% 100%; background-position: 0 0; }
 .bestiary-sprite--wave { background-image: url("../img/besouro-ondulante-voando-sprites.png"); background-size: 400% 100%; background-position: 0 0; }
 .bestiary-sprite--ground { background-image: url("../img/besouro-terrestre-correndo-sprites.png"); background-size: 400% 100%; background-position: 0 0; }
+.bestiary-sprite--jumper { width: 62px; height: 62px; margin-inline: auto; background-image: url("../img/besouro-saltador-sprites.png"); background-size: 400% 200%; background-position: 0 0; }
 .bestiary-sprite--bee { background-image: url("../img/abelha-investida-sprites.png"); background-size: 400% 100%; background-position: 0 0; }
 .museum-medals { display: grid; grid-template-columns: 1fr repeat(3, 38px); align-items: center; gap: 7px; margin-top: 14px; padding-top: 12px; border-top: 2px dashed #a0703f; }
 .museum-medals div { display: grid; grid-template-columns: 32px 1fr; align-items: center; column-gap: 7px; text-align: left; }
@@ -1205,6 +1222,20 @@ kbd {
     75%, 100% { background-position-x: 100%; }
 }
 
+@keyframes leaping-beetle-run {
+    0%, 24.99% { background-position: 0 0; }
+    25%, 49.99% { background-position: 33.333% 0; }
+    50%, 74.99% { background-position: 66.667% 0; }
+    75%, 100% { background-position: 100% 0; }
+}
+
+@keyframes leaping-beetle-attack {
+    0%, 19.99% { background-position: 0 100%; }
+    20%, 44.99% { background-position: 33.333% 100%; }
+    45%, 74.99% { background-position: 66.667% 100%; }
+    75%, 100% { background-position: 100% 100%; }
+}
+
 @keyframes tongue-catch-glow {
     from { opacity: 0.55; transform: scale(0.75); }
     to { opacity: 1; transform: scale(1.35); }
@@ -1260,6 +1291,10 @@ kbd {
         width: clamp(104px, 30vw, 136px);
         height: clamp(58px, 17vw, 76px);
     }
+    .obstacle--leaping-beetle {
+        bottom: calc(14% + 10px);
+        width: clamp(70px, 21vw, 92px);
+    }
     .platform { bottom: 21%; width: clamp(164px, 48vw, 212px); }
     .insect { width: clamp(58px, 17vw, 82px); }
     .insect--bee { width: clamp(66px, 19vw, 88px); }
@@ -1300,7 +1335,9 @@ kbd {
 @media (prefers-reduced-motion: reduce) {
     .insect,
     .runner,
-    .obstacle--ground-beetle { animation: none; }
+    .obstacle--ground-beetle,
+    .obstacle--leaping-beetle,
+    .obstacle--leaping-beetle.is-leaping { animation: none; }
     .insect--bee.is-aiming::before { animation: none; opacity: 0.9; }
     .scenery-layer { transition: none; }
     .game-overlay,

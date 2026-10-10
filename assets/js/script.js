@@ -52,7 +52,7 @@ const PHASES = [
         paceLabel: 'Ritmo padrão',
         obstacleGap: [1.65, 2.2],
         insectGap: [2.65, 3.75],
-        obstacles: ['rock', 'wheel', 'rock', 'ground-beetle', 'ground-beetle'],
+        obstacles: ['rock', 'wheel', 'rock', 'ground-beetle', 'ground-beetle', 'leaping-beetle'],
     },
     {
         name: 'Campos do Orvalho',
@@ -62,7 +62,7 @@ const PHASES = [
         paceLabel: 'Ritmo acelerando',
         obstacleGap: [1.55, 2.1],
         insectGap: [2.45, 3.45],
-        obstacles: ['rock', 'wheel', 'ground-beetle', 'rock', 'wheel', 'ground-beetle'],
+        obstacles: ['rock', 'wheel', 'ground-beetle', 'rock', 'wheel', 'ground-beetle', 'leaping-beetle', 'leaping-beetle'],
     },
     {
         name: 'Floresta Antiga',
@@ -72,7 +72,7 @@ const PHASES = [
         paceLabel: 'Corrida veloz',
         obstacleGap: [1.45, 1.98],
         insectGap: [2.22, 3.18],
-        obstacles: ['rock', 'wheel', 'ground-beetle', 'wheel', 'ground-beetle'],
+        obstacles: ['rock', 'wheel', 'ground-beetle', 'wheel', 'ground-beetle', 'leaping-beetle', 'leaping-beetle'],
     },
     {
         name: 'Castelo da Manhã',
@@ -82,7 +82,7 @@ const PHASES = [
         paceLabel: 'Reta final em alta velocidade',
         obstacleGap: [1.36, 1.88],
         insectGap: [2.02, 2.9],
-        obstacles: ['wheel', 'ground-beetle', 'rock', 'wheel-heavy', 'ground-beetle', 'ground-beetle'],
+        obstacles: ['wheel', 'ground-beetle', 'rock', 'wheel-heavy', 'ground-beetle', 'ground-beetle', 'leaping-beetle', 'leaping-beetle'],
     },
 ];
 
@@ -121,6 +121,17 @@ const OBSTACLES = {
         insetX: 0.16,
         insetTop: 0.18,
         spriteSheet: true,
+    },
+    'leaping-beetle': {
+        src: 'assets/img/besouro-saltador-sprites.png',
+        className: 'obstacle--leaping-beetle',
+        points: 32,
+        speedScale: 1.46,
+        leapSpeedScale: 1.24,
+        insetX: 0.14,
+        insetTop: 0.38,
+        spriteSheet: true,
+        leaps: true,
     },
 };
 
@@ -397,6 +408,10 @@ function spawnObstacle() {
         config,
         element,
         x: state.boardWidth + Math.max(42, state.boardWidth * 0.045),
+        y: 0,
+        velocityY: 0,
+        movementStage: 'running',
+        hasLeaped: false,
         rotation: 0,
         scored: false,
     };
@@ -506,7 +521,10 @@ function spawnPlatform() {
 }
 
 function obstacleSpeed(obstacle) {
-    return currentWorldSpeed() * obstacle.config.speedScale;
+    const leapScale = obstacle.movementStage === 'leaping'
+        ? obstacle.config.leapSpeedScale || 1
+        : 1;
+    return currentWorldSpeed() * obstacle.config.speedScale * leapScale;
 }
 
 function renderObstacle(obstacle, currentTime) {
@@ -514,7 +532,7 @@ function renderObstacle(obstacle, currentTime) {
     if (obstacle.config.rotates) {
         extraTransform = ` rotate(${obstacle.rotation.toFixed(1)}deg)`;
     }
-    obstacle.element.style.transform = `translate3d(${obstacle.x.toFixed(2)}px, 0, 0)${extraTransform}`;
+    obstacle.element.style.transform = `translate3d(${obstacle.x.toFixed(2)}px, ${(-obstacle.y).toFixed(2)}px, 0)${extraTransform}`;
 }
 
 function renderInsect(insect, currentTime) {
@@ -909,6 +927,8 @@ function endGame(hazard = 'obstacle') {
         ? 'A abelha acertou o sapo com o ferrão. Observe a mira, pule da investida ou capture-a com a língua.'
         : hazard === 'beetle'
             ? 'Um besouro acertou o sapo. Pule para ajustar a altura e use a língua antes que o bando chegue perto.'
+        : hazard === 'leaping-beetle'
+            ? 'O besouro-saltador atacou de repente. Espere os olhos verdes se aproximarem e pule acima da investida.'
         : state.phaseIndex === PHASES.length - 1
             ? 'Você chegou ao castelo. Agora tente correr ainda mais longe e capture mais besouros.'
             : 'O caminho ficou difícil desta vez. Tente outra corrida e descubra a próxima região.';
@@ -952,6 +972,29 @@ function updateObstacles(delta, currentTime) {
     const runnerBox = runner.getBoundingClientRect();
 
     state.obstacles.forEach((obstacle) => {
+        if (
+            obstacle.config.leaps
+            && !obstacle.hasLeaped
+            && obstacle.movementStage === 'running'
+            && obstacle.x - state.runnerX <= clamp(state.boardWidth * 0.29, 255, 390)
+        ) {
+            obstacle.hasLeaped = true;
+            obstacle.movementStage = 'leaping';
+            obstacle.velocityY = 455;
+            obstacle.element.classList.add('is-leaping');
+        }
+
+        if (obstacle.movementStage === 'leaping') {
+            obstacle.velocityY -= 1580 * delta;
+            obstacle.y = Math.max(0, obstacle.y + obstacle.velocityY * delta);
+            if (obstacle.y === 0 && obstacle.velocityY < 0) {
+                obstacle.velocityY = 0;
+                obstacle.movementStage = 'landed';
+                obstacle.element.classList.remove('is-leaping');
+                obstacle.element.classList.add('has-landed');
+            }
+        }
+
         const speed = obstacleSpeed(obstacle);
         obstacle.x -= speed * delta;
         if (obstacle.config.rotates) obstacle.rotation -= speed * delta * 0.52;
@@ -1195,9 +1238,10 @@ function gameLoop(currentTime) {
         return;
     }
 
-    if (state.obstacles.some(collisionDetected)) {
+    const collidingObstacle = state.obstacles.find(collisionDetected);
+    if (collidingObstacle) {
         state.dodgeCombo = 0;
-        endGame();
+        endGame(collidingObstacle.type);
         return;
     }
 
@@ -1313,7 +1357,11 @@ function syncBoardSize(width, height) {
     if (state.boardWidth > 0 && state.mode === 'playing') {
         const widthRatio = width / state.boardWidth;
         const heightRatio = height / state.boardHeight;
-        state.obstacles.forEach((obstacle) => { obstacle.x *= widthRatio; });
+        state.obstacles.forEach((obstacle) => {
+            obstacle.x *= widthRatio;
+            obstacle.y *= heightRatio;
+            obstacle.velocityY *= heightRatio;
+        });
         state.platforms.forEach((platform) => { platform.x *= widthRatio; });
         state.runnerX *= widthRatio;
         state.runnerY *= heightRatio;
