@@ -7,8 +7,8 @@
     <meta name="description" content="Ajude o Sapo do Chapéu de Palha a atravessar quatro regiões da manhã, saltar obstáculos e capturar besouros e abelhas antes que eles se aproximem.">
     <link rel="icon" type="image/png" href="assets/img/sapo-capa.png">
     <link rel="preload" as="image" href="assets/img/cenario-vila-panorama-v3.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=22">
-    <script src="assets/js/script.js?v=22" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=23">
+    <script src="assets/js/script.js?v=23" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body>
@@ -81,14 +81,26 @@
             </div>
 
             <div class="game-controls" aria-label="Controles do jogo">
-                <button class="action-button action-button--jump" id="jump-button" type="button" disabled>
-                    <span class="action-symbol" aria-hidden="true">↑</span>
-                    <span>Pular <kbd>Espaço</kbd></span>
-                </button>
-                <button class="action-button action-button--tongue" id="tongue-button" type="button" disabled>
-                    <span class="action-symbol" aria-hidden="true">↝</span>
-                    <span>Língua <kbd>X</kbd></span>
-                </button>
+                <div class="control-group control-group--movement" aria-label="Movimento horizontal">
+                    <button class="action-button action-button--move" id="move-left-button" type="button" disabled aria-label="Mover o sapo para trás">
+                        <span class="action-symbol" aria-hidden="true">←</span>
+                        <span>Voltar <kbd>A</kbd></span>
+                    </button>
+                    <button class="action-button action-button--move" id="move-right-button" type="button" disabled aria-label="Mover o sapo para frente">
+                        <span class="action-symbol" aria-hidden="true">→</span>
+                        <span>Avançar <kbd>D</kbd></span>
+                    </button>
+                </div>
+                <div class="control-group control-group--actions" aria-label="Ações">
+                    <button class="action-button action-button--jump" id="jump-button" type="button" disabled>
+                        <span class="action-symbol" aria-hidden="true">↑</span>
+                        <span>Pular <kbd>Espaço</kbd></span>
+                    </button>
+                    <button class="action-button action-button--tongue" id="tongue-button" type="button" disabled>
+                        <span class="action-symbol" aria-hidden="true">↝</span>
+                        <span>Língua <kbd>X</kbd></span>
+                    </button>
+                </div>
             </div>
 
             <div class="game-overlay is-visible" id="game-overlay">
@@ -102,7 +114,7 @@
                             <span class="play-icon" aria-hidden="true">▶</span>
                             <span id="play-label">Carregando...</span>
                         </button>
-                        <p class="controls-hint"><kbd>Espaço</kbd> pula <span aria-hidden="true">·</span> <kbd>X</kbd> lança a língua <span aria-hidden="true">·</span> <kbd>P</kbd> pausa</p>
+                        <p class="controls-hint"><kbd>A</kbd>/<kbd>D</kbd> movimentam <span aria-hidden="true">·</span> <kbd>Espaço</kbd> pula <span aria-hidden="true">·</span> <kbd>X</kbd> lança a língua <span aria-hidden="true">·</span> <kbd>P</kbd> pausa</p>
                     </div>
                 </div>
             </div>

@@ -35,6 +35,7 @@ components:
   primaryButton: {}
   jumpButton: {}
   tongueButton: {}
+  horizontalMovementButtons: {}
   runningFrog: {}
   jumpStates: {}
   flyingInsect: {}
@@ -63,7 +64,7 @@ Pixelify Sans is bundled locally under the SIL Open Font License and owns titles
 
 ## Layout
 
-The playfield occupies the available browser viewport up to a 1600 × 900 maximum instead of sitting inside a decorative page frame. The title, phase, score, record, pause and play controls live inside the stage as a game HUD. A compact map below the HUD shows four named stops, total route progress and elapsed time. Narrow screens become a full-height portrait stage with two large touch targets anchored to opposite bottom corners. Safe-area insets and unusually narrow embedded browser views are supported without horizontal overflow.
+The playfield occupies the available browser viewport up to a 1600 × 900 maximum instead of sitting inside a decorative page frame. The title, phase, score, record, pause and play controls live inside the stage as a game HUD. A compact map below the HUD shows four named stops, total route progress and elapsed time. Narrow screens become a full-height portrait stage with four compact touch targets grouped by purpose: backward/forward movement on the left and Jump/Tongue on the right. Safe-area insets and unusually narrow embedded browser views are supported without horizontal overflow.
 
 ## Elevation & Depth
 
@@ -79,6 +80,8 @@ All actions use native buttons with hover, active, focus-visible, disabled, and 
 
 The original `Sapinho: Aventura no Sonho` track loops quietly beneath gameplay at 28% volume so jumps and collision cues remain clear. Music starts only from the player's Play gesture, pauses with the run or hidden tab, resumes from the same point, and resets when the run ends or restarts.
 
+Horizontal movement uses an actual bounded x-coordinate with keyboard A/D or Left/Right and held touch buttons. The frog keeps a fixed visual scale across running, jumping, attacking and swallowing; retreating reverses the footfall order without turning away from incoming threats. Mobile movement and action targets remain at least 54px tall. Animated sprite backgrounds crop slightly inside their cells so neighboring frames cannot bleed into the visible pose.
+
 ## Do's and Don'ts
 
 - Do keep pixel artwork crisp with `image-rendering: pixelated`.
@@ -91,6 +94,8 @@ The original `Sapinho: Aventura no Sonho` track loops quietly beneath gameplay a
 - Do telegraph the bee's committed sting before its diagonal dive and keep the locked trajectory avoidable by jumping or landing.
 - Do keep the frog's cream-white nose readable in every running frame.
 - Do keep the frog's body scale fixed when the tongue overlay appears.
+- Do keep the frog, enemies, platforms and obstacles at a fixed visual scale while their positions change.
+- Do crop animated sprite backgrounds slightly inside their cells so adjacent frames never bleed into the active pose.
 - Do open the frog's mouth before the tongue extends and align the tongue origin with the cream muzzle in both ground and air poses.
 - Do keep the charming upright run on the ground and reserve natural frog poses for jumping.
 - Do use the jump sprite states to match takeoff, ascent, apex, descent and landing velocity.

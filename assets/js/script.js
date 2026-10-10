@@ -10,6 +10,8 @@ const overlay = document.querySelector('#game-overlay');
 const playButton = document.querySelector('#play-button');
 const playLabel = document.querySelector('#play-label');
 const pauseButton = document.querySelector('#pause-button');
+const moveLeftButton = document.querySelector('#move-left-button');
+const moveRightButton = document.querySelector('#move-right-button');
 const jumpButton = document.querySelector('#jump-button');
 const tongueButton = document.querySelector('#tongue-button');
 const scoreDisplay = document.querySelector('#score');
@@ -135,6 +137,7 @@ const state = {
     score: 0,
     elapsedTime: 0,
     best: readBestScore(),
+    runnerX: 0,
     runnerY: 0,
     velocityY: 0,
     phaseIndex: 0,
@@ -161,6 +164,8 @@ const state = {
     animationFrame: 0,
     boardWidth: 0,
     boardHeight: 0,
+    moveLeft: false,
+    moveRight: false,
 };
 
 const BASE_RUN_SPEED = 255;
@@ -173,6 +178,8 @@ const ATTACK_CAPTURE_CLOSE = 360;
 const ATTACK_RETRACT_AT = 430;
 const ATTACK_SWALLOW_AT = 620;
 const JOURNEY_DURATION = 185;
+const HORIZONTAL_SPEED_MIN = 210;
+const HORIZONTAL_SPEED_MAX = 430;
 const RUNNER_MOTION_CLASSES = ['motion-takeoff', 'motion-rise', 'motion-apex', 'motion-fall', 'motion-land'];
 
 function clamp(value, minimum, maximum) {
@@ -248,6 +255,44 @@ function pauseBackgroundMusic(reset = false) {
 
 function boardMetrics() {
     return board.getBoundingClientRect();
+}
+
+function initialRunnerX(width = state.boardWidth || boardMetrics().width) {
+    return clamp(width * 0.08, 24, 126);
+}
+
+function runnerHorizontalBounds() {
+    const width = Math.max(1, state.boardWidth || boardMetrics().width);
+    const runnerWidth = Math.max(1, runnerLayer.offsetWidth);
+    return {
+        minimum: clamp(width * 0.025, 10, 42),
+        maximum: Math.max(width * 0.34, width * 0.62 - runnerWidth),
+    };
+}
+
+function renderRunnerPosition() {
+    runnerLayer.style.setProperty('--runner-x', `${state.runnerX.toFixed(2)}px`);
+    runnerLayer.style.setProperty('--jump-y', state.runnerY.toFixed(2));
+}
+
+function clearHorizontalInput() {
+    state.moveLeft = false;
+    state.moveRight = false;
+    moveLeftButton.classList.remove('is-held');
+    moveRightButton.classList.remove('is-held');
+    runnerLayer.classList.remove('is-retreating', 'is-advancing');
+}
+
+function updateRunnerHorizontalMovement(delta) {
+    const direction = Number(state.moveRight) - Number(state.moveLeft);
+    if (direction !== 0) {
+        const speed = clamp(state.boardWidth * 0.34, HORIZONTAL_SPEED_MIN, HORIZONTAL_SPEED_MAX);
+        const bounds = runnerHorizontalBounds();
+        state.runnerX = clamp(state.runnerX + direction * speed * delta, bounds.minimum, bounds.maximum);
+    }
+    runnerLayer.classList.toggle('is-retreating', direction < 0);
+    runnerLayer.classList.toggle('is-advancing', direction > 0);
+    renderRunnerPosition();
 }
 
 function worldSpeedScale() {
@@ -558,6 +603,7 @@ function resetRun() {
     clearAttack();
     state.score = 0;
     state.elapsedTime = 0;
+    state.runnerX = initialRunnerX();
     state.runnerY = 0;
     state.velocityY = 0;
     state.dodgeCombo = 0;
@@ -574,16 +620,20 @@ function resetRun() {
     state.landingUntil = 0;
     state.swallowUntil = 0;
     state.runnerMotion = 'run';
+    clearHorizontalInput();
     runnerLayer.classList.remove('is-hit', 'is-airborne', 'is-swallowing', ...RUNNER_MOTION_CLASSES);
-    runnerLayer.style.setProperty('--jump-y', '0');
+    renderRunnerPosition();
     applyPhase(0, false);
     updateWorldMotion();
 }
 
 function setPlayingControls(enabled) {
+    moveLeftButton.disabled = !enabled;
+    moveRightButton.disabled = !enabled;
     jumpButton.disabled = !enabled;
     tongueButton.disabled = !enabled;
     pauseButton.disabled = !enabled;
+    if (!enabled) clearHorizontalInput();
 }
 
 function startGame() {
@@ -620,6 +670,9 @@ function pauseGame() {
     pauseBackgroundMusic();
     window.cancelAnimationFrame(state.animationFrame);
     clearAttack();
+    clearHorizontalInput();
+    moveLeftButton.disabled = true;
+    moveRightButton.disabled = true;
     jumpButton.disabled = true;
     tongueButton.disabled = true;
     pauseButton.disabled = false;
@@ -1068,6 +1121,7 @@ function gameLoop(currentTime) {
 
     scheduleActors(delta);
     updatePlatforms(delta);
+    updateRunnerHorizontalMovement(delta);
     updateRunnerPhysics(delta, currentTime);
     updateObstacles(delta, currentTime);
     updateInsects(delta, currentTime);
@@ -1134,6 +1188,37 @@ function handleKeyboard(event) {
     handleJumpInput(event);
 }
 
+function handleHorizontalKey(event, isPressed) {
+    const isLeft = ['ArrowLeft', 'KeyA'].includes(event.code);
+    const isRight = ['ArrowRight', 'KeyD'].includes(event.code);
+    if (!isLeft && !isRight) return false;
+    event.preventDefault();
+    if (state.mode !== 'playing' && isPressed) return true;
+    if (isLeft) state.moveLeft = isPressed;
+    if (isRight) state.moveRight = isPressed;
+    moveLeftButton.classList.toggle('is-held', state.moveLeft);
+    moveRightButton.classList.toggle('is-held', state.moveRight);
+    return true;
+}
+
+function bindMovementButton(button, direction) {
+    const setPressed = (pressed) => {
+        if (direction === 'left') state.moveLeft = pressed;
+        else state.moveRight = pressed;
+        button.classList.toggle('is-held', pressed);
+    };
+
+    button.addEventListener('pointerdown', (event) => {
+        if (button.disabled || state.mode !== 'playing') return;
+        event.preventDefault();
+        button.setPointerCapture?.(event.pointerId);
+        setPressed(true);
+    });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((eventName) => {
+        button.addEventListener(eventName, () => setPressed(false));
+    });
+}
+
 function preloadImage(source) {
     return new Promise((resolve, reject) => {
         const image = new Image();
@@ -1159,11 +1244,13 @@ async function initializeGame() {
 }
 
 function syncBoardSize(width, height) {
+    const previousWidth = state.boardWidth;
     if (state.boardWidth > 0 && state.mode === 'playing') {
         const widthRatio = width / state.boardWidth;
         const heightRatio = height / state.boardHeight;
         state.obstacles.forEach((obstacle) => { obstacle.x *= widthRatio; });
         state.platforms.forEach((platform) => { platform.x *= widthRatio; });
+        state.runnerX *= widthRatio;
         state.runnerY *= heightRatio;
         runnerLayer.style.setProperty('--jump-y', state.runnerY.toFixed(2));
         state.insects.forEach((insect) => {
@@ -1183,6 +1270,10 @@ function syncBoardSize(width, height) {
     }
     state.boardWidth = width;
     state.boardHeight = height;
+    if (previousWidth === 0 || state.runnerX === 0) state.runnerX = initialRunnerX(width);
+    const bounds = runnerHorizontalBounds();
+    state.runnerX = clamp(state.runnerX, bounds.minimum, bounds.maximum);
+    renderRunnerPosition();
     updateWorldMotion();
 }
 
@@ -1198,6 +1289,8 @@ pauseButton.addEventListener('click', () => {
 
 jumpButton.addEventListener('pointerdown', handleJumpInput);
 tongueButton.addEventListener('pointerdown', handleAttackInput);
+bindMovementButton(moveLeftButton, 'left');
+bindMovementButton(moveRightButton, 'right');
 runnerAttack.addEventListener('animationend', clearAttack);
 
 board.addEventListener('pointerdown', (event) => {
@@ -1205,7 +1298,11 @@ board.addEventListener('pointerdown', (event) => {
     handleJumpInput(event);
 });
 
-document.addEventListener('keydown', handleKeyboard);
+document.addEventListener('keydown', (event) => {
+    if (!handleHorizontalKey(event, true)) handleKeyboard(event);
+});
+document.addEventListener('keyup', (event) => handleHorizontalKey(event, false));
+window.addEventListener('blur', clearHorizontalInput);
 document.addEventListener('visibilitychange', () => {
     if (document.hidden && state.mode === 'playing') pauseGame();
 });

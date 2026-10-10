@@ -33,10 +33,11 @@ Jogo de corrida em pixel art para navegador, com suporte a computador e celular.
 
 ## Como jogar
 
+- Movimento: use `A`/`D` ou `←`/`→` para recuar e avançar pelo cenário.
 - Computador: pressione `Espaço` ou `↑` para pular.
 - Língua: pressione `X` para capturar os besouros que voam da direita para a esquerda. Encostar neles encerra a corrida.
 - Pausa: pressione `P` ou use o botão **Pausar**.
-- Celular: use os botões **Pular** e **Língua** na própria tela do jogo.
+- Celular: segure **Voltar** ou **Avançar** para se mover e use **Pular** e **Língua** para agir.
 - Desvie dos obstáculos, use as plataformas, capture besouros e tente superar o recorde salvo no navegador.
 
 Jogue online: https://natanashi.github.io/sapo_do_chapeu_de_palha/
