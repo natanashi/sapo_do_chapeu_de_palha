@@ -47,7 +47,7 @@ const PHASES = [
     {
         name: 'Vila do Sol',
         startsAt: 0,
-        background: 'assets/img/cenario-vila-transparente-v1.png',
+        background: 'assets/img/cenario-arvores-planaltos-transparente-v1.png',
         speedScale: 1,
         paceLabel: 'Ritmo padrão',
         obstacleGap: [1.65, 2.2],
@@ -57,7 +57,7 @@ const PHASES = [
     {
         name: 'Campos do Orvalho',
         startsAt: 45,
-        background: 'assets/img/cenario-campos-transparente-v1.png',
+        background: 'assets/img/cenario-arvores-planaltos-transparente-v1.png',
         speedScale: 1.08,
         paceLabel: 'Ritmo acelerando',
         obstacleGap: [1.55, 2.1],
@@ -67,7 +67,7 @@ const PHASES = [
     {
         name: 'Floresta Antiga',
         startsAt: 90,
-        background: 'assets/img/cenario-floresta-transparente-v1.png',
+        background: 'assets/img/cenario-arvores-planaltos-transparente-v1.png',
         speedScale: 1.16,
         paceLabel: 'Corrida veloz',
         obstacleGap: [1.45, 1.98],
@@ -77,7 +77,7 @@ const PHASES = [
     {
         name: 'Castelo da Manhã',
         startsAt: 135,
-        background: 'assets/img/cenario-castelo-transparente-v1.png',
+        background: 'assets/img/cenario-arvores-planaltos-transparente-v1.png',
         speedScale: 1.24,
         paceLabel: 'Reta final em alta velocidade',
         obstacleGap: [1.36, 1.88],
@@ -136,7 +136,6 @@ const OBSTACLES = {
 };
 
 const ASSET_URLS = [
-    'assets/img/montanhas-sapinho-panorama-v1.png',
     'assets/img/passaro-horizonte-sprites-v1.png',
     PHASES[0].background,
     ...Object.values(OBSTACLES).map((obstacle) => obstacle.src),
@@ -1366,7 +1365,8 @@ async function initializeGame() {
     }
 
     const preloadLaterScenes = () => {
-        PHASES.slice(1).forEach((phase) => preloadImage(phase.background).catch(() => {}));
+        [...new Set(PHASES.slice(1).map((phase) => phase.background))]
+            .forEach((source) => preloadImage(source).catch(() => {}));
     };
     if ('requestIdleCallback' in window) {
         window.requestIdleCallback(preloadLaterScenes, { timeout: 2500 });

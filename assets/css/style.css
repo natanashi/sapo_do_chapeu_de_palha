@@ -124,20 +124,24 @@ button { cursor: pointer; }
     flex: 0 0 calc(100% / 3);
     overflow: hidden;
     background-color: var(--sky-top);
-    background-image:
-        var(--scene-image),
-        url("../img/montanhas-sapinho-panorama-v1.png"),
-        linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 76%, #b9bd8c 100%);
-    background-position:
-        center bottom calc(var(--ground-height) - 1px),
-        center bottom calc(var(--ground-height) - 1px),
-        center;
+    background-image: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 76%, #b9bd8c 100%);
+    background-position: center;
     background-repeat: no-repeat;
-    background-size:
-        auto min(66%, 590px),
-        auto min(50%, 440px),
-        100% 100%;
+    background-size: 100% 100%;
     image-rendering: pixelated;
+}
+
+.scenery-panel::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    inset: 0 0 var(--ground-height);
+    background-image: var(--scene-image);
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    background-size: 100% auto;
+    image-rendering: pixelated;
+    pointer-events: none;
 }
 
 .scenery-panel--mirror { transform: scaleX(-1); }
@@ -910,7 +914,7 @@ kbd {
     bottom: 0;
     left: 0;
     height: 56%;
-    background: url("../img/montanhas-sapinho-panorama-v1.png") center bottom / cover no-repeat;
+    background: url("../img/cenario-arvores-planaltos-transparente-v1.png") center bottom / cover no-repeat;
     image-rendering: pixelated;
     opacity: 0.74;
     pointer-events: none;
@@ -1134,7 +1138,7 @@ kbd {
     aspect-ratio: 1.8;
     border: 2px solid #2c1c12;
     background:
-        url("../img/montanhas-sapinho-panorama-v1.png") center bottom / cover no-repeat,
+        url("../img/cenario-arvores-planaltos-transparente-v1.png") center bottom / cover no-repeat,
         linear-gradient(180deg, #8dc9df 0 64%, #597957 65% 100%);
     image-rendering: pixelated;
 }
@@ -1425,6 +1429,12 @@ kbd {
     .scoreboard { display: flex; }
     .scoreboard p { min-width: 48px; padding-inline: 5px; }
     .pause-button { min-width: 48px; min-height: 32px; }
+}
+
+@media (orientation: portrait) {
+    .scenery-panel::before {
+        background-size: auto min(66%, 590px);
+    }
 }
 
 @media (max-width: 720px) {
