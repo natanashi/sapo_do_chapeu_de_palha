@@ -186,12 +186,13 @@ const state = {
     moveRight: false,
 };
 
-const BASE_RUN_SPEED = 270;
+const PACE_REFERENCE_SPEED = 270;
+const BASE_RUN_SPEED = PACE_REFERENCE_SPEED * 1.1;
 const RUN_SPEED_GAIN = 170;
 const GRAVITY = 1850;
 const JUMP_FORCE = 820;
 const ATTACK_DURATION = 700;
-const ATTACK_COOLDOWN = 860;
+const ATTACK_COOLDOWN = 3000;
 const ATTACK_CAPTURE_CLOSE = 360;
 const ATTACK_RETRACT_AT = 430;
 const ATTACK_SWALLOW_AT = 620;
@@ -325,7 +326,7 @@ function currentWorldSpeed() {
 
 function currentPaceMultiplier() {
     const journeyProgress = clamp(state.elapsedTime / JOURNEY_DURATION, 0, 1);
-    return ((BASE_RUN_SPEED + RUN_SPEED_GAIN * journeyProgress) * PHASES[state.phaseIndex].speedScale) / BASE_RUN_SPEED;
+    return ((BASE_RUN_SPEED + RUN_SPEED_GAIN * journeyProgress) * PHASES[state.phaseIndex].speedScale) / PACE_REFERENCE_SPEED;
 }
 
 function showPhaseBanner(index) {
@@ -599,6 +600,26 @@ function clearAttack() {
     runnerAttack.classList.remove('is-visible');
 }
 
+function updateTongueCooldown(currentTime = performance.now()) {
+    const remaining = Math.max(0, state.attackReadyAt - currentTime);
+    const isCoolingDown = state.mode === 'playing' && remaining > 0;
+
+    tongueButton.classList.toggle('is-cooling-down', isCoolingDown);
+    tongueButton.disabled = state.mode !== 'playing' || isCoolingDown;
+
+    if (isCoolingDown) {
+        const remainingSeconds = Math.ceil(remaining / 1000);
+        tongueButton.dataset.cooldown = `${remainingSeconds}s`;
+        tongueButton.setAttribute('aria-label', `Língua recarregando: ${remainingSeconds} segundos`);
+        tongueButton.style.setProperty('--cooldown-progress', `${(remaining / ATTACK_COOLDOWN) * 360}deg`);
+        return;
+    }
+
+    delete tongueButton.dataset.cooldown;
+    tongueButton.removeAttribute('style');
+    tongueButton.setAttribute('aria-label', 'Usar a língua');
+}
+
 function mouthPosition() {
     const boardBox = boardMetrics();
     const tongueBox = runnerAttack.getBoundingClientRect();
@@ -673,6 +694,7 @@ function setPlayingControls(enabled) {
     tongueButton.disabled = !enabled;
     pauseButton.disabled = !enabled;
     if (!enabled) clearHorizontalInput();
+    updateTongueCooldown();
 }
 
 const MENU_PARENTS = {
@@ -792,6 +814,7 @@ function attack() {
     state.attackStartedAt = now;
     state.attackUntil = now + ATTACK_DURATION;
     state.attackReadyAt = now + ATTACK_COOLDOWN;
+    updateTongueCooldown(now);
     runner.classList.add('is-attacking');
     runnerLayer.classList.add('is-attacking');
     runnerAttack.classList.remove('is-visible');
@@ -1200,8 +1223,8 @@ function scheduleActors(delta) {
         spawnObstacle();
         const [minimumGap, maximumGap] = PHASES[state.phaseIndex].obstacleGap;
         const pressure = clamp(state.elapsedTime / JOURNEY_DURATION, 0, 1);
-        const difficultyReduction = pressure * 0.08;
-        state.obstacleCooldown = Math.max(1.28, minimumGap + Math.random() * (maximumGap - minimumGap) - difficultyReduction);
+        const densityScale = 1 - pressure * 0.1;
+        state.obstacleCooldown = Math.max(1.18, (minimumGap + Math.random() * (maximumGap - minimumGap)) * densityScale);
     }
 
     if (state.insectCooldown <= 0) {
@@ -1211,7 +1234,8 @@ function scheduleActors(delta) {
             spawnInsectWave();
             const [minimumGap, maximumGap] = PHASES[state.phaseIndex].insectGap;
             const pressure = clamp(state.elapsedTime / JOURNEY_DURATION, 0, 1);
-            state.insectCooldown = Math.max(1.9, minimumGap + Math.random() * (maximumGap - minimumGap) - pressure * 0.12);
+            const densityScale = 1 - pressure * 0.08;
+            state.insectCooldown = Math.max(1.72, (minimumGap + Math.random() * (maximumGap - minimumGap)) * densityScale);
         }
     }
 
@@ -1231,6 +1255,7 @@ function gameLoop(currentTime) {
     const runCycle = clamp(680 / currentPaceMultiplier(), 410, 680);
     runnerLayer.style.setProperty('--run-cycle', `${runCycle.toFixed(0)}ms`);
     if (currentTime >= state.swallowUntil) runnerLayer.classList.remove('is-swallowing');
+    updateTongueCooldown(currentTime);
     if (!reducedMotionQuery.matches) state.sceneTravel += worldSpeed * 0.075 * delta;
     state.groundTravel += worldSpeed * delta;
     updateWorldMotion();

@@ -849,14 +849,39 @@ button { cursor: pointer; }
     box-shadow: inset 0 -5px 0 rgba(126, 68, 13, 0.24), inset 0 2px 0 rgba(255, 255, 255, 0.34), 0 5px 0 #75451a, 0 8px 16px rgba(4, 18, 11, 0.34);
 }
 .action-button--tongue {
+    position: relative;
     border-color: #ffd3dc;
     background: radial-gradient(circle at 36% 25%, #ffb5c7 0 7%, transparent 8%), linear-gradient(150deg, #d85a78, #8d2948 72%);
     box-shadow: inset 0 -5px 0 rgba(68, 11, 29, 0.28), inset 0 2px 0 rgba(255, 255, 255, 0.23), 0 5px 0 #4b1325, 0 8px 16px rgba(4, 18, 11, 0.34);
+}
+.action-button--tongue.is-cooling-down {
+    filter: saturate(0.48) brightness(0.82);
+    opacity: 0.82;
+}
+.action-button--tongue.is-cooling-down::after {
+    content: attr(data-cooldown);
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    display: grid;
+    width: 27px;
+    height: 27px;
+    border: 2px solid #fff0c0;
+    border-radius: 50%;
+    place-items: center;
+    color: #fff8db;
+    background: conic-gradient(#f7c95e var(--cooldown-progress), #5e2038 0);
+    box-shadow: 0 2px 0 #3e1124;
+    font-family: var(--font-data);
+    font-size: 0.58rem;
+    font-weight: 700;
+    line-height: 1;
 }
 .action-button:hover:not(:disabled) { transform: translateY(-2px) scale(1.03); }
 .action-button:active:not(:disabled) { transform: translateY(4px) scale(0.96); box-shadow: inset 0 -2px 0 rgba(5, 26, 15, 0.22), 0 1px 0 #092b1a; }
 .action-button--tongue:active:not(:disabled) { box-shadow: inset 0 -2px 0 rgba(74, 18, 34, 0.24), 0 1px 0 #4b1325; }
 .action-button:disabled { cursor: not-allowed; filter: grayscale(0.6); opacity: 0.48; }
+.action-button--tongue.is-cooling-down:disabled { filter: saturate(0.48) brightness(0.82); opacity: 0.82; }
 .action-button:focus-visible,
 .play-button:focus-visible { outline: 4px solid white; outline-offset: 3px; }
 .action-symbol { color: #fff3c4; font-size: clamp(1.25rem, 2vw, 1.65rem); line-height: 0.9; text-shadow: 0 2px 0 rgba(5, 26, 15, 0.34); }
