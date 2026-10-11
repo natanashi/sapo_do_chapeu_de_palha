@@ -36,7 +36,9 @@ components:
   jumpButton: {}
   tongueButton: {}
   horizontalMovementButtons: {}
+  crouchButton: {}
   runningFrog: {}
+  crouchingFrog: {}
   jumpStates: {}
   flyingInsect: {}
   waveFlyingBeetle: {}
@@ -88,7 +90,7 @@ Gameplay controls borrow the immediate tactile language of a handheld console wi
 
 The running world uses one continuous transparent panorama dominated by gentle trees, forest groves and layered grassy plateaus, with only three tiny distant wooden cabins. Water, lakes, rivers, waterfalls, bridges, castles and dense towns are excluded from the background. Muted sage, moss, warm wood and soft stone keep the handcrafted 16-bit world playful without harsh saturation. The transparent upper field belongs to the runtime sky, a separate fixed sun, two small desaturated bird flocks and six softly translucent pixel clouds drifting at different heights and speeds. Depth follows one explicit back-to-front stack: sky and sun, clouds, birds, then the forest panorama. This keeps the sun and atmospheric sprites behind every treetop even when their paths overlap. The panorama lives in a dedicated layer whose bottom is pinned directly to the top of the runtime ground; its former 45-row transparent lower margin was removed so the grassy baseline meets the soil without a gray gap at any viewport size. Landscape viewports scale it to the complete panel width so scenery reaches both edges and mirrored panels join without a blank band; portrait viewports preserve the larger height-based crop. Phase changes retain their timing and sky tint while sharing this coherent forest route.
 
-Horizontal movement uses an actual bounded x-coordinate with keyboard A/D or Left/Right and held touch buttons. The frog keeps a fixed outer frame across running, jumping, attacking and swallowing; the mouth-open artwork receives a small internal crop correction so its visible body matches the running sprite without moving the feet from the ground line. Retreating reverses the footfall order without turning away from incoming threats. Mobile movement and action targets remain at least 54px tall. Animated sprite backgrounds crop slightly inside their cells so neighboring frames cannot bleed into the visible pose. The run starts at a real and displayed 1.10x pace, then rises continuously. Encounter density follows that acceleration instead of thinning out: obstacle and insect cooldowns tighten modestly with journey progress while retaining bounded reaction gaps, spatial safety checks and capped minimum intervals so the last phase stays demanding but beatable.
+Horizontal movement uses an actual bounded x-coordinate with keyboard A/D or Left/Right and held touch buttons. Arrow Down or the dedicated touch control changes the ground run into an eight-frame low crouch-run while preserving horizontal movement and auto-run speed. Crouching uses a shorter collision profile, and its separate mouth-open attack sheet keeps the tongue anchored to the muzzle without changing the frog's outer frame or scale. Jumping releases the crouch cleanly; landing while Down remains held restores the low posture. The frog keeps a fixed outer frame across running, crouching, jumping, attacking and swallowing; the mouth-open artwork receives a small internal crop correction so its visible body matches the active motion sprite without moving the feet from the ground line. Retreating reverses the footfall order without turning away from incoming threats. Mobile movement and action targets remain at least 46px tall on unusually narrow screens and 48px elsewhere. Animated sprite backgrounds crop slightly inside their cells so neighboring frames cannot bleed into the visible pose. The run starts at a real and displayed 1.10x pace, then rises continuously. Encounter density follows that acceleration instead of thinning out: obstacle and insect cooldowns tighten modestly with journey progress while retaining bounded reaction gaps, spatial safety checks and capped minimum intervals so the last phase stays demanding but beatable.
 
 ## Do's and Don'ts
 
@@ -102,6 +104,7 @@ Horizontal movement uses an actual bounded x-coordinate with keyboard A/D or Lef
 - Do telegraph the bee's committed sting before its diagonal dive and keep the locked trajectory avoidable by jumping or landing.
 - Do keep the frog's cream-white nose readable in every running frame.
 - Do keep the frog's body scale fixed when the tongue overlay appears.
+- Do keep the crouch-run animated, collision-aware and compatible with the tongue on keyboard and touch.
 - Do keep the frog, enemies, platforms and obstacles at a fixed visual scale while their positions change.
 - Do crop animated sprite backgrounds slightly inside their cells so adjacent frames never bleed into the active pose.
 - Do open the frog's mouth before the tongue extends and align the tongue origin with the cream muzzle in both ground and air poses.

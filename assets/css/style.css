@@ -421,6 +421,17 @@ button { cursor: pointer; }
 
 .runner-layer.is-retreating .runner:not(.is-attacking) { animation-direction: reverse; }
 
+.runner-layer.is-crouching:not(.is-airborne) {
+    --mouth-x: 70%;
+    --mouth-y: 66%;
+}
+
+.runner-layer.is-crouching:not(.is-airborne) .runner {
+    background-image: url("../img/sapo-corrida-agachado-sprites-v1.png");
+    background-size: 404% 202%;
+    animation: frog-run-biped var(--run-cycle, 680ms) linear infinite;
+}
+
 .runner-layer.motion-takeoff .runner,
 .runner-layer.motion-rise .runner,
 .runner-layer.motion-apex .runner,
@@ -442,6 +453,13 @@ button { cursor: pointer; }
     background-size: 252% 126%;
     animation: none;
     background-position: 8.6% 38%;
+}
+
+.runner-layer.is-crouching:not(.is-airborne) .runner.is-attacking {
+    background-image: url("../img/sapo-agachado-boca-aberta-sprites-v1.png");
+    background-size: 202% 102%;
+    background-position: 0 50%;
+    animation: frog-crouch-attack 260ms steps(1, end) infinite;
 }
 
 .runner-attack {
@@ -842,6 +860,9 @@ button { cursor: pointer; }
 }
 .action-button--move.is-held:not(:disabled),
 .action-button--move.is-held:not(:disabled):hover { background: linear-gradient(150deg, #a3e66f, #63b740 70%); color: var(--forest-950); transform: translateY(4px) scale(0.96); box-shadow: inset 0 -3px 0 rgba(29, 82, 34, 0.22), 0 1px 0 #092b1a; }
+.action-button--crouch {
+    background: radial-gradient(circle at 36% 25%, rgba(255, 255, 255, 0.2) 0 7%, transparent 8%), linear-gradient(150deg, #337d60, #154a39 72%);
+}
 .action-button--jump {
     border-color: #fff0b8;
     color: var(--forest-950);
@@ -1438,6 +1459,11 @@ kbd {
     86%, 100% { background-position: 100% 100%; }
 }
 
+@keyframes frog-crouch-attack {
+    0%, 49.99% { background-position: 0 50%; }
+    50%, 100% { background-position: 100% 50%; }
+}
+
 @keyframes ground-beetle-run {
     0%, 24.99% { background-position-x: 0; }
     25%, 49.99% { background-position-x: 33.333%; }
@@ -1532,7 +1558,7 @@ kbd {
     .game-controls { right: max(8px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); left: max(8px, env(safe-area-inset-left)); gap: 8px; }
     .control-group { width: auto; gap: 7px; padding: 5px; }
     .action-button { width: clamp(64px, 18vw, 76px); min-width: clamp(64px, 18vw, 76px); height: clamp(64px, 18vw, 76px); min-height: clamp(64px, 18vw, 76px); padding: 4px; border-radius: 50%; }
-    .action-button--move { width: clamp(58px, 16vw, 68px); min-width: clamp(58px, 16vw, 68px); height: clamp(58px, 16vw, 68px); min-height: clamp(58px, 16vw, 68px); }
+    .action-button--move { width: clamp(48px, 13.5vw, 60px); min-width: clamp(48px, 13.5vw, 60px); height: clamp(48px, 13.5vw, 60px); min-height: clamp(48px, 13.5vw, 60px); }
     .action-symbol { font-size: 1.28rem; }
     .action-button kbd { display: none; }
     .overlay-card { display: block; width: min(560px, 100%); min-height: min(600px, calc(100svh - 24px)); border-radius: 20px 20px 46px 20px; }
@@ -1547,7 +1573,7 @@ kbd {
     .game-controls { gap: 5px; }
     .control-group { gap: 3px; padding: 4px; }
     .action-button { width: 58px; min-width: 58px; height: 58px; min-height: 58px; padding-inline: 3px; }
-    .action-button--move { width: 52px; min-width: 52px; height: 52px; min-height: 52px; }
+    .action-button--move { width: 46px; min-width: 46px; height: 46px; min-height: 46px; }
     .action-symbol { font-size: 1.2rem; }
     .route-map li span { display: none; }
     .scoreboard p { min-width: 36px; }
@@ -1560,7 +1586,7 @@ kbd {
     .overlay-copy { padding-top: 22px; padding-bottom: 22px; }
     .overlay-message { margin-bottom: 16px; }
     .action-button { width: 58px; min-width: 58px; height: 58px; min-height: 58px; }
-    .action-button--move { width: 52px; min-width: 52px; height: 52px; min-height: 52px; }
+    .action-button--move { width: 46px; min-width: 46px; height: 46px; min-height: 46px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

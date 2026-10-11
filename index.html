@@ -9,8 +9,8 @@
     <link rel="preload" as="image" href="assets/img/cenario-arvores-planaltos-transparente-v2.png">
     <link rel="preload" as="image" href="assets/img/nuvem-pixel-flutuante-v1.png">
     <link rel="preload" as="image" href="assets/img/passaro-horizonte-sprites-v1.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=46">
-    <script src="assets/js/script.js?v=46" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=47">
+    <script src="assets/js/script.js?v=47" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body>
@@ -95,7 +95,7 @@
             </div>
 
             <div class="game-controls" aria-label="Controles do jogo">
-                <div class="control-group control-group--movement" aria-label="Movimento horizontal">
+                <div class="control-group control-group--movement" aria-label="Movimento e postura">
                     <button class="action-button action-button--move" id="move-left-button" type="button" disabled aria-label="Mover o sapo para trás">
                         <span class="action-symbol" aria-hidden="true">←</span>
                         <span>Voltar <kbd>A</kbd></span>
@@ -103,6 +103,10 @@
                     <button class="action-button action-button--move" id="move-right-button" type="button" disabled aria-label="Mover o sapo para frente">
                         <span class="action-symbol" aria-hidden="true">→</span>
                         <span>Avançar <kbd>D</kbd></span>
+                    </button>
+                    <button class="action-button action-button--move action-button--crouch" id="crouch-button" type="button" disabled aria-label="Agachar o sapo">
+                        <span class="action-symbol" aria-hidden="true">↓</span>
+                        <span>Agachar <kbd>↓</kbd></span>
                     </button>
                 </div>
                 <div class="control-group control-group--actions" aria-label="Ações">
@@ -251,7 +255,7 @@
                             <span id="play-label">Carregando...</span>
                         </button>
                         <button class="result-menu-button" id="result-menu-button" type="button" onclick="showMainMenu()">Voltar ao menu</button>
-                        <p class="controls-hint"><kbd>A</kbd>/<kbd>D</kbd> movimentam <span aria-hidden="true">·</span> <kbd>Espaço</kbd> pula <span aria-hidden="true">·</span> <kbd>X</kbd> lança a língua <span aria-hidden="true">·</span> <kbd>P</kbd> pausa</p>
+                        <p class="controls-hint"><kbd>A</kbd>/<kbd>D</kbd> movimentam <span aria-hidden="true">·</span> <kbd>↓</kbd> agacha <span aria-hidden="true">·</span> <kbd>Espaço</kbd> pula <span aria-hidden="true">·</span> <kbd>X</kbd> lança a língua <span aria-hidden="true">·</span> <kbd>P</kbd> pausa</p>
                     </div>
                 </div>
             </div>

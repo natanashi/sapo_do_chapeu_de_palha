@@ -18,6 +18,7 @@ const playLabel = document.querySelector('#play-label');
 const pauseButton = document.querySelector('#pause-button');
 const moveLeftButton = document.querySelector('#move-left-button');
 const moveRightButton = document.querySelector('#move-right-button');
+const crouchButton = document.querySelector('#crouch-button');
 const jumpButton = document.querySelector('#jump-button');
 const tongueButton = document.querySelector('#tongue-button');
 const scoreDisplay = document.querySelector('#score');
@@ -141,6 +142,8 @@ const ASSET_URLS = [
     ...Object.values(OBSTACLES).map((obstacle) => obstacle.src),
     'assets/img/textura-solo.jpg',
     'assets/img/sapo-corrida-bipede-v3.png',
+    'assets/img/sapo-corrida-agachado-sprites-v1.png',
+    'assets/img/sapo-agachado-boca-aberta-sprites-v1.png',
     'assets/img/sapo-ciclo-natural-v2.png',
     'assets/img/sapo-boca-aberta-sprites.png',
     'assets/img/sapo-lingua-limpa-v3.png',
@@ -184,6 +187,7 @@ const state = {
     boardHeight: 0,
     moveLeft: false,
     moveRight: false,
+    isCrouching: false,
 };
 
 const PACE_REFERENCE_SPEED = 270;
@@ -299,7 +303,21 @@ function clearHorizontalInput() {
     state.moveRight = false;
     moveLeftButton.classList.remove('is-held');
     moveRightButton.classList.remove('is-held');
-    runnerLayer.classList.remove('is-retreating', 'is-advancing');
+    crouchButton.classList.remove('is-held');
+    state.isCrouching = false;
+    runnerLayer.classList.remove('is-retreating', 'is-advancing', 'is-crouching');
+}
+
+function setCrouching(pressed) {
+    if (pressed && state.mode !== 'playing') return;
+    state.isCrouching = pressed;
+    const isGrounded = state.runnerY <= 3 || Boolean(state.standingPlatform);
+    crouchButton.classList.toggle('is-held', pressed);
+    runnerLayer.classList.toggle('is-crouching', pressed && isGrounded);
+}
+
+function isRunnerCrouched() {
+    return state.isCrouching && (state.runnerY <= 3 || Boolean(state.standingPlatform));
 }
 
 function updateRunnerHorizontalMovement(delta) {
@@ -690,6 +708,7 @@ function resetRun() {
 function setPlayingControls(enabled) {
     moveLeftButton.disabled = !enabled;
     moveRightButton.disabled = !enabled;
+    crouchButton.disabled = !enabled;
     jumpButton.disabled = !enabled;
     tongueButton.disabled = !enabled;
     pauseButton.disabled = !enabled;
@@ -784,6 +803,7 @@ function pauseGame() {
     clearHorizontalInput();
     moveLeftButton.disabled = true;
     moveRightButton.disabled = true;
+    crouchButton.disabled = true;
     jumpButton.disabled = true;
     tongueButton.disabled = true;
     pauseButton.disabled = false;
@@ -826,7 +846,7 @@ function collisionDetected(obstacle) {
     const runnerBox = runner.getBoundingClientRect();
     const obstacleBox = obstacle.element.getBoundingClientRect();
     const runnerInsetX = runnerBox.width * 0.28;
-    const runnerInsetTop = runnerBox.height * 0.18;
+    const runnerInsetTop = runnerBox.height * (isRunnerCrouched() ? 0.46 : 0.18);
     const obstacleInsetX = obstacleBox.width * obstacle.config.insetX;
     const obstacleInsetTop = obstacleBox.height * obstacle.config.insetTop;
 
@@ -865,15 +885,16 @@ function insectHitsRunner(insect) {
     const runnerBox = runner.getBoundingClientRect();
     const insectBox = insect.element.getBoundingClientRect();
     const runnerInsetX = runnerBox.width * 0.3;
-    const runnerInsetY = runnerBox.height * 0.2;
+    const runnerInsetTop = runnerBox.height * (isRunnerCrouched() ? 0.48 : 0.2);
+    const runnerInsetBottom = runnerBox.height * 0.2;
     const insectInsetX = insectBox.width * 0.22;
     const insectInsetY = insectBox.height * 0.2;
 
     return (
         runnerBox.right - runnerInsetX > insectBox.left + insectInsetX
         && runnerBox.left + runnerInsetX < insectBox.right - insectInsetX
-        && runnerBox.bottom - runnerInsetY > insectBox.top + insectInsetY
-        && runnerBox.top + runnerInsetY < insectBox.bottom - insectInsetY
+        && runnerBox.bottom - runnerInsetBottom > insectBox.top + insectInsetY
+        && runnerBox.top + runnerInsetTop < insectBox.bottom - insectInsetY
     );
 }
 
@@ -1133,6 +1154,7 @@ function updateRunnerPhysics(delta, currentTime) {
 
     const isAirborne = !state.standingPlatform && state.runnerY > 3;
     runnerLayer.classList.toggle('is-airborne', isAirborne);
+    runnerLayer.classList.toggle('is-crouching', state.isCrouching && !isAirborne);
 
     if (isAirborne) {
         state.wasAirborne = true;
@@ -1346,6 +1368,14 @@ function handleHorizontalKey(event, isPressed) {
     return true;
 }
 
+function handleCrouchKey(event, isPressed) {
+    if (event.code !== 'ArrowDown') return false;
+    event.preventDefault();
+    if (state.mode !== 'playing' && isPressed) return true;
+    setCrouching(isPressed);
+    return true;
+}
+
 function bindMovementButton(button, direction) {
     const setPressed = (pressed) => {
         if (direction === 'left') state.moveLeft = pressed;
@@ -1362,6 +1392,30 @@ function bindMovementButton(button, direction) {
     ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((eventName) => {
         button.addEventListener(eventName, () => setPressed(false));
     });
+}
+
+function bindCrouchButton() {
+    const release = () => setCrouching(false);
+    crouchButton.addEventListener('pointerdown', (event) => {
+        if (crouchButton.disabled || state.mode !== 'playing') return;
+        event.preventDefault();
+        crouchButton.setPointerCapture?.(event.pointerId);
+        setCrouching(true);
+    });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((eventName) => {
+        crouchButton.addEventListener(eventName, release);
+    });
+    crouchButton.addEventListener('keydown', (event) => {
+        if (!['Space', 'Enter'].includes(event.code) || event.repeat || crouchButton.disabled) return;
+        event.preventDefault();
+        setCrouching(true);
+    });
+    crouchButton.addEventListener('keyup', (event) => {
+        if (!['Space', 'Enter'].includes(event.code)) return;
+        event.preventDefault();
+        release();
+    });
+    crouchButton.addEventListener('blur', release);
 }
 
 function preloadImage(source) {
@@ -1456,6 +1510,7 @@ jumpButton.addEventListener('pointerdown', handleJumpInput);
 tongueButton.addEventListener('pointerdown', handleAttackInput);
 bindMovementButton(moveLeftButton, 'left');
 bindMovementButton(moveRightButton, 'right');
+bindCrouchButton();
 runnerAttack.addEventListener('animationend', clearAttack);
 
 board.addEventListener('pointerdown', (event) => {
@@ -1464,9 +1519,11 @@ board.addEventListener('pointerdown', (event) => {
 });
 
 document.addEventListener('keydown', (event) => {
-    if (!handleHorizontalKey(event, true)) handleKeyboard(event);
+    if (!handleHorizontalKey(event, true) && !handleCrouchKey(event, true)) handleKeyboard(event);
 });
-document.addEventListener('keyup', (event) => handleHorizontalKey(event, false));
+document.addEventListener('keyup', (event) => {
+    if (!handleHorizontalKey(event, false)) handleCrouchKey(event, false);
+});
 window.addEventListener('blur', clearHorizontalInput);
 document.addEventListener('visibilitychange', () => {
     if (document.hidden && state.mode === 'playing') pauseGame();
