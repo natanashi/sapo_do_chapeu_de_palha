@@ -87,6 +87,10 @@ button { cursor: pointer; }
 }
 
 .scenery-layer {
+    --sky-top: #8dc9df;
+    --sky-bottom: #d9e4c0;
+    --ridge-far: #7c9d6d;
+    --ridge-near: #4f7550;
     position: absolute;
     z-index: 0;
     top: 0;
@@ -102,21 +106,58 @@ button { cursor: pointer; }
 
 .scenery-layer.is-active { opacity: 1; }
 
+.scenery-layer[data-scene="2"] {
+    --sky-top: #87c4d8;
+    --sky-bottom: #dbe0b7;
+    --ridge-far: #78956a;
+    --ridge-near: #496c4b;
+}
+
+.scenery-layer[data-scene="3"] {
+    --sky-top: #78b9ce;
+    --sky-bottom: #c8d7ae;
+    --ridge-far: #688964;
+    --ridge-near: #3f6647;
+}
+
+.scenery-layer[data-scene="4"] {
+    --sky-top: #96cad8;
+    --sky-bottom: #e2deb3;
+    --ridge-far: #7e9568;
+    --ridge-near: #536f49;
+}
+
 .scenery-panel {
+    position: relative;
     flex: 0 0 calc(100% / 3);
-    background-color: var(--sky-morning);
+    overflow: hidden;
+    background-color: var(--sky-top);
     background-image:
-        var(--scene-image),
-        linear-gradient(180deg, #4a853f 0%, var(--ground-verge) 100%);
+        url("../img/montanhas-sapinho-panorama-v1.png"),
+        linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 76%, #b9bd8c 100%);
     background-position:
-        center bottom calc(var(--ground-height) + var(--scene-lift)),
-        center bottom var(--ground-height);
+        center bottom calc(var(--ground-height) - 1px),
+        center;
     background-repeat: no-repeat;
-    background-size: 100% auto, 100% var(--scene-lift);
+    background-size:
+        auto min(64%, 540px),
+        100% 100%;
     image-rendering: pixelated;
 }
 
-.scenery-panel--mirror { transform: scaleX(-1); }
+.scenery-panel::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: var(--ground-height);
+    left: 0;
+    z-index: 1;
+    height: 14%;
+    background: var(--ridge-near);
+    clip-path: polygon(0 100%, 0 74%, 7% 42%, 14% 74%, 21% 34%, 29% 77%, 38% 45%, 47% 79%, 56% 31%, 65% 76%, 74% 43%, 83% 78%, 92% 38%, 100% 73%, 100% 100%);
+    opacity: 0.72;
+    pointer-events: none;
+}
 
 .sun-haze {
     position: absolute;
@@ -127,9 +168,74 @@ button { cursor: pointer; }
     transition: background 800ms ease;
 }
 
+.sun-haze::before {
+    content: "";
+    position: absolute;
+    top: clamp(76px, 14%, 126px);
+    right: clamp(42px, 16vw, 230px);
+    width: clamp(52px, 6.4vw, 88px);
+    aspect-ratio: 1;
+    border: clamp(4px, 0.45vw, 7px) solid rgba(255, 239, 164, 0.72);
+    border-radius: 50%;
+    background: #f3cf68;
+    box-shadow:
+        0 0 0 5px rgba(255, 221, 112, 0.18),
+        0 0 30px rgba(255, 222, 118, 0.28);
+    image-rendering: pixelated;
+}
+
 .game-board[data-phase="2"] .sun-haze { background: linear-gradient(180deg, rgba(255, 242, 184, 0.05), rgba(44, 105, 48, 0.16)); }
 .game-board[data-phase="3"] .sun-haze { background: linear-gradient(180deg, rgba(188, 245, 197, 0.03), rgba(8, 61, 34, 0.22)); }
 .game-board[data-phase="4"] .sun-haze { background: linear-gradient(180deg, rgba(255, 235, 172, 0.07), rgba(31, 82, 44, 0.18)); }
+
+.horizon-birds {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.bird-flock {
+    position: absolute;
+    left: 104%;
+    width: clamp(92px, 10vw, 148px);
+    height: clamp(54px, 6vw, 84px);
+    opacity: 0.62;
+    filter: saturate(0.72) contrast(0.92);
+    animation: bird-flock-cross 24s linear infinite;
+    will-change: transform;
+}
+
+.bird-flock--near {
+    top: clamp(112px, 24%, 206px);
+    animation-delay: -7s;
+}
+
+.bird-flock--far {
+    top: clamp(92px, 18%, 154px);
+    opacity: 0.4;
+    scale: 0.72;
+    animation-duration: 31s;
+    animation-delay: -22s;
+}
+
+.horizon-bird {
+    position: absolute;
+    display: block;
+    width: clamp(27px, 2.9vw, 43px);
+    aspect-ratio: 1.36;
+    background: url("../img/passaro-horizonte-sprites-v1.png") 0 center / 400% 100% no-repeat;
+    image-rendering: pixelated;
+    animation: horizon-bird-flap 640ms steps(1, end) infinite;
+}
+
+.horizon-bird:nth-child(1) { top: 2%; left: 0; }
+.horizon-bird:nth-child(2) { top: 32%; left: 36%; animation-delay: -210ms; }
+.horizon-bird:nth-child(3) { top: 6%; left: 72%; animation-delay: -420ms; }
+
+.bird-flock--far .horizon-bird:nth-child(1) { top: 0; left: 12%; }
+.bird-flock--far .horizon-bird:nth-child(2) { top: 34%; left: 56%; }
 
 .ground {
     position: absolute;
@@ -796,8 +902,8 @@ kbd {
     border: 3px solid #e8b85b;
     border-radius: 5px;
     background:
-        linear-gradient(rgba(10, 43, 26, 0.2), rgba(10, 43, 26, 0.2)),
-        url("../img/cenario-vila-panorama-v3.png") center bottom / cover no-repeat;
+        radial-gradient(circle at 72% 22%, rgba(255, 224, 139, 0.24), transparent 24%),
+        linear-gradient(155deg, #436d4b 0%, #244b36 54%, #132f23 100%);
     box-shadow:
         0 0 0 6px #203f28,
         0 0 0 9px #0b2417,
@@ -811,6 +917,20 @@ kbd {
     z-index: -1;
     inset: 0;
     background: linear-gradient(90deg, rgba(6, 29, 18, 0.9) 0%, rgba(7, 33, 20, 0.72) 45%, rgba(7, 25, 16, 0.42) 100%);
+}
+
+.main-menu-shell::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 56%;
+    background: url("../img/montanhas-sapinho-panorama-v1.png") center bottom / cover no-repeat;
+    image-rendering: pixelated;
+    opacity: 0.74;
+    pointer-events: none;
 }
 
 .menu-brand {
@@ -1025,7 +1145,16 @@ kbd {
 }
 .map-card:not(:disabled):hover { transform: translateY(-3px) rotate(-0.5deg); box-shadow: inset 0 0 0 2px #d79749, 0 10px 0 #2a1a10; }
 .map-card:disabled { cursor: wait; filter: grayscale(0.7); opacity: 0.72; }
-.map-card__picture { display: block; width: 100%; aspect-ratio: 1.8; border: 2px solid #2c1c12; background: url("../img/cenario-vila-panorama-v3.png") center bottom / cover no-repeat; image-rendering: pixelated; }
+.map-card__picture {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1.8;
+    border: 2px solid #2c1c12;
+    background:
+        url("../img/montanhas-sapinho-panorama-v1.png") center bottom / cover no-repeat,
+        linear-gradient(180deg, #8dc9df 0 64%, #597957 65% 100%);
+    image-rendering: pixelated;
+}
 .map-card__copy { display: block; padding: 10px 8px 7px; }
 .map-card__copy small,
 .map-card__copy strong,
@@ -1064,6 +1193,21 @@ kbd {
 @keyframes menu-page-in {
     from { opacity: 0; transform: translateX(8px); }
     to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes horizon-bird-flap {
+    0%, 24.99% { background-position: 0 center; }
+    25%, 49.99% { background-position: 33.333% center; }
+    50%, 74.99% { background-position: 66.667% center; }
+    75%, 100% { background-position: 100% center; }
+}
+
+@keyframes bird-flock-cross {
+    0% { transform: translate3d(0, 3px, 0); }
+    24% { transform: translate3d(-30vw, -4px, 0); }
+    52% { transform: translate3d(-67vw, 2px, 0); }
+    76% { transform: translate3d(-96vw, -3px, 0); }
+    100% { transform: translate3d(-126vw, 1px, 0); }
 }
 
 .overlay-card {
@@ -1304,7 +1448,6 @@ kbd {
     .game-shell { width: 100vw; height: 100svh; min-height: 0; padding: 0; }
     .game-board { border-radius: 0; box-shadow: none; }
     .game-hud { top: max(6px, env(safe-area-inset-top)); right: 6px; left: 6px; grid-template-columns: minmax(100px, 1fr) auto; gap: 3px; min-height: 48px; padding: 4px; border-radius: 13px; }
-    .scenery-panel { background-size: auto 82%, 100% var(--scene-lift); }
     .game-title { display: none; }
     .scoreboard p { min-width: clamp(38px, 10vw, 49px); padding: 1px 3px; }
     .scoreboard span { font-size: clamp(0.4rem, 1.65vw, 0.47rem); letter-spacing: 0.02em; }
@@ -1370,6 +1513,7 @@ kbd {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .horizon-birds { display: none; }
     .insect,
     .runner,
     .obstacle--ground-beetle,

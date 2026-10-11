@@ -47,7 +47,6 @@ const PHASES = [
     {
         name: 'Vila do Sol',
         startsAt: 0,
-        background: 'assets/img/cenario-vila-panorama-v3.png',
         speedScale: 1,
         paceLabel: 'Ritmo padrão',
         obstacleGap: [1.65, 2.2],
@@ -57,7 +56,6 @@ const PHASES = [
     {
         name: 'Campos do Orvalho',
         startsAt: 45,
-        background: 'assets/img/cenario-campos-panorama-v3.png',
         speedScale: 1.08,
         paceLabel: 'Ritmo acelerando',
         obstacleGap: [1.55, 2.1],
@@ -67,7 +65,6 @@ const PHASES = [
     {
         name: 'Floresta Antiga',
         startsAt: 90,
-        background: 'assets/img/cenario-floresta-panorama-v3.png',
         speedScale: 1.16,
         paceLabel: 'Corrida veloz',
         obstacleGap: [1.45, 1.98],
@@ -77,7 +74,6 @@ const PHASES = [
     {
         name: 'Castelo da Manhã',
         startsAt: 135,
-        background: 'assets/img/cenario-castelo-panorama-v3.png',
         speedScale: 1.24,
         paceLabel: 'Reta final em alta velocidade',
         obstacleGap: [1.36, 1.88],
@@ -136,7 +132,8 @@ const OBSTACLES = {
 };
 
 const ASSET_URLS = [
-    ...PHASES.map((phase) => phase.background),
+    'assets/img/montanhas-sapinho-panorama-v1.png',
+    'assets/img/passaro-horizonte-sprites-v1.png',
     ...Object.values(OBSTACLES).map((obstacle) => obstacle.src),
     'assets/img/textura-solo.jpg',
     'assets/img/sapo-corrida-bipede-v3.png',
@@ -334,11 +331,21 @@ function showPhaseBanner(index) {
     window.requestAnimationFrame(() => phaseBanner.classList.add('is-visible'));
 }
 
-function setScene(background, instant = false) {
-    const backgroundUrl = new URL(background, document.baseURI).href;
+function buildScene(layer, sceneIndex) {
+    layer.dataset.scene = String(sceneIndex + 1);
+    layer.replaceChildren();
+
+    for (let panelIndex = 0; panelIndex < 3; panelIndex += 1) {
+        const panel = document.createElement('span');
+        panel.className = 'scenery-panel';
+        layer.append(panel);
+    }
+}
+
+function setScene(sceneIndex, instant = false) {
 
     if (instant) {
-        sceneLayers[0].style.setProperty('--scene-image', `url("${backgroundUrl}")`);
+        buildScene(sceneLayers[0], sceneIndex);
         sceneLayers[0].classList.add('is-active');
         sceneLayers[1].classList.remove('is-active');
         state.activeScene = 0;
@@ -346,7 +353,7 @@ function setScene(background, instant = false) {
     }
 
     const nextScene = state.activeScene === 0 ? 1 : 0;
-    sceneLayers[nextScene].style.setProperty('--scene-image', `url("${backgroundUrl}")`);
+    buildScene(sceneLayers[nextScene], sceneIndex);
     sceneLayers[nextScene].classList.add('is-active');
     sceneLayers[state.activeScene].classList.remove('is-active');
     state.activeScene = nextScene;
@@ -355,7 +362,7 @@ function setScene(background, instant = false) {
 function applyPhase(index, announce = true) {
     state.phaseIndex = index;
     board.dataset.phase = String(index + 1);
-    setScene(PHASES[index].background, !announce);
+    setScene(index, !announce);
 
     if (announce) {
         showPhaseBanner(index);
