@@ -75,7 +75,7 @@ button { cursor: pointer; }
     height: 100%;
     overflow: hidden;
     border-radius: var(--board-radius);
-    background: var(--sky-morning);
+    background: linear-gradient(180deg, #8dc9df 0%, #d9e4c0 76%, #b9bd8c 100%);
     box-shadow: 0 18px 62px rgba(0, 0, 0, 0.38);
     touch-action: manipulation;
     user-select: none;
@@ -90,7 +90,7 @@ button { cursor: pointer; }
     --sky-top: #8dc9df;
     --sky-bottom: #d9e4c0;
     position: absolute;
-    z-index: 0;
+    z-index: 4;
     top: 0;
     bottom: 0;
     left: 0;
@@ -123,11 +123,7 @@ button { cursor: pointer; }
     position: relative;
     flex: 0 0 calc(100% / 3);
     overflow: hidden;
-    background-color: var(--sky-top);
-    background-image: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 76%, #b9bd8c 100%);
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: 100% 100%;
+    background: transparent;
     image-rendering: pixelated;
 }
 
@@ -207,7 +203,7 @@ button { cursor: pointer; }
 
 .horizon-birds {
     position: absolute;
-    z-index: 2;
+    z-index: 3;
     inset: 0;
     overflow: hidden;
     pointer-events: none;
@@ -256,7 +252,7 @@ button { cursor: pointer; }
 
 .ground {
     position: absolute;
-    z-index: 3;
+    z-index: 5;
     right: 0;
     bottom: 0;
     left: 0;
