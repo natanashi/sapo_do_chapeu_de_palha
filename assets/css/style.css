@@ -940,7 +940,7 @@ kbd {
     bottom: 0;
     left: 0;
     height: 56%;
-    background: url("../img/cenario-arvores-planaltos-transparente-v1.png") center bottom / cover no-repeat;
+    background: url("../img/cenario-arvores-planaltos-transparente-v2.png") center bottom / cover no-repeat;
     image-rendering: pixelated;
     opacity: 0.74;
     pointer-events: none;
@@ -1164,7 +1164,7 @@ kbd {
     aspect-ratio: 1.8;
     border: 2px solid #2c1c12;
     background:
-        url("../img/cenario-arvores-planaltos-transparente-v1.png") center bottom / cover no-repeat,
+        url("../img/cenario-arvores-planaltos-transparente-v2.png") center bottom / cover no-repeat,
         linear-gradient(180deg, #8dc9df 0 64%, #597957 65% 100%);
     image-rendering: pixelated;
 }
