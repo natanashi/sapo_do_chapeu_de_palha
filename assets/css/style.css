@@ -89,8 +89,6 @@ button { cursor: pointer; }
 .scenery-layer {
     --sky-top: #8dc9df;
     --sky-bottom: #d9e4c0;
-    --ridge-far: #7c9d6d;
-    --ridge-near: #4f7550;
     position: absolute;
     z-index: 0;
     top: 0;
@@ -109,22 +107,16 @@ button { cursor: pointer; }
 .scenery-layer[data-scene="2"] {
     --sky-top: #87c4d8;
     --sky-bottom: #dbe0b7;
-    --ridge-far: #78956a;
-    --ridge-near: #496c4b;
 }
 
 .scenery-layer[data-scene="3"] {
     --sky-top: #78b9ce;
     --sky-bottom: #c8d7ae;
-    --ridge-far: #688964;
-    --ridge-near: #3f6647;
 }
 
 .scenery-layer[data-scene="4"] {
     --sky-top: #96cad8;
     --sky-bottom: #e2deb3;
-    --ridge-far: #7e9568;
-    --ridge-near: #536f49;
 }
 
 .scenery-panel {
@@ -133,31 +125,22 @@ button { cursor: pointer; }
     overflow: hidden;
     background-color: var(--sky-top);
     background-image:
+        var(--scene-image),
         url("../img/montanhas-sapinho-panorama-v1.png"),
         linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 76%, #b9bd8c 100%);
     background-position:
         center bottom calc(var(--ground-height) - 1px),
+        center bottom calc(var(--ground-height) - 1px),
         center;
     background-repeat: no-repeat;
     background-size:
-        auto min(64%, 540px),
+        auto min(66%, 590px),
+        auto min(50%, 440px),
         100% 100%;
     image-rendering: pixelated;
 }
 
-.scenery-panel::after {
-    content: "";
-    position: absolute;
-    right: 0;
-    bottom: var(--ground-height);
-    left: 0;
-    z-index: 1;
-    height: 14%;
-    background: var(--ridge-near);
-    clip-path: polygon(0 100%, 0 74%, 7% 42%, 14% 74%, 21% 34%, 29% 77%, 38% 45%, 47% 79%, 56% 31%, 65% 76%, 74% 43%, 83% 78%, 92% 38%, 100% 73%, 100% 100%);
-    opacity: 0.72;
-    pointer-events: none;
-}
+.scenery-panel--mirror { transform: scaleX(-1); }
 
 .sun-haze {
     position: absolute;

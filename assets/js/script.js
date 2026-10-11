@@ -47,6 +47,7 @@ const PHASES = [
     {
         name: 'Vila do Sol',
         startsAt: 0,
+        background: 'assets/img/cenario-vila-transparente-v1.png',
         speedScale: 1,
         paceLabel: 'Ritmo padrão',
         obstacleGap: [1.65, 2.2],
@@ -56,6 +57,7 @@ const PHASES = [
     {
         name: 'Campos do Orvalho',
         startsAt: 45,
+        background: 'assets/img/cenario-campos-transparente-v1.png',
         speedScale: 1.08,
         paceLabel: 'Ritmo acelerando',
         obstacleGap: [1.55, 2.1],
@@ -65,6 +67,7 @@ const PHASES = [
     {
         name: 'Floresta Antiga',
         startsAt: 90,
+        background: 'assets/img/cenario-floresta-transparente-v1.png',
         speedScale: 1.16,
         paceLabel: 'Corrida veloz',
         obstacleGap: [1.45, 1.98],
@@ -74,6 +77,7 @@ const PHASES = [
     {
         name: 'Castelo da Manhã',
         startsAt: 135,
+        background: 'assets/img/cenario-castelo-transparente-v1.png',
         speedScale: 1.24,
         paceLabel: 'Reta final em alta velocidade',
         obstacleGap: [1.36, 1.88],
@@ -134,6 +138,7 @@ const OBSTACLES = {
 const ASSET_URLS = [
     'assets/img/montanhas-sapinho-panorama-v1.png',
     'assets/img/passaro-horizonte-sprites-v1.png',
+    PHASES[0].background,
     ...Object.values(OBSTACLES).map((obstacle) => obstacle.src),
     'assets/img/textura-solo.jpg',
     'assets/img/sapo-corrida-bipede-v3.png',
@@ -333,11 +338,13 @@ function showPhaseBanner(index) {
 
 function buildScene(layer, sceneIndex) {
     layer.dataset.scene = String(sceneIndex + 1);
+    const backgroundUrl = new URL(PHASES[sceneIndex].background, document.baseURI).href;
+    layer.style.setProperty('--scene-image', `url("${backgroundUrl}")`);
     layer.replaceChildren();
 
     for (let panelIndex = 0; panelIndex < 3; panelIndex += 1) {
         const panel = document.createElement('span');
-        panel.className = 'scenery-panel';
+        panel.className = panelIndex === 1 ? 'scenery-panel scenery-panel--mirror' : 'scenery-panel';
         layer.append(panel);
     }
 }
@@ -1356,6 +1363,15 @@ async function initializeGame() {
     playLabel.textContent = 'Jogar novamente';
     if (failedAssets > 0) {
         storyMapStatus.textContent = 'Pronto · alguns elementos ainda podem carregar';
+    }
+
+    const preloadLaterScenes = () => {
+        PHASES.slice(1).forEach((phase) => preloadImage(phase.background).catch(() => {}));
+    };
+    if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(preloadLaterScenes, { timeout: 2500 });
+    } else {
+        window.setTimeout(preloadLaterScenes, 500);
     }
 }
 
