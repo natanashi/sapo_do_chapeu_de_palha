@@ -164,7 +164,7 @@ const ASSET_URLS = [
     'assets/img/sapo-boca-aberta-sprites.png',
     'assets/img/sapo-lingua-limpa-v3.png',
     'assets/img/sapo-capa.png',
-    'assets/img/mapa-mundo-sapinho-v1.png',
+    'assets/img/mapa-mundo-grama-v2.png',
     'assets/img/inseto-voando-sprites.png',
     'assets/img/besouro-ondulante-voando-sprites.png',
     'assets/img/abelha-investida-sprites.png',

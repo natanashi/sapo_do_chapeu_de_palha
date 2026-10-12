@@ -1399,7 +1399,7 @@ kbd {
     overflow: hidden;
     border: 5px solid #392416;
     border-radius: 7px;
-    background: #47733c url("../img/mapa-mundo-sapinho-v1.png") center / cover no-repeat;
+    background: #47733c url("../img/mapa-mundo-grama-v2.png") center / cover no-repeat;
     box-shadow: inset 0 0 0 3px #d69a49, 0 8px 0 #2a1a10;
     image-rendering: pixelated;
     touch-action: none;
