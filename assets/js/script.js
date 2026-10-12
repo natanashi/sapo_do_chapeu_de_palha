@@ -1,4 +1,5 @@
 const board = document.querySelector('#game-board');
+const gameShell = document.querySelector('.game-shell');
 const runnerLayer = document.querySelector('.runner-layer');
 const runner = document.querySelector('#runner');
 const runnerAttack = document.querySelector('#runner-attack');
@@ -37,6 +38,7 @@ const journeyProgress = document.querySelector('#journey-progress');
 const routeTimeDisplay = document.querySelector('#route-time');
 const routeMapStops = [...document.querySelectorAll('[data-route-stop]')];
 const sceneLayers = [document.querySelector('#scenery-a'), document.querySelector('#scenery-b')];
+const orientationGuard = document.querySelector('#orientation-guard');
 
 const jumpAudio = new Audio('assets/aud/pulo.mp3');
 const loseAudio = new Audio('assets/aud/risada_duende.mp3');
@@ -204,9 +206,56 @@ const JOURNEY_DURATION = 185;
 const HORIZONTAL_SPEED_MIN = 210;
 const HORIZONTAL_SPEED_MAX = 430;
 const RUNNER_MOTION_CLASSES = ['motion-takeoff', 'motion-rise', 'motion-apex', 'motion-fall', 'motion-land'];
+const REFERENCE_GAME_HEIGHT = 745;
+
+const WORLD_SIZES = {
+    '--runner-size': 158,
+    '--rock-size': 124,
+    '--wheel-size': 132,
+    '--wheel-heavy-size': 148,
+    '--ground-beetle-width': 146,
+    '--ground-beetle-height': 82,
+    '--ground-beetle-offset': 18,
+    '--leaping-beetle-size': 104,
+    '--leaping-beetle-offset': 14,
+    '--platform-size': 248,
+    '--insect-size': 88,
+    '--wave-insect-size': 96,
+    '--bee-size': 100,
+};
 
 function clamp(value, minimum, maximum) {
     return Math.min(maximum, Math.max(minimum, value));
+}
+
+let orientationGuardActive = false;
+
+function syncOrientationGuard() {
+    const isTouchDevice = navigator.maxTouchPoints > 0 || window.innerWidth <= 1024;
+    const needsLandscape = isTouchDevice && window.innerHeight > window.innerWidth;
+    if (needsLandscape === orientationGuardActive) return;
+
+    orientationGuardActive = needsLandscape;
+    document.documentElement.classList.toggle('needs-landscape', needsLandscape);
+    orientationGuard.setAttribute('aria-hidden', String(!needsLandscape));
+    gameShell.inert = needsLandscape;
+    gameShell.setAttribute('aria-hidden', String(needsLandscape));
+
+    if (needsLandscape) {
+        if (state.mode === 'playing') pauseGame();
+        orientationGuard.focus({ preventScroll: true });
+        return;
+    }
+
+    if (state.mode === 'paused') playButton.focus({ preventScroll: true });
+}
+
+function applyWorldScale(width, height) {
+    const scale = clamp(height / REFERENCE_GAME_HEIGHT, 0.48, 1);
+    Object.entries(WORLD_SIZES).forEach(([property, desktopSize]) => {
+        board.style.setProperty(property, `${(desktopSize * scale).toFixed(2)}px`);
+    });
+    board.style.setProperty('--tongue-size', `${clamp(width * 0.3075, 220, 420).toFixed(2)}px`);
 }
 
 function readBestScore() {
@@ -1485,6 +1534,7 @@ function syncBoardSize(width, height) {
     }
     state.boardWidth = width;
     state.boardHeight = height;
+    applyWorldScale(width, height);
     if (previousWidth === 0 || state.runnerX === 0) state.runnerX = initialRunnerX(width);
     const bounds = runnerHorizontalBounds();
     state.runnerX = clamp(state.runnerX, bounds.minimum, bounds.maximum);
@@ -1543,4 +1593,7 @@ if ('ResizeObserver' in window) {
     });
 }
 
+window.addEventListener('orientationchange', syncOrientationGuard);
+window.addEventListener('resize', syncOrientationGuard);
+syncOrientationGuard();
 initializeGame();

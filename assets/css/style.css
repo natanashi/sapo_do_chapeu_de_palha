@@ -7,6 +7,7 @@
 }
 
 :root {
+    color-scheme: only light;
     --primary: #173f2a;
     --forest-950: #102d20;
     --forest-800: #173f2a;
@@ -53,6 +54,100 @@ body {
     font-family: var(--font-body);
 }
 
+.orientation-guard {
+    position: fixed;
+    z-index: 100;
+    inset: 0;
+    display: none;
+    min-height: 100svh;
+    align-content: center;
+    justify-items: center;
+    padding: max(28px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+    color: var(--parchment);
+    background:
+        linear-gradient(rgba(9, 37, 23, 0.86), rgba(9, 37, 23, 0.94)),
+        url("../img/cenario-arvores-planaltos-transparente-v2.png") center bottom / auto 48% no-repeat,
+        #0b2e1d;
+    text-align: center;
+}
+
+.needs-landscape { overflow: hidden; }
+.needs-landscape .orientation-guard { display: grid; }
+.needs-landscape .game-shell { visibility: hidden; pointer-events: none; }
+
+.orientation-guard__device {
+    position: relative;
+    width: 76px;
+    height: 124px;
+    margin-bottom: 28px;
+    border: 7px solid var(--straw-300);
+    border-radius: 16px;
+    background: linear-gradient(180deg, #8dc9df, #7fcf47 72%, #2f6b3c 73%);
+    box-shadow: 7px 7px 0 rgba(3, 20, 12, 0.46);
+    transform: rotate(90deg);
+}
+
+.orientation-guard__device::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -37px;
+    width: 24px;
+    height: 24px;
+    border-top: 6px solid var(--straw-500);
+    border-left: 6px solid var(--straw-500);
+    transform: translateY(-50%) rotate(-45deg);
+}
+
+.orientation-guard__device::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -42px;
+    width: 44px;
+    height: 44px;
+    border: 6px solid transparent;
+    border-top-color: var(--straw-500);
+    border-radius: 50%;
+    transform: translateY(-50%) rotate(-28deg);
+}
+
+.orientation-guard__device span {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 22px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(16, 45, 32, 0.72);
+    transform: translateX(-50%);
+}
+
+.orientation-guard__kicker {
+    margin: 0 0 7px;
+    color: var(--straw-300);
+    font-family: var(--font-ui);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.orientation-guard h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 12vw, 4.25rem);
+    line-height: 0.9;
+    text-shadow: 4px 4px 0 #173f2a;
+}
+
+.orientation-guard > p:last-child {
+    max-width: 440px;
+    margin: 18px 0 0;
+    font-size: clamp(0.94rem, 4vw, 1.12rem);
+    line-height: 1.5;
+}
+
 button,
 kbd { font: inherit; }
 
@@ -69,6 +164,20 @@ button { cursor: pointer; }
     --ground-height: 19%;
     --ground-verge: #41773d;
     --scene-lift: 3%;
+    --runner-size: 158px;
+    --tongue-size: 420px;
+    --rock-size: 124px;
+    --wheel-size: 132px;
+    --wheel-heavy-size: 148px;
+    --ground-beetle-width: 146px;
+    --ground-beetle-height: 82px;
+    --ground-beetle-offset: 18px;
+    --leaping-beetle-size: 104px;
+    --leaping-beetle-offset: 14px;
+    --platform-size: 248px;
+    --insect-size: 88px;
+    --wave-insect-size: 96px;
+    --bee-size: 100px;
     isolation: isolate;
     position: relative;
     width: 100%;
@@ -394,7 +503,7 @@ button { cursor: pointer; }
     z-index: 8;
     left: 0;
     bottom: 13.5%;
-    width: clamp(105px, 10vw, 158px);
+    width: var(--runner-size);
     aspect-ratio: 1;
     transform: translate3d(var(--runner-x, 8vw), calc(var(--jump-y, 0) * -1px), 0);
     transform-origin: 50% 100%;
@@ -467,7 +576,7 @@ button { cursor: pointer; }
     z-index: 1;
     top: var(--mouth-y);
     left: var(--mouth-x);
-    width: clamp(250px, 28vw, 420px);
+    width: var(--tongue-size);
     max-width: none;
     height: auto;
     opacity: 0;
@@ -520,13 +629,13 @@ button { cursor: pointer; }
     will-change: transform;
 }
 
-.obstacle--rock { width: clamp(88px, 8vw, 124px); }
-.obstacle--wheel { width: clamp(98px, 9vw, 132px); }
-.obstacle--wheel-heavy { width: clamp(116px, 10vw, 148px); filter: hue-rotate(17deg) saturate(0.86) brightness(0.9) drop-shadow(0 7px 4px rgba(18, 34, 21, 0.25)); }
+.obstacle--rock { width: var(--rock-size); }
+.obstacle--wheel { width: var(--wheel-size); }
+.obstacle--wheel-heavy { width: var(--wheel-heavy-size); filter: hue-rotate(17deg) saturate(0.86) brightness(0.9) drop-shadow(0 7px 4px rgba(18, 34, 21, 0.25)); }
 .obstacle--ground-beetle {
-    bottom: calc(13.5% + 18px);
-    width: clamp(112px, 10vw, 146px);
-    height: clamp(64px, 5.8vw, 82px);
+    bottom: calc(13.5% + var(--ground-beetle-offset));
+    width: var(--ground-beetle-width);
+    height: var(--ground-beetle-height);
     background-image: url("../img/besouro-terrestre-correndo-sprites.png");
     background-position: 0 54%;
     background-repeat: no-repeat;
@@ -536,8 +645,8 @@ button { cursor: pointer; }
 }
 
 .obstacle--leaping-beetle {
-    bottom: calc(13.5% + 14px);
-    width: clamp(78px, 7.2vw, 104px);
+    bottom: calc(13.5% + var(--leaping-beetle-offset));
+    width: var(--leaping-beetle-size);
     aspect-ratio: 1;
     background-image: url("../img/besouro-saltador-sprites.png");
     background-position: 0 0;
@@ -555,7 +664,7 @@ button { cursor: pointer; }
     position: absolute;
     bottom: 22%;
     left: 0;
-    width: clamp(180px, 17vw, 248px);
+    width: var(--platform-size);
     height: auto;
     filter: drop-shadow(0 8px 5px rgba(18, 34, 21, 0.24));
     image-rendering: pixelated;
@@ -566,7 +675,7 @@ button { cursor: pointer; }
     position: absolute;
     top: 0;
     left: 0;
-    width: clamp(62px, 6vw, 88px);
+    width: var(--insect-size);
     aspect-ratio: 272 / 250;
     background-image: url("../img/inseto-voando-sprites.png");
     background-position: 0 0;
@@ -579,7 +688,7 @@ button { cursor: pointer; }
 }
 
 .insect--wave {
-    width: clamp(68px, 6.5vw, 96px);
+    width: var(--wave-insect-size);
     aspect-ratio: 1.18;
     background-image: url("../img/besouro-ondulante-voando-sprites.png");
     background-position: 0 55%;
@@ -589,7 +698,7 @@ button { cursor: pointer; }
 }
 
 .insect--bee {
-    width: clamp(72px, 6.8vw, 100px);
+    width: var(--bee-size);
     aspect-ratio: 1.22;
     background-image: url("../img/abelha-investida-sprites.png");
     background-position: 0 55%;
@@ -1535,24 +1644,6 @@ kbd {
     .route-map__header span { font-size: 0.42rem; }
     .route-map li { min-width: 26px; font-size: 0.41rem; }
     .route-map li i { width: 9px; height: 9px; }
-    .runner-layer { bottom: 14%; width: clamp(86px, 24vw, 116px); }
-    .runner-attack { left: var(--mouth-x); width: clamp(220px, 66vw, 310px); }
-    .obstacle { bottom: 14%; }
-    .obstacle--rock { width: clamp(78px, 22vw, 104px); }
-    .obstacle--wheel { width: clamp(86px, 23vw, 116px); }
-    .obstacle--wheel-heavy { width: clamp(102px, 27vw, 132px); }
-    .obstacle--ground-beetle {
-        bottom: calc(14% + 12px);
-        width: clamp(104px, 30vw, 136px);
-        height: clamp(58px, 17vw, 76px);
-    }
-    .obstacle--leaping-beetle {
-        bottom: calc(14% + 10px);
-        width: clamp(70px, 21vw, 92px);
-    }
-    .platform { bottom: 21%; width: clamp(164px, 48vw, 212px); }
-    .insect { width: clamp(58px, 17vw, 82px); }
-    .insect--bee { width: clamp(66px, 19vw, 88px); }
     .phase-banner { top: 22%; padding: 8px 18px 10px; }
     .status { top: 20%; max-width: calc(100% - 28px); text-align: center; }
     .game-controls { right: max(8px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); left: max(8px, env(safe-area-inset-left)); gap: 8px; }
