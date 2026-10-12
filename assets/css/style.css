@@ -1420,47 +1420,61 @@ kbd {
     position: absolute;
     z-index: 3;
     display: grid;
-    width: clamp(40px, 5vw, 62px);
+    width: clamp(48px, 6vw, 72px);
     aspect-ratio: 1;
     padding: 0;
-    border: 4px solid #fff0b0;
-    border-radius: 50%;
+    border: 0;
     place-items: center;
-    color: #fff8d7;
-    background: #315f35;
-    box-shadow: 0 0 0 4px #253c25, 0 6px 0 rgba(25, 30, 17, 0.48);
+    color: #3a2617;
+    background: #f3bf48;
+    clip-path: polygon(25% 0, 75% 0, 100% 25%, 100% 75%, 75% 100%, 25% 100%, 0 75%, 0 25%);
+    filter: drop-shadow(0 6px 0 #49301c) drop-shadow(0 0 0 #49301c);
     font-family: var(--font-display);
     font-size: clamp(1rem, 2.4vw, 1.55rem);
     line-height: 1;
     transform: translate(-50%, -50%);
 }
 
-.world-level strong {
+.world-level::before {
+    content: "";
     position: absolute;
-    top: calc(100% + 8px);
-    left: 50%;
-    width: max-content;
-    max-width: 130px;
-    padding: 4px 7px;
-    border: 2px solid rgba(40, 31, 18, 0.78);
-    color: #fff5c7;
-    background: rgba(29, 57, 34, 0.92);
-    box-shadow: 2px 3px 0 rgba(25, 20, 12, 0.44);
-    font-family: var(--font-body);
-    font-size: 0.58rem;
-    line-height: 1.1;
-    transform: translateX(-50%);
+    inset: 7px;
+    border: 4px solid #fff0b0;
+    background:
+        linear-gradient(90deg, transparent 43%, #6f431f 44% 56%, transparent 57%),
+        linear-gradient(0deg, transparent 43%, #6f431f 44% 56%, transparent 57%),
+        #de9033;
+    clip-path: inherit;
 }
 
-.world-level--one { left: 61%; top: 42%; }
+.world-level > span {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    width: 48%;
+    aspect-ratio: 1;
+    border: 2px solid #49301c;
+    place-items: center;
+    background: #fff0b0;
+    box-shadow: 2px 2px 0 #88552a;
+    transform: rotate(45deg);
+}
+
+.world-level > span b { font-weight: 700; transform: rotate(-45deg); }
+
+.world-level strong {
+    display: none;
+}
+
+.world-level--one { left: 42%; top: 50%; }
 .world-level--two { left: 51%; top: 58%; }
 .world-level--three { left: 77.5%; top: 38%; }
 .world-level--four { left: 89%; top: 15%; }
-.world-level.is-unlocked { animation: world-node-pulse 1.25s ease-in-out infinite alternate; }
-.world-level.is-unlocked:hover { filter: brightness(1.15); }
+.world-level.is-unlocked { animation: world-node-pulse 1.25s steps(2, end) infinite alternate; }
+.world-level.is-unlocked:hover { filter: brightness(1.1) drop-shadow(0 7px 0 #49301c); }
 .world-level.is-locked { border-color: #c9c3a7; color: #dbd3b6; background: #5e6557; filter: saturate(0.35); }
 .world-level.is-locked::after { content: "\1F512"; position: absolute; right: -7px; bottom: -5px; font-family: sans-serif; font-size: 0.72rem; }
-.world-level.is-near { outline: 5px solid rgba(255, 217, 102, 0.76); outline-offset: 5px; }
+.world-level.is-near { filter: drop-shadow(0 7px 0 #49301c) drop-shadow(0 0 10px #fff0a6); }
 
 .world-map-future {
     position: absolute;
@@ -1506,19 +1520,44 @@ kbd {
 .world-map-prompt {
     position: absolute;
     z-index: 8;
-    right: 12px;
-    bottom: 12px;
+    top: 50%;
+    left: calc(42% + clamp(48px, 6vw, 72px));
     display: grid;
-    min-width: min(235px, 42%);
+    min-width: min(225px, 38%);
     padding: 10px 12px;
-    border: 3px solid #352317;
-    color: #fff3c4;
-    background: rgba(22, 57, 35, 0.94);
-    box-shadow: inset 0 0 0 2px #6b9451, 4px 5px 0 rgba(26, 20, 12, 0.54);
+    border: 4px solid #3c2818;
+    color: #382719;
+    background:
+        repeating-linear-gradient(0deg, rgba(111, 67, 31, 0.08) 0 2px, transparent 2px 6px),
+        #ffe7a0;
+    box-shadow: inset 0 0 0 3px #d38b35, 5px 6px 0 rgba(50, 32, 19, 0.58);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(10px, -50%) scale(0.94);
+    transform-origin: left center;
+    transition: opacity 130ms steps(2, end), transform 130ms steps(2, end);
 }
 
-.world-map-prompt small { color: #f2ca67; font-size: 0.55rem; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; }
-.world-map-prompt strong { margin: 1px 0 6px; font-family: var(--font-display); font-size: 1.05rem; }
+.world-map-prompt::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 100%;
+    width: 15px;
+    height: 19px;
+    background: #3c2818;
+    clip-path: polygon(100% 0, 0 50%, 100% 100%);
+    transform: translateY(-50%);
+}
+
+.world-map-prompt.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(0, -50%) scale(1);
+}
+
+.world-map-prompt small { color: #9a4f25; font-size: 0.55rem; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; }
+.world-map-prompt strong { margin: 1px 0 6px; color: #173f2a; font-family: var(--font-display); font-size: 1.05rem; }
 .world-map-prompt button {
     min-height: 34px;
     border: 2px solid #fff0a6;
@@ -1531,7 +1570,7 @@ kbd {
     text-transform: uppercase;
 }
 .world-map-prompt button:disabled { cursor: not-allowed; filter: grayscale(0.72); opacity: 0.65; }
-.world-map-prompt em { margin-top: 6px; color: #dce9c8; font-size: 0.58rem; font-style: normal; font-weight: 800; }
+.world-map-prompt em { margin-top: 6px; color: #69503a; font-size: 0.58rem; font-style: normal; font-weight: 800; }
 
 .world-map-pad {
     display: none;
@@ -1571,8 +1610,8 @@ kbd {
 .skin-saved.is-visible { opacity: 1; }
 
 @keyframes world-node-pulse {
-    from { box-shadow: 0 0 0 4px #253c25, 0 6px 0 rgba(25, 30, 17, 0.48), 0 0 0 rgba(255, 222, 105, 0); }
-    to { box-shadow: 0 0 0 4px #253c25, 0 6px 0 rgba(25, 30, 17, 0.48), 0 0 20px rgba(255, 222, 105, 0.9); }
+    from { filter: drop-shadow(0 5px 0 #49301c) drop-shadow(0 0 0 rgba(255, 240, 176, 0)); }
+    to { filter: drop-shadow(0 7px 0 #49301c) drop-shadow(0 0 8px rgba(255, 240, 176, 0.92)); }
 }
 
 .bestiary-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; padding: 0; list-style: none; }
@@ -1986,7 +2025,7 @@ kbd {
     .world-level { width: clamp(36px, 10vw, 48px); border-width: 3px; }
     .world-level strong { display: none; }
     .world-map-frog { width: clamp(48px, 14vw, 66px); }
-    .world-map-prompt { right: 7px; bottom: 7px; min-width: 178px; padding: 7px; }
+    .world-map-prompt { top: 50%; right: auto; bottom: auto; left: calc(42% + 42px); min-width: 145px; max-width: 47%; padding: 7px; }
     .world-map-prompt strong { font-size: 0.82rem; }
     .world-map-prompt button { min-height: 30px; font-size: 0.56rem; }
     .world-map-prompt em { font-size: 0.5rem; }

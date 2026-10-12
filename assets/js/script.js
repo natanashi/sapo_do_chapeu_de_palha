@@ -16,6 +16,7 @@ const storyMapButton = document.querySelector('#story-map-button');
 const storyMapStatus = document.querySelector('#story-map-status');
 const worldMap = document.querySelector('#world-map');
 const worldMapFrog = document.querySelector('#world-map-frog');
+const worldMapPrompt = document.querySelector('#world-map-prompt');
 const worldMapStageName = document.querySelector('#world-map-stage-name');
 const worldMapHelp = document.querySelector('#world-map-help');
 const worldLevelButtons = [...document.querySelectorAll('[data-world-level]')];
@@ -781,7 +782,7 @@ function setPlayingControls(enabled) {
 }
 
 const WORLD_LEVELS = [
-    { name: 'Rota da Manhã', x: 61, y: 42, unlocked: true },
+    { name: 'Rota da Manhã', x: 42, y: 50, unlocked: true },
 ];
 
 const worldMapState = {
@@ -818,6 +819,8 @@ function updateWorldMapProximity() {
     worldMapState.nearestLevel = nearestIndex;
     const level = WORLD_LEVELS[nearestIndex];
     const isNear = nearestDistance < 7.2;
+    worldMapPrompt.classList.toggle('is-visible', isNear);
+    worldMapPrompt.setAttribute('aria-hidden', String(!isNear));
     worldMapStageName.textContent = level.name;
     storyMapButton.disabled = !worldMapState.ready || !isNear || !level.unlocked;
 
