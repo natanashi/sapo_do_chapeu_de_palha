@@ -10,8 +10,9 @@
     <link rel="preload" as="image" href="assets/img/cenario-arvores-planaltos-transparente-v2.png">
     <link rel="preload" as="image" href="assets/img/nuvem-pixel-flutuante-v1.png">
     <link rel="preload" as="image" href="assets/img/passaro-horizonte-sprites-v1.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=51">
-    <script src="assets/js/script.js?v=51" defer></script>
+    <link rel="preload" as="image" href="assets/img/mapa-mundo-sapinho-v1.png">
+    <link rel="stylesheet" href="assets/css/style.css?v=53">
+    <script src="assets/js/script.js?v=54" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body>
@@ -154,7 +155,7 @@
                                 </button>
                                 <button class="wood-button" type="button" data-menu-target="skins" onclick="showMenuScreen('skins')">
                                     <span class="wood-button__mark" aria-hidden="true">♟</span>
-                                    <span><strong>Skins</strong><small>Chapéus e aparências</small></span>
+                                    <span><strong>Skins</strong><small>Cores do sapo e da língua</small></span>
                                 </button>
                                 <button class="wood-button" type="button" data-menu-target="settings" onclick="showMenuScreen('settings')">
                                     <span class="wood-button__mark" aria-hidden="true">⚙</span>
@@ -188,24 +189,31 @@
                         </section>
 
                         <section class="menu-screen" data-menu-screen="maps" aria-labelledby="map-menu-title" hidden>
-                            <div class="menu-section-heading">
-                                <span>Modo história</span>
-                                <h2 id="map-menu-title">Mapa da jornada</h2>
-                                <p>Escolha uma fase para entrar na estrada.</p>
-                            </div>
-                            <div class="map-select">
-                                <button class="map-card" id="story-map-button" type="button" disabled>
-                                    <span class="map-card__picture" aria-hidden="true"></span>
-                                    <span class="map-card__copy">
-                                        <small>Mapa 01</small>
-                                        <strong>Rota da Manhã</strong>
-                                        <em id="story-map-status">Preparando o mapa...</em>
-                                    </span>
-                                </button>
-                                <div class="map-trail" aria-hidden="true">
-                                    <i></i><i></i><i></i><i></i>
+                            <div class="world-map-heading">
+                                <div>
+                                    <span>Modo história</span>
+                                    <h2 id="map-menu-title">Trilha do Chapéu de Palha</h2>
                                 </div>
-                                <p class="map-note">Vila do Sol → Campos do Orvalho → Floresta Antiga → Castelo da Manhã</p>
+                                <p id="world-map-help">Caminhe com as setas ou toque no mapa. A Rota da Manhã inteira é uma única fase.</p>
+                            </div>
+                            <div class="world-map" id="world-map" tabindex="0" aria-label="Mapa explorável da história. Use as setas para caminhar.">
+                                <button class="world-level world-level--one is-unlocked" type="button" data-world-level="0" aria-label="Fase 1, Rota da Manhã">
+                                    <span>1</span><strong>Rota da Manhã</strong>
+                                </button>
+                                <div class="world-map-frog" id="world-map-frog" aria-hidden="true"></div>
+                                <div class="world-map-future" aria-label="Próximos mapas em construção"><span aria-hidden="true">⚒</span> Novos mapas em construção</div>
+                                <div class="world-map-prompt" id="world-map-prompt" aria-live="polite">
+                                    <small>Fase mais próxima</small>
+                                    <strong id="world-map-stage-name">Rota da Manhã</strong>
+                                    <button id="story-map-button" type="button" disabled><span aria-hidden="true">▶</span> Entrar na fase</button>
+                                    <em id="story-map-status">Preparando o mapa...</em>
+                                </div>
+                            </div>
+                            <div class="world-map-pad" aria-label="Controles do mapa">
+                                <button type="button" data-map-direction="up" aria-label="Andar para cima">↑</button>
+                                <button type="button" data-map-direction="left" aria-label="Andar para a esquerda">←</button>
+                                <button type="button" data-map-direction="down" aria-label="Andar para baixo">↓</button>
+                                <button type="button" data-map-direction="right" aria-label="Andar para a direita">→</button>
                             </div>
                         </section>
 
@@ -229,11 +237,43 @@
                         </section>
 
                         <section class="menu-screen" data-menu-screen="skins" aria-labelledby="skins-title" hidden>
-                            <div class="construction-panel">
-                                <span class="construction-panel__icon" aria-hidden="true">♟</span>
-                                <small>Oficina do sapo</small>
-                                <h2 id="skins-title">Skins em construção</h2>
-                                <p>Novos chapéus e aparências ainda estão sendo costurados.</p>
+                            <div class="menu-section-heading skin-heading">
+                                <span>Oficina do brejo</span>
+                                <h2 id="skins-title">Cores do viajante</h2>
+                                <p>Mude a pele e a língua. A escolha fica salva neste aparelho.</p>
+                            </div>
+                            <div class="skin-workbench">
+                                <div class="skin-preview" aria-label="Prévia da aparência">
+                                    <div class="skin-preview__stage">
+                                        <img id="skin-preview-frog" src="assets/img/sapo-capa.png" alt="Prévia do sapinho">
+                                        <img id="skin-preview-tongue" src="assets/img/sapo-lingua-limpa-v3.png" alt="Prévia da língua">
+                                    </div>
+                                    <strong>Sua aparência</strong>
+                                </div>
+                                <div class="skin-controls">
+                                    <label class="color-control" for="frog-color">
+                                        <span><strong>Cor do sapinho</strong><small>Corpo e pernas</small></span>
+                                        <input id="frog-color" type="color" value="#69b83f">
+                                    </label>
+                                    <div class="color-presets" data-color-presets="frog" aria-label="Cores prontas do sapinho">
+                                        <button type="button" data-color="#69b83f" style="--swatch:#69b83f" aria-label="Verde folha"></button>
+                                        <button type="button" data-color="#39a7a2" style="--swatch:#39a7a2" aria-label="Azul lagoa"></button>
+                                        <button type="button" data-color="#d49a3a" style="--swatch:#d49a3a" aria-label="Dourado"></button>
+                                        <button type="button" data-color="#9b65bd" style="--swatch:#9b65bd" aria-label="Roxo amora"></button>
+                                    </div>
+                                    <label class="color-control" for="tongue-color">
+                                        <span><strong>Cor da língua</strong><small>Aparece durante o ataque</small></span>
+                                        <input id="tongue-color" type="color" value="#e75f86">
+                                    </label>
+                                    <div class="color-presets" data-color-presets="tongue" aria-label="Cores prontas da língua">
+                                        <button type="button" data-color="#e75f86" style="--swatch:#e75f86" aria-label="Rosa pitaya"></button>
+                                        <button type="button" data-color="#ef8f45" style="--swatch:#ef8f45" aria-label="Laranja"></button>
+                                        <button type="button" data-color="#7559c7" style="--swatch:#7559c7" aria-label="Violeta"></button>
+                                        <button type="button" data-color="#55a7d8" style="--swatch:#55a7d8" aria-label="Azul celeste"></button>
+                                    </div>
+                                    <button class="skin-reset" id="skin-reset" type="button">Voltar às cores originais</button>
+                                    <p class="skin-saved" id="skin-saved" role="status" aria-live="polite">Cores salvas</p>
+                                </div>
                             </div>
                         </section>
 

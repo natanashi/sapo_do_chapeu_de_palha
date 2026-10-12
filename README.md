@@ -11,6 +11,8 @@ Jogo de corrida em pixel art para navegador, com suporte a computador e celular.
 
 - Quatro regiões inteiramente pela manhã: Vila do Sol, Campos do Orvalho, Floresta Antiga e Castelo da Manhã.
 - Jornada com duração mínima de 3 minutos e 5 segundos e um mapa no topo que mostra a posição do jogador em toda a rota.
+- Mapa-múndi explorável antes da partida: o sapinho caminha livremente até a única fase disponível, **Rota da Manhã**. As quatro regiões fazem parte dessa mesma fase; novos mapas virão futuramente.
+- Oficina de skins com cores personalizáveis para o corpo e a língua, prévia ao vivo e salvamento no aparelho.
 - Panoramas ultralargos criados para corrida lateral, com construções detalhadas e legíveis, terreno plano e bordas preparadas para não revelar emendas.
 - Pedras compactas, rodas e dois tipos de besouro terrestre: o corredor preto comum e o pequeno besouro-saltador de olhos verdes, que acelera e salta na direção do sapo quando chega perto.
 - Plataformas móveis nas quais o sapo pode aterrissar e saltar novamente.

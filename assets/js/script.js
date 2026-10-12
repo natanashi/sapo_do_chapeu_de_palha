@@ -14,6 +14,19 @@ const menuBackButton = document.querySelector('#menu-back');
 const menuScreens = [...document.querySelectorAll('[data-menu-screen]')];
 const storyMapButton = document.querySelector('#story-map-button');
 const storyMapStatus = document.querySelector('#story-map-status');
+const worldMap = document.querySelector('#world-map');
+const worldMapFrog = document.querySelector('#world-map-frog');
+const worldMapStageName = document.querySelector('#world-map-stage-name');
+const worldMapHelp = document.querySelector('#world-map-help');
+const worldLevelButtons = [...document.querySelectorAll('[data-world-level]')];
+const worldMapDirectionButtons = [...document.querySelectorAll('[data-map-direction]')];
+const frogColorInput = document.querySelector('#frog-color');
+const tongueColorInput = document.querySelector('#tongue-color');
+const skinPreviewFrog = document.querySelector('#skin-preview-frog');
+const skinPreviewTongue = document.querySelector('#skin-preview-tongue');
+const skinResetButton = document.querySelector('#skin-reset');
+const skinSavedStatus = document.querySelector('#skin-saved');
+const menuFrog = document.querySelector('.menu-frog');
 const playButton = document.querySelector('#play-button');
 const playLabel = document.querySelector('#play-label');
 const pauseButton = document.querySelector('#pause-button');
@@ -149,6 +162,8 @@ const ASSET_URLS = [
     'assets/img/sapo-ciclo-natural-v2.png',
     'assets/img/sapo-boca-aberta-sprites.png',
     'assets/img/sapo-lingua-limpa-v3.png',
+    'assets/img/sapo-capa.png',
+    'assets/img/mapa-mundo-sapinho-v1.png',
     'assets/img/inseto-voando-sprites.png',
     'assets/img/besouro-ondulante-voando-sprites.png',
     'assets/img/abelha-investida-sprites.png',
@@ -765,6 +780,338 @@ function setPlayingControls(enabled) {
     updateTongueCooldown();
 }
 
+const WORLD_LEVELS = [
+    { name: 'Rota da Manhã', x: 61, y: 42, unlocked: true },
+];
+
+const worldMapState = {
+    x: 18,
+    y: 78,
+    targetX: null,
+    targetY: null,
+    pressed: new Set(),
+    frame: 0,
+    previousTime: 0,
+    ready: false,
+    nearestLevel: 0,
+};
+
+function renderWorldMapFrog() {
+    worldMapFrog.style.setProperty('--map-x', `${worldMapState.x}%`);
+    worldMapFrog.style.setProperty('--map-y', `${worldMapState.y}%`);
+}
+
+function updateWorldMapProximity() {
+    let nearestIndex = 0;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+    WORLD_LEVELS.forEach((level, index) => {
+        const dx = worldMapState.x - level.x;
+        const dy = (worldMapState.y - level.y) * 1.35;
+        const distance = Math.hypot(dx, dy);
+        if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearestIndex = index;
+        }
+        worldLevelButtons[index]?.classList.toggle('is-near', distance < 7.2);
+    });
+
+    worldMapState.nearestLevel = nearestIndex;
+    const level = WORLD_LEVELS[nearestIndex];
+    const isNear = nearestDistance < 7.2;
+    worldMapStageName.textContent = level.name;
+    storyMapButton.disabled = !worldMapState.ready || !isNear || !level.unlocked;
+
+    if (!worldMapState.ready) storyMapStatus.textContent = 'Preparando o mapa...';
+    else if (!isNear) storyMapStatus.textContent = 'Caminhe até uma marca de fase';
+    else if (!level.unlocked) storyMapStatus.textContent = 'Fase ainda bloqueada';
+    else storyMapStatus.textContent = 'Pronto para jogar';
+}
+
+function worldMapLoop(currentTime) {
+    if (activeMenuScreen !== 'maps' || !overlay.classList.contains('is-visible')) {
+        worldMapFrog.classList.remove('is-walking');
+        worldMapState.frame = 0;
+        return;
+    }
+
+    const delta = Math.min((currentTime - (worldMapState.previousTime || currentTime)) / 1000, 0.05);
+    worldMapState.previousTime = currentTime;
+    let directionX = 0;
+    let directionY = 0;
+    if (worldMapState.pressed.has('left')) directionX -= 1;
+    if (worldMapState.pressed.has('right')) directionX += 1;
+    if (worldMapState.pressed.has('up')) directionY -= 1;
+    if (worldMapState.pressed.has('down')) directionY += 1;
+
+    if (directionX || directionY) {
+        worldMapState.targetX = null;
+        worldMapState.targetY = null;
+        const length = Math.hypot(directionX, directionY) || 1;
+        worldMapState.x += (directionX / length) * 25 * delta;
+        worldMapState.y += (directionY / length) * 34 * delta;
+    } else if (worldMapState.targetX !== null && worldMapState.targetY !== null) {
+        const dx = worldMapState.targetX - worldMapState.x;
+        const dy = worldMapState.targetY - worldMapState.y;
+        const distance = Math.hypot(dx, dy);
+        if (distance < 0.7) {
+            worldMapState.targetX = null;
+            worldMapState.targetY = null;
+        } else {
+            directionX = dx / distance;
+            directionY = dy / distance;
+            worldMapState.x += directionX * 25 * delta;
+            worldMapState.y += directionY * 34 * delta;
+        }
+    }
+
+    const isMoving = Boolean(directionX || directionY);
+    worldMapState.x = clamp(worldMapState.x, 4.5, 95.5);
+    worldMapState.y = clamp(worldMapState.y, 7, 92);
+    if (directionX) worldMapFrog.style.setProperty('--map-facing', directionX < 0 ? -1 : 1);
+    worldMapFrog.classList.toggle('is-walking', isMoving);
+    renderWorldMapFrog();
+    updateWorldMapProximity();
+    worldMapState.frame = window.requestAnimationFrame(worldMapLoop);
+}
+
+function startWorldMapNavigation() {
+    if (worldMapState.frame) window.cancelAnimationFrame(worldMapState.frame);
+    worldMapState.previousTime = performance.now();
+    renderWorldMapFrog();
+    updateWorldMapProximity();
+    worldMapState.frame = window.requestAnimationFrame(worldMapLoop);
+    worldMap.focus({ preventScroll: true });
+}
+
+function setWorldMapDirection(direction, pressed) {
+    if (pressed) worldMapState.pressed.add(direction);
+    else worldMapState.pressed.delete(direction);
+}
+
+function handleWorldMapKey(event, pressed) {
+    if (activeMenuScreen !== 'maps' || !overlay.classList.contains('is-visible')) return false;
+    const directions = {
+        ArrowLeft: 'left', KeyA: 'left',
+        ArrowRight: 'right', KeyD: 'right',
+        ArrowUp: 'up', KeyW: 'up',
+        ArrowDown: 'down', KeyS: 'down',
+    };
+    if (directions[event.code]) {
+        event.preventDefault();
+        setWorldMapDirection(directions[event.code], pressed);
+        return true;
+    }
+    if (pressed && ['Enter', 'Space', 'KeyE'].includes(event.code) && !storyMapButton.disabled) {
+        event.preventDefault();
+        startGame();
+        return true;
+    }
+    return false;
+}
+
+function moveWorldMapToPointer(event) {
+    if (event.target.closest('button')) return;
+    const bounds = worldMap.getBoundingClientRect();
+    worldMapState.targetX = clamp(((event.clientX - bounds.left) / bounds.width) * 100, 4.5, 95.5);
+    worldMapState.targetY = clamp(((event.clientY - bounds.top) / bounds.height) * 100, 7, 92);
+}
+
+const DEFAULT_SKIN = { frog: '#69b83f', tongue: '#e75f86' };
+const FROG_SPRITES = [
+    ['--frog-run-sprite', 'assets/img/sapo-corrida-bipede-v3.png'],
+    ['--frog-crouch-sprite', 'assets/img/sapo-corrida-agachado-sprites-v1.png'],
+    ['--frog-jump-sprite', 'assets/img/sapo-ciclo-natural-v2.png'],
+    ['--frog-attack-sprite', 'assets/img/sapo-boca-aberta-sprites.png'],
+    ['--frog-crouch-attack-sprite', 'assets/img/sapo-agachado-boca-aberta-sprites-v1.png'],
+];
+const skinObjectUrls = new Map();
+let skinRenderVersion = 0;
+let skinSaveTimer = 0;
+let lastAppliedSkin = { frog: '', tongue: '' };
+const skinWorker = typeof Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined'
+    ? new Worker('assets/js/skin-worker.js?v=1')
+    : null;
+const skinWorkerJobs = new Map();
+let skinWorkerJobId = 0;
+
+if (skinWorker) {
+    skinWorker.addEventListener('message', (event) => {
+        const job = skinWorkerJobs.get(event.data.id);
+        if (!job) return;
+        skinWorkerJobs.delete(event.data.id);
+        if (event.data.error) job.reject(new Error(event.data.error));
+        else job.resolve(URL.createObjectURL(event.data.blob));
+    });
+    skinWorker.addEventListener('error', () => {
+        skinWorkerJobs.forEach((job) => job.reject(new Error('Falha no processador de cores')));
+        skinWorkerJobs.clear();
+    });
+}
+
+function readSkin() {
+    try {
+        const saved = JSON.parse(localStorage.getItem('sapo-skin-colors') || '{}');
+        return {
+            frog: /^#[0-9a-f]{6}$/i.test(saved.frog) ? saved.frog : DEFAULT_SKIN.frog,
+            tongue: /^#[0-9a-f]{6}$/i.test(saved.tongue) ? saved.tongue : DEFAULT_SKIN.tongue,
+        };
+    } catch {
+        return { ...DEFAULT_SKIN };
+    }
+}
+
+function hexToHsl(hex) {
+    const value = Number.parseInt(hex.slice(1), 16);
+    const r = ((value >> 16) & 255) / 255;
+    const g = ((value >> 8) & 255) / 255;
+    const b = (value & 255) / 255;
+    const maximum = Math.max(r, g, b);
+    const minimum = Math.min(r, g, b);
+    const lightness = (maximum + minimum) / 2;
+    const delta = maximum - minimum;
+    if (!delta) return [0, 0, lightness];
+    const saturation = delta / (1 - Math.abs(2 * lightness - 1));
+    let hue = maximum === r ? ((g - b) / delta) % 6 : maximum === g ? (b - r) / delta + 2 : (r - g) / delta + 4;
+    hue = (hue * 60 + 360) % 360;
+    return [hue, saturation, lightness];
+}
+
+function rgbToHsl(r, g, b) {
+    const maximum = Math.max(r, g, b);
+    const minimum = Math.min(r, g, b);
+    const lightness = (maximum + minimum) / 2;
+    const delta = maximum - minimum;
+    if (!delta) return [0, 0, lightness];
+    const saturation = delta / (1 - Math.abs(2 * lightness - 1));
+    let hue = maximum === r ? ((g - b) / delta) % 6 : maximum === g ? (b - r) / delta + 2 : (r - g) / delta + 4;
+    return [((hue * 60) + 360) % 360, saturation, lightness];
+}
+
+function hslToRgb(hue, saturation, lightness) {
+    const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+    const segment = hue / 60;
+    const x = chroma * (1 - Math.abs((segment % 2) - 1));
+    let rgb = segment < 1 ? [chroma, x, 0] : segment < 2 ? [x, chroma, 0] : segment < 3 ? [0, chroma, x] : segment < 4 ? [0, x, chroma] : segment < 5 ? [x, 0, chroma] : [chroma, 0, x];
+    const match = lightness - chroma / 2;
+    return rgb.map((channel) => Math.round((channel + match) * 255));
+}
+
+function loadImage(source) {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = source;
+    });
+}
+
+async function recolorImage(source, targetColor, kind) {
+    if (skinWorker) {
+        return new Promise((resolve, reject) => {
+            const id = ++skinWorkerJobId;
+            skinWorkerJobs.set(id, { resolve, reject });
+            skinWorker.postMessage({ id, source: new URL(source, window.location.href).href, targetColor, kind });
+        });
+    }
+
+    const image = await loadImage(source);
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    context.drawImage(image, 0, 0);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+    const [targetHue, targetSaturation] = hexToHsl(targetColor);
+
+    for (let index = 0; index < pixels.data.length; index += 4) {
+        if (pixels.data[index + 3] < 18) continue;
+        const red = pixels.data[index] / 255;
+        const green = pixels.data[index + 1] / 255;
+        const blue = pixels.data[index + 2] / 255;
+        const [hue, saturation, lightness] = rgbToHsl(red, green, blue);
+        const isFrogGreen = kind === 'frog' && green > red * 1.04 && green > blue * 1.03 && hue > 55 && hue < 175 && saturation > 0.18;
+        const isTonguePink = kind === 'tongue' && saturation > 0.18 && (hue > 315 || hue < 48) && red > green * 1.06;
+        if (!isFrogGreen && !isTonguePink) continue;
+        const recolored = hslToRgb(targetHue, Math.max(saturation * 0.78, targetSaturation * 0.72), lightness);
+        pixels.data[index] = recolored[0];
+        pixels.data[index + 1] = recolored[1];
+        pixels.data[index + 2] = recolored[2];
+    }
+
+    context.putImageData(pixels, 0, 0);
+    return new Promise((resolve) => canvas.toBlob((blob) => resolve(URL.createObjectURL(blob)), 'image/png'));
+}
+
+function replaceSkinObjectUrl(key, nextUrl) {
+    const previousUrl = skinObjectUrls.get(key);
+    if (previousUrl) URL.revokeObjectURL(previousUrl);
+    skinObjectUrls.set(key, nextUrl);
+}
+
+function markSelectedPresets(frogColor, tongueColor) {
+    document.querySelectorAll('[data-color-presets="frog"] button').forEach((button) => button.classList.toggle('is-selected', button.dataset.color.toLowerCase() === frogColor.toLowerCase()));
+    document.querySelectorAll('[data-color-presets="tongue"] button').forEach((button) => button.classList.toggle('is-selected', button.dataset.color.toLowerCase() === tongueColor.toLowerCase()));
+}
+
+async function applySkinColors(showSaved = false) {
+    const version = ++skinRenderVersion;
+    const frogColor = frogColorInput.value;
+    const tongueColor = tongueColorInput.value;
+    const frogChanged = frogColor !== lastAppliedSkin.frog;
+    const tongueChanged = tongueColor !== lastAppliedSkin.tongue;
+    if (!frogChanged && !tongueChanged) {
+        markSelectedPresets(frogColor, tongueColor);
+        return;
+    }
+    skinSavedStatus.textContent = 'Costurando as novas cores...';
+    skinSavedStatus.classList.add('is-visible');
+    document.documentElement.style.setProperty('--skin-tongue', tongueColor);
+
+    try {
+        const [frogSprites, coverUrl, tongueUrl] = await Promise.all([
+            frogChanged ? Promise.all(FROG_SPRITES.map(async ([property, source]) => [property, await recolorImage(source, frogColor, 'frog')])) : Promise.resolve([]),
+            frogChanged ? recolorImage('assets/img/sapo-capa.png', frogColor, 'frog') : Promise.resolve(null),
+            tongueChanged ? recolorImage('assets/img/sapo-lingua-limpa-v3.png', tongueColor, 'tongue') : Promise.resolve(null),
+        ]);
+        if (version !== skinRenderVersion) {
+            [...frogSprites.map(([, url]) => url), coverUrl, tongueUrl].filter(Boolean).forEach((url) => URL.revokeObjectURL(url));
+            return;
+        }
+
+        frogSprites.forEach(([property, url]) => {
+            replaceSkinObjectUrl(property, url);
+            document.documentElement.style.setProperty(property, `url("${url}")`);
+        });
+        if (coverUrl) {
+            replaceSkinObjectUrl('cover', coverUrl);
+            menuFrog.src = coverUrl;
+            skinPreviewFrog.src = coverUrl;
+        }
+        if (tongueUrl) {
+            replaceSkinObjectUrl('tongue', tongueUrl);
+            runnerAttack.src = tongueUrl;
+            skinPreviewTongue.src = tongueUrl;
+        }
+        lastAppliedSkin = { frog: frogColor, tongue: tongueColor };
+        markSelectedPresets(frogColor, tongueColor);
+        try {
+            localStorage.setItem('sapo-skin-colors', JSON.stringify({ frog: frogColor, tongue: tongueColor }));
+        } catch {}
+        skinSavedStatus.textContent = showSaved ? 'Cores salvas neste aparelho' : 'Aparência carregada';
+        window.clearTimeout(skinSaveTimer);
+        skinSaveTimer = window.setTimeout(() => skinSavedStatus.classList.remove('is-visible'), 1300);
+    } catch {
+        skinSavedStatus.textContent = 'Não foi possível aplicar esta cor';
+    }
+}
+
+function initializeSkins() {
+    const skin = readSkin();
+    frogColorInput.value = skin.frog;
+    tongueColorInput.value = skin.tongue;
+    applySkinColors(false);
+}
+
 const MENU_PARENTS = {
     play: 'main',
     maps: 'play',
@@ -786,10 +1133,18 @@ function showMenuScreen(screenName, focusFirst = true) {
         screen.classList.toggle('is-active', isActive);
     });
     menuBackButton.classList.toggle('is-hidden', screenName === 'main');
+    mainMenuShell.classList.toggle('is-world-map', screenName === 'maps');
+
+    if (screenName === 'maps') {
+        window.requestAnimationFrame(startWorldMapNavigation);
+    } else {
+        worldMapState.pressed.clear();
+        worldMapFrog.classList.remove('is-walking');
+    }
 
     if (focusFirst) {
         const firstControl = nextScreen.querySelector('button:not(:disabled)');
-        (firstControl || menuBackButton).focus({ preventScroll: true });
+        if (screenName !== 'maps') (firstControl || menuBackButton).focus({ preventScroll: true });
     }
 }
 
@@ -1485,11 +1840,11 @@ async function initializeGame() {
 
     state.mode = 'idle';
     playButton.disabled = false;
-    storyMapButton.disabled = false;
-    storyMapStatus.textContent = 'Pronto para jogar';
+    worldMapState.ready = true;
+    updateWorldMapProximity();
     playLabel.textContent = 'Jogar novamente';
     if (failedAssets > 0) {
-        storyMapStatus.textContent = 'Pronto · alguns elementos ainda podem carregar';
+        worldMapHelp.textContent = 'O mapa está pronto. Alguns detalhes visuais ainda podem carregar durante a caminhada.';
     }
 
     const preloadLaterScenes = () => {
@@ -1551,6 +1906,59 @@ storyMapButton.addEventListener('click', () => {
     if (!storyMapButton.disabled && state.mode !== 'loading') startGame();
 });
 
+worldMap.addEventListener('pointerdown', moveWorldMapToPointer);
+worldLevelButtons.forEach((button, index) => {
+    button.addEventListener('click', () => {
+        const level = WORLD_LEVELS[index];
+        const distance = Math.hypot(worldMapState.x - level.x, (worldMapState.y - level.y) * 1.35);
+        if (distance < 7.2 && level.unlocked && worldMapState.ready) {
+            startGame();
+            return;
+        }
+        worldMapState.targetX = level.x;
+        worldMapState.targetY = level.y;
+        storyMapStatus.textContent = level.unlocked ? 'Caminhando até a fase...' : 'Caminhe até a marca para explorar';
+    });
+});
+
+worldMapDirectionButtons.forEach((button) => {
+    const direction = button.dataset.mapDirection;
+    const press = (event) => {
+        event.preventDefault();
+        button.setPointerCapture?.(event.pointerId);
+        setWorldMapDirection(direction, true);
+    };
+    const release = (event) => {
+        event.preventDefault();
+        setWorldMapDirection(direction, false);
+    };
+    button.addEventListener('pointerdown', press);
+    button.addEventListener('pointerup', release);
+    button.addEventListener('pointercancel', release);
+    button.addEventListener('lostpointercapture', () => setWorldMapDirection(direction, false));
+});
+
+[frogColorInput, tongueColorInput].forEach((input) => {
+    input.addEventListener('input', () => {
+        window.clearTimeout(skinSaveTimer);
+        skinSaveTimer = window.setTimeout(() => applySkinColors(true), 120);
+    });
+});
+
+document.querySelectorAll('[data-color-presets] button').forEach((button) => {
+    button.addEventListener('click', () => {
+        const group = button.closest('[data-color-presets]').dataset.colorPresets;
+        (group === 'frog' ? frogColorInput : tongueColorInput).value = button.dataset.color;
+        applySkinColors(true);
+    });
+});
+
+skinResetButton.addEventListener('click', () => {
+    frogColorInput.value = DEFAULT_SKIN.frog;
+    tongueColorInput.value = DEFAULT_SKIN.tongue;
+    applySkinColors(true);
+});
+
 pauseButton.addEventListener('click', () => {
     if (state.mode === 'paused') resumeGame();
     else pauseGame();
@@ -1569,9 +1977,11 @@ board.addEventListener('pointerdown', (event) => {
 });
 
 document.addEventListener('keydown', (event) => {
+    if (handleWorldMapKey(event, true)) return;
     if (!handleHorizontalKey(event, true) && !handleCrouchKey(event, true)) handleKeyboard(event);
 });
 document.addEventListener('keyup', (event) => {
+    if (handleWorldMapKey(event, false)) return;
     if (!handleHorizontalKey(event, false)) handleCrouchKey(event, false);
 });
 window.addEventListener('blur', clearHorizontalInput);
@@ -1596,4 +2006,5 @@ if ('ResizeObserver' in window) {
 window.addEventListener('orientationchange', syncOrientationGuard);
 window.addEventListener('resize', syncOrientationGuard);
 syncOrientationGuard();
+initializeSkins();
 initializeGame();
