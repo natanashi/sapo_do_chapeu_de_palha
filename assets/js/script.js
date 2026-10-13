@@ -23,6 +23,7 @@ const worldMapStageName = document.querySelector('#world-map-stage-name');
 const worldMapHelp = document.querySelector('#world-map-help');
 const worldLevelButtons = [...document.querySelectorAll('[data-world-level]')];
 const worldMapDirectionButtons = [...document.querySelectorAll('[data-map-direction]')];
+const difficultyInputs = [...document.querySelectorAll('input[name="stage-difficulty"]')];
 const frogColorInput = document.querySelector('#frog-color');
 const tongueColorInput = document.querySelector('#tongue-color');
 const skinPreviewFrog = document.querySelector('#skin-preview-frog');
@@ -79,6 +80,31 @@ const CONTROL_STYLES = ['round', 'pixel', 'leaf'];
 const CONTROL_PALETTES = ['forest', 'ocean', 'sunset'];
 const gameSettings = readGameSettings();
 let settingsSavedTimer = 0;
+
+const DIFFICULTIES = {
+    easy: {
+        label: 'Fácil',
+        speedScale: 0.92,
+        spawnGapScale: 1.16,
+        minimumObstacleGap: 1.34,
+        minimumInsectGap: 1.9,
+    },
+    medium: {
+        label: 'Médio',
+        speedScale: 1,
+        spawnGapScale: 1,
+        minimumObstacleGap: 1.18,
+        minimumInsectGap: 1.72,
+    },
+    hard: {
+        label: 'Difícil',
+        speedScale: 1.1,
+        spawnGapScale: 0.87,
+        minimumObstacleGap: 1.05,
+        minimumInsectGap: 1.48,
+    },
+};
+let selectedDifficulty = 'medium';
 
 const PHASES = [
     {
@@ -226,6 +252,7 @@ const state = {
     moveLeft: false,
     moveRight: false,
     isCrouching: false,
+    difficulty: 'medium',
 };
 
 const PACE_REFERENCE_SPEED = 270;
@@ -520,12 +547,12 @@ function worldSpeedScale() {
 function currentWorldSpeed() {
     const journeyProgress = clamp(state.elapsedTime / JOURNEY_DURATION, 0, 1);
     const timeBoost = RUN_SPEED_GAIN * journeyProgress;
-    return (BASE_RUN_SPEED + timeBoost) * PHASES[state.phaseIndex].speedScale * worldSpeedScale();
+    return (BASE_RUN_SPEED + timeBoost) * PHASES[state.phaseIndex].speedScale * DIFFICULTIES[state.difficulty].speedScale * worldSpeedScale();
 }
 
 function currentPaceMultiplier() {
     const journeyProgress = clamp(state.elapsedTime / JOURNEY_DURATION, 0, 1);
-    return ((BASE_RUN_SPEED + RUN_SPEED_GAIN * journeyProgress) * PHASES[state.phaseIndex].speedScale) / PACE_REFERENCE_SPEED;
+    return ((BASE_RUN_SPEED + RUN_SPEED_GAIN * journeyProgress) * PHASES[state.phaseIndex].speedScale * DIFFICULTIES[state.difficulty].speedScale) / PACE_REFERENCE_SPEED;
 }
 
 function showPhaseBanner(index) {
@@ -943,7 +970,7 @@ function updateWorldMapProximity() {
     if (!worldMapState.ready) storyMapStatus.textContent = 'Preparando o mapa...';
     else if (!isNear) storyMapStatus.textContent = 'Caminhe até uma marca de fase';
     else if (!level.unlocked) storyMapStatus.textContent = 'Fase ainda bloqueada';
-    else storyMapStatus.textContent = 'Pronto para jogar';
+    else storyMapStatus.textContent = `${DIFFICULTIES[selectedDifficulty].label} selecionado · pronto`;
 }
 
 function worldMapLoop(currentTime) {
@@ -1292,6 +1319,7 @@ function showResultOverlay() {
 }
 
 function startGame() {
+    state.difficulty = selectedDifficulty;
     resetRun();
     state.mode = 'playing';
     playBackgroundMusic(true);
@@ -1301,7 +1329,7 @@ function startGame() {
     pauseButton.textContent = 'Pausar';
     pauseButton.setAttribute('aria-label', 'Pausar jogo');
     updateScore();
-    setStatus('Valendo!');
+    setStatus(`Valendo! · ${DIFFICULTIES[state.difficulty].label}`);
     board.focus({ preventScroll: true });
     state.animationFrame = window.requestAnimationFrame(gameLoop);
 }
@@ -1762,6 +1790,7 @@ function updateInsects(delta, currentTime) {
 }
 
 function scheduleActors(delta) {
+    const difficulty = DIFFICULTIES[state.difficulty];
     state.obstacleCooldown -= delta;
     state.insectCooldown -= delta;
     state.platformCooldown -= delta;
@@ -1771,7 +1800,10 @@ function scheduleActors(delta) {
         const [minimumGap, maximumGap] = PHASES[state.phaseIndex].obstacleGap;
         const pressure = clamp(state.elapsedTime / JOURNEY_DURATION, 0, 1);
         const densityScale = 1 - pressure * 0.1;
-        state.obstacleCooldown = Math.max(1.18, (minimumGap + Math.random() * (maximumGap - minimumGap)) * densityScale);
+        state.obstacleCooldown = Math.max(
+            difficulty.minimumObstacleGap,
+            (minimumGap + Math.random() * (maximumGap - minimumGap)) * densityScale * difficulty.spawnGapScale,
+        );
     }
 
     if (state.insectCooldown <= 0) {
@@ -1782,7 +1814,10 @@ function scheduleActors(delta) {
             const [minimumGap, maximumGap] = PHASES[state.phaseIndex].insectGap;
             const pressure = clamp(state.elapsedTime / JOURNEY_DURATION, 0, 1);
             const densityScale = 1 - pressure * 0.08;
-            state.insectCooldown = Math.max(1.72, (minimumGap + Math.random() * (maximumGap - minimumGap)) * densityScale);
+            state.insectCooldown = Math.max(
+                difficulty.minimumInsectGap,
+                (minimumGap + Math.random() * (maximumGap - minimumGap)) * densityScale * difficulty.spawnGapScale,
+            );
         }
     }
 
@@ -2025,6 +2060,14 @@ playButton.addEventListener('click', () => {
 
 storyMapButton.addEventListener('click', () => {
     if (!storyMapButton.disabled && state.mode !== 'loading') startGame();
+});
+
+difficultyInputs.forEach((input) => {
+    input.addEventListener('change', () => {
+        if (!input.checked || !DIFFICULTIES[input.value]) return;
+        selectedDifficulty = input.value;
+        updateWorldMapProximity();
+    });
 });
 
 worldMap.addEventListener('pointerdown', moveWorldMapToPointer);

@@ -7,7 +7,7 @@
 
 Jogo de corrida em pixel art para navegador, com suporte a computador e celular. Esta beta permite testar a jogabilidade, os cenários, os inimigos e a progressão enquanto a versão oficial continua em desenvolvimento.
 
-Ao abrir o jogo, uma mensagem autoral apresenta sua origem indie: IA é usada como apoio, mas código, personagens, cenários e animações passam pela revisão e dedicação do criador, Nataniel Wilson (NWOAN/Natanashi), que estuda programação desde 2018.
+Ao abrir o jogo, uma mensagem apresenta sua origem indie: a **Natanashi Studios** é o codinome da pequena startup que desenvolve o projeto. IA é usada como apoio, mas código, personagens, cenários e animações passam por revisão e dedicação humana, apoiadas por uma prática de programação iniciada em 2018.
 
 ## O que há no jogo
 
