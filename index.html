@@ -11,19 +11,35 @@
     <link rel="preload" as="image" href="assets/img/nuvem-pixel-flutuante-v1.png">
     <link rel="preload" as="image" href="assets/img/passaro-horizonte-sprites-v1.png">
     <link rel="preload" as="image" href="assets/img/mapa-mundo-grama-v2.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=59">
-    <script src="assets/js/script.js?v=59" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=61">
+    <script src="assets/js/script.js?v=61" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
-<body>
+<body class="has-indie-intro">
     <audio id="background-music" src="assets/aud/sapinho-aventura-no-sonho.mp3" preload="auto" loop></audio>
-    <section class="orientation-guard" id="orientation-guard" role="dialog" aria-modal="true" aria-labelledby="orientation-title" aria-describedby="orientation-message" aria-hidden="true" tabindex="-1">
+    <section class="indie-intro is-visible" id="indie-intro" role="dialog" aria-modal="true" aria-labelledby="indie-intro-title" aria-describedby="indie-intro-copy">
+        <div class="indie-intro__panel">
+            <div class="indie-intro__pixels" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+            <p class="indie-intro__eyebrow">Antes de começar</p>
+            <h1 id="indie-intro-title">Um jogo indie.<br>Feito com cuidado.</h1>
+            <div class="indie-intro__copy" id="indie-intro-copy">
+                <p>Hoje parece que tudo é feito por IA: alguém escreve um prompt, publica e logo deixa o projeto para trás. <strong>Este jogo não nasceu assim.</strong></p>
+                <p>Sou <strong>Nataniel Wilson</strong>, também conhecido como <strong>NWOAN</strong> ou <strong>Natanashi</strong>. Sou apaixonado por programação desde 2018, praticando Python e JavaScript e criando sites e jogos simples.</p>
+                <p>A IA me ajuda a construir este jogo, mas cada código, personagem, cenário e animação é revisto, testado e ajustado por mim com muita dedicação. Ele não é só um jogo gerado por IA para tentar ganhar dinheiro.</p>
+                <aside>Claro que eu também quero ganhar dinheiro com ele, se for possível — ninguém vive só de capturar besouros, né? <span>kkkkk</span></aside>
+                <p>Mas, antes de qualquer coisa, este projeto existe por diversão, curiosidade e gostos certamente humanos.</p>
+            </div>
+            <p class="indie-intro__signature">Obrigado por dar uma chance ao meu brejinho.</p>
+            <button class="indie-intro__continue" id="indie-intro-continue" type="button" onclick="closeIndieIntro()">Entrar no jogo</button>
+        </div>
+    </section>
+    <section class="orientation-guard" id="orientation-guard" role="dialog" aria-modal="true" aria-labelledby="orientation-title" aria-describedby="orientation-message" aria-hidden="true" tabindex="-1" inert>
         <div class="orientation-guard__device" aria-hidden="true"><span></span></div>
         <p class="orientation-guard__kicker">Modo de jogo</p>
         <h1 id="orientation-title">Gire o aparelho</h1>
         <p id="orientation-message">Para jogar com o cenário, os controles e as colisões no tamanho correto, use o celular ou tablet na horizontal.</p>
     </section>
-    <main class="game-shell">
+    <main class="game-shell" inert>
         <section class="game-board" id="game-board" aria-label="Área do jogo" tabindex="0">
             <div class="scenery-layer scenery-layer--a is-active" id="scenery-a" aria-hidden="true"></div>
             <div class="scenery-layer scenery-layer--b" id="scenery-b" aria-hidden="true"></div>

@@ -1,4 +1,6 @@
 const board = document.querySelector('#game-board');
+const indieIntro = document.querySelector('#indie-intro');
+const indieIntroContinue = document.querySelector('#indie-intro-continue');
 const gameShell = document.querySelector('.game-shell');
 const runnerLayer = document.querySelector('.runner-layer');
 const runner = document.querySelector('#runner');
@@ -426,6 +428,16 @@ function applyGameSettings({ save = false, announce = false } = {}) {
 function updateFullscreenLabel() {
     fullscreenLabel.textContent = document.fullscreenElement ? 'Sair da tela cheia' : 'Usar tela cheia';
     fullscreenButton.disabled = !document.fullscreenEnabled;
+}
+
+function closeIndieIntro() {
+    indieIntro.classList.remove('is-visible');
+    indieIntro.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('has-indie-intro');
+    gameShell.removeAttribute('inert');
+    orientationGuard.removeAttribute('inert');
+    const mainMenuButton = document.querySelector('[data-menu-screen="main"] button:not(:disabled)');
+    window.requestAnimationFrame(() => mainMenuButton?.focus({ preventScroll: true }));
 }
 
 function playSound(audio) {
@@ -2180,3 +2192,4 @@ applyGameSettings();
 updateFullscreenLabel();
 initializeSkins();
 initializeGame();
+window.requestAnimationFrame(() => indieIntroContinue.focus({ preventScroll: true }));

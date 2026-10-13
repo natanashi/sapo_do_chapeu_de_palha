@@ -7,6 +7,8 @@
 
 Jogo de corrida em pixel art para navegador, com suporte a computador e celular. Esta beta permite testar a jogabilidade, os cenários, os inimigos e a progressão enquanto a versão oficial continua em desenvolvimento.
 
+Ao abrir o jogo, uma mensagem autoral apresenta sua origem indie: IA é usada como apoio, mas código, personagens, cenários e animações passam pela revisão e dedicação do criador, Nataniel Wilson (NWOAN/Natanashi), que estuda programação desde 2018.
+
 ## O que há no jogo
 
 - Quatro regiões inteiramente pela manhã: Vila do Sol, Campos do Orvalho, Floresta Antiga e Castelo da Manhã.
