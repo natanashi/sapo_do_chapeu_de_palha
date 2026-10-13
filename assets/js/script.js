@@ -36,6 +36,9 @@ const effectsVolumeInput = document.querySelector('#setting-effects-volume');
 const effectsVolumeValue = document.querySelector('#effects-volume-value');
 const reducedMotionInput = document.querySelector('#setting-reduced-motion');
 const compactControlsInput = document.querySelector('#setting-compact-controls');
+const controlLayoutInputs = [...document.querySelectorAll('input[name="control-layout"]')];
+const controlStyleInputs = [...document.querySelectorAll('input[name="control-style"]')];
+const controlPaletteInputs = [...document.querySelectorAll('input[name="control-palette"]')];
 const fullscreenButton = document.querySelector('#settings-fullscreen');
 const fullscreenLabel = document.querySelector('#fullscreen-label');
 const settingsSavedStatus = document.querySelector('#settings-saved');
@@ -69,6 +72,9 @@ const jumpAudio = new Audio('assets/aud/pulo.mp3');
 const loseAudio = new Audio('assets/aud/risada_duende.mp3');
 const backgroundMusic = document.querySelector('#background-music');
 const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+const CONTROL_LAYOUTS = ['classic', 'left-handed', 'arcade'];
+const CONTROL_STYLES = ['round', 'pixel', 'leaf'];
+const CONTROL_PALETTES = ['forest', 'ocean', 'sunset'];
 const gameSettings = readGameSettings();
 let settingsSavedTimer = 0;
 
@@ -346,6 +352,9 @@ function readGameSettings() {
         effectsVolume: 0.65,
         reducedMotion: false,
         compactControls: false,
+        controlLayout: 'classic',
+        controlStyle: 'round',
+        controlPalette: 'forest',
     };
     try {
         const stored = JSON.parse(localStorage.getItem('sapo-game-settings') || '{}');
@@ -356,6 +365,9 @@ function readGameSettings() {
             effectsVolume: Number.isFinite(stored.effectsVolume) ? clamp(stored.effectsVolume, 0, 1) : defaults.effectsVolume,
             reducedMotion: typeof stored.reducedMotion === 'boolean' ? stored.reducedMotion : defaults.reducedMotion,
             compactControls: typeof stored.compactControls === 'boolean' ? stored.compactControls : defaults.compactControls,
+            controlLayout: CONTROL_LAYOUTS.includes(stored.controlLayout) ? stored.controlLayout : defaults.controlLayout,
+            controlStyle: CONTROL_STYLES.includes(stored.controlStyle) ? stored.controlStyle : defaults.controlStyle,
+            controlPalette: CONTROL_PALETTES.includes(stored.controlPalette) ? stored.controlPalette : defaults.controlPalette,
         };
     } catch {
         return defaults;
@@ -379,6 +391,12 @@ function applyGameSettings({ save = false, announce = false } = {}) {
     loseAudio.volume = gameSettings.effectsVolume;
     document.body.classList.toggle('reduce-game-motion', gameSettings.reducedMotion);
     document.body.classList.toggle('compact-game-controls', gameSettings.compactControls);
+    document.body.classList.remove(...CONTROL_LAYOUTS.map((value) => `controls-layout-${value}`));
+    document.body.classList.remove(...CONTROL_STYLES.map((value) => `controls-style-${value}`));
+    document.body.classList.remove(...CONTROL_PALETTES.map((value) => `controls-palette-${value}`));
+    document.body.classList.add(`controls-layout-${gameSettings.controlLayout}`);
+    document.body.classList.add(`controls-style-${gameSettings.controlStyle}`);
+    document.body.classList.add(`controls-palette-${gameSettings.controlPalette}`);
 
     musicEnabledInput.checked = gameSettings.musicEnabled;
     musicVolumeInput.value = String(Math.round(gameSettings.musicVolume * 100));
@@ -390,6 +408,9 @@ function applyGameSettings({ save = false, announce = false } = {}) {
     effectsVolumeValue.value = `${effectsVolumeInput.value}%`;
     reducedMotionInput.checked = gameSettings.reducedMotion;
     compactControlsInput.checked = gameSettings.compactControls;
+    controlLayoutInputs.forEach((input) => { input.checked = input.value === gameSettings.controlLayout; });
+    controlStyleInputs.forEach((input) => { input.checked = input.value === gameSettings.controlStyle; });
+    controlPaletteInputs.forEach((input) => { input.checked = input.value === gameSettings.controlPalette; });
 
     if (!gameSettings.musicEnabled) backgroundMusic.pause();
     else if (state?.mode === 'playing' && backgroundMusic.paused) backgroundMusic.play().catch(() => {});
@@ -2076,6 +2097,24 @@ compactControlsInput.addEventListener('change', () => {
     gameSettings.compactControls = compactControlsInput.checked;
     applyGameSettings({ save: true, announce: true });
 });
+
+controlLayoutInputs.forEach((input) => input.addEventListener('change', () => {
+    if (!input.checked || !CONTROL_LAYOUTS.includes(input.value)) return;
+    gameSettings.controlLayout = input.value;
+    applyGameSettings({ save: true, announce: true });
+}));
+
+controlStyleInputs.forEach((input) => input.addEventListener('change', () => {
+    if (!input.checked || !CONTROL_STYLES.includes(input.value)) return;
+    gameSettings.controlStyle = input.value;
+    applyGameSettings({ save: true, announce: true });
+}));
+
+controlPaletteInputs.forEach((input) => input.addEventListener('change', () => {
+    if (!input.checked || !CONTROL_PALETTES.includes(input.value)) return;
+    gameSettings.controlPalette = input.value;
+    applyGameSettings({ save: true, announce: true });
+}));
 
 fullscreenButton.addEventListener('click', async () => {
     try {

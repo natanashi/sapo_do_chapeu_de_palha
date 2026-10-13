@@ -11,8 +11,8 @@
     <link rel="preload" as="image" href="assets/img/nuvem-pixel-flutuante-v1.png">
     <link rel="preload" as="image" href="assets/img/passaro-horizonte-sprites-v1.png">
     <link rel="preload" as="image" href="assets/img/mapa-mundo-grama-v2.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=58">
-    <script src="assets/js/script.js?v=58" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=59">
+    <script src="assets/js/script.js?v=59" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body>
@@ -333,6 +333,53 @@
                                         <span><kbd>Espaço</kbd><small>Pular</small></span>
                                         <span><kbd>X</kbd><small>Língua</small></span>
                                     </div>
+                                </section>
+
+                                <section class="settings-panel settings-panel--controls" aria-labelledby="mobile-controls-title">
+                                    <div class="settings-panel__title">
+                                        <span aria-hidden="true">✣</span>
+                                        <div><small>Personalização mobile</small><h3 id="mobile-controls-title">Controles de bolso</h3></div>
+                                    </div>
+                                    <div class="settings-choice-section">
+                                        <strong>Posição dos controles</strong>
+                                        <small>Escolha onde movimento e ações ficam durante a partida.</small>
+                                        <div class="settings-choice-grid settings-choice-grid--layout">
+                                            <label class="setting-choice">
+                                                <input type="radio" name="control-layout" value="classic" checked>
+                                                <span class="control-layout-preview control-layout-preview--classic" aria-hidden="true"><i></i><i></i></span>
+                                                <b>Padrão</b><small>Movimento à esquerda</small>
+                                            </label>
+                                            <label class="setting-choice">
+                                                <input type="radio" name="control-layout" value="left-handed">
+                                                <span class="control-layout-preview control-layout-preview--left" aria-hidden="true"><i></i><i></i></span>
+                                                <b>Canhoto</b><small>Ações à esquerda</small>
+                                            </label>
+                                            <label class="setting-choice">
+                                                <input type="radio" name="control-layout" value="arcade">
+                                                <span class="control-layout-preview control-layout-preview--arcade" aria-hidden="true"><i></i><i></i></span>
+                                                <b>Arcade</b><small>Grupos mais próximos</small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="settings-choice-columns">
+                                        <div class="settings-choice-section">
+                                            <strong>Formato dos botões</strong>
+                                            <div class="settings-choice-grid">
+                                                <label class="setting-choice setting-choice--small"><input type="radio" name="control-style" value="round" checked><span class="button-shape button-shape--round" aria-hidden="true"></span><b>Redondo</b></label>
+                                                <label class="setting-choice setting-choice--small"><input type="radio" name="control-style" value="pixel"><span class="button-shape button-shape--pixel" aria-hidden="true"></span><b>Pixel</b></label>
+                                                <label class="setting-choice setting-choice--small"><input type="radio" name="control-style" value="leaf"><span class="button-shape button-shape--leaf" aria-hidden="true"></span><b>Folha</b></label>
+                                            </div>
+                                        </div>
+                                        <div class="settings-choice-section">
+                                            <strong>Cores dos botões</strong>
+                                            <div class="settings-choice-grid settings-choice-grid--palette">
+                                                <label class="setting-choice setting-choice--small"><input type="radio" name="control-palette" value="forest" checked><span class="palette-preview palette-preview--forest" aria-hidden="true"></span><b>Brejo</b></label>
+                                                <label class="setting-choice setting-choice--small"><input type="radio" name="control-palette" value="ocean"><span class="palette-preview palette-preview--ocean" aria-hidden="true"></span><b>Lagoa</b></label>
+                                                <label class="setting-choice setting-choice--small"><input type="radio" name="control-palette" value="sunset"><span class="palette-preview palette-preview--sunset" aria-hidden="true"></span><b>Entardecer</b></label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="mobile-controls-note">No celular e tablet, o jogo continua pedindo a tela deitada para manter os botões e os obstáculos na mesma proporção.</p>
                                 </section>
                             </div>
                             <p class="settings-saved" id="settings-saved" role="status" aria-live="polite">Configurações salvas</p>
