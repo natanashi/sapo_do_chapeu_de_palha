@@ -12,8 +12,8 @@ Ao abrir o jogo, uma mensagem apresenta sua origem indie: a **Natanashi Studios*
 ## O que há no jogo
 
 - Quatro regiões inteiramente pela manhã: Vila do Sol, Campos do Orvalho, Floresta Antiga e Castelo da Manhã.
-- Jornada com duração mínima de 3 minutos e 5 segundos e um mapa no topo que mostra a posição do jogador em toda a rota.
-- Mapa-múndi explorável antes da partida: o sapinho caminha livremente até a única fase disponível, **Rota da Manhã**. As quatro regiões fazem parte dessa mesma fase; novos mapas virão futuramente.
+- Jornada de 2 minutos e 30 segundos e um mapa no topo que mostra a posição do jogador em toda a rota.
+- Mapa-múndi explorável 2×2 antes da partida: a câmera acompanha o sapinho entre bosques e rochas com colisão. Há seis selos de fase; apenas **Rota da Manhã** está disponível e os outros cinco aparecem como “Em construção · em breve”. As quatro regiões continuam fazendo parte dessa mesma fase.
 - Oficina de skins com cores personalizáveis para o corpo e a língua, prévia ao vivo e salvamento no aparelho.
 - Aba de configurações com música e efeitos separados, volumes independentes, movimento reduzido, tela cheia e personalização dos controles: posição padrão, canhota ou arcade, três formatos de botão e três paletas de cores. As escolhas ficam salvas no aparelho.
 - Panoramas ultralargos criados para corrida lateral, com construções detalhadas e legíveis, terreno plano e bordas preparadas para não revelar emendas.

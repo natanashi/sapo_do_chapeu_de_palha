@@ -17,10 +17,12 @@ const menuScreens = [...document.querySelectorAll('[data-menu-screen]')];
 const storyMapButton = document.querySelector('#story-map-button');
 const storyMapStatus = document.querySelector('#story-map-status');
 const worldMap = document.querySelector('#world-map');
+const worldMapWorld = document.querySelector('#world-map-world');
 const worldMapFrog = document.querySelector('#world-map-frog');
 const worldMapPrompt = document.querySelector('#world-map-prompt');
 const worldMapStageName = document.querySelector('#world-map-stage-name');
 const worldMapHelp = document.querySelector('#world-map-help');
+const difficultyPicker = document.querySelector('.difficulty-picker');
 const worldLevelButtons = [...document.querySelectorAll('[data-world-level]')];
 const worldMapDirectionButtons = [...document.querySelectorAll('[data-map-direction]')];
 const difficultyInputs = [...document.querySelectorAll('input[name="stage-difficulty"]')];
@@ -211,6 +213,8 @@ const ASSET_URLS = [
     'assets/img/sapo-lingua-limpa-v3.png',
     'assets/img/sapo-capa.png',
     'assets/img/mapa-mundo-grama-v2.png',
+    'assets/img/mapa-bosque-pixel-v1.png',
+    'assets/img/mapa-rochas-pixel-v1.png',
     'assets/img/inseto-voando-sprites.png',
     'assets/img/besouro-ondulante-voando-sprites.png',
     'assets/img/abelha-investida-sprites.png',
@@ -925,24 +929,117 @@ function setPlayingControls(enabled) {
 }
 
 const WORLD_LEVELS = [
-    { name: 'Rota da Manhã', x: 42, y: 50, unlocked: true },
+    { name: 'Rota da Manhã', x: 29, y: 80, unlocked: true },
+    { name: 'Bosque dos Cogumelos', x: 68, y: 82, unlocked: false },
+    { name: 'Pedreira Musgosa', x: 84, y: 57, unlocked: false },
+    { name: 'Clareira dos Ventos', x: 68, y: 27, unlocked: false },
+    { name: 'Vale das Folhas', x: 37, y: 20, unlocked: false },
+    { name: 'Coração da Mata', x: 13, y: 46, unlocked: false },
+];
+
+const WORLD_MAP_SCALE = 2;
+const WORLD_LEVEL_REACH = 4.8;
+const WORLD_MAP_BLOCKERS = [
+    { x: 10, y: 14, width: 13, height: 13 },
+    { x: 52, y: 11, width: 14, height: 14 },
+    { x: 91, y: 22, width: 12, height: 13 },
+    { x: 50, y: 50, width: 15, height: 16 },
+    { x: 92, y: 85, width: 13, height: 15 },
+    { x: 19, y: 62, width: 12, height: 14 },
+    { x: 24, y: 31, width: 8, height: 7 },
+    { x: 76, y: 44, width: 9, height: 8 },
+    { x: 48, y: 82, width: 8, height: 7 },
+    { x: 39, y: 36, width: 7, height: 6 },
+    { x: 66, y: 64, width: 8, height: 7 },
 ];
 
 const worldMapState = {
     x: 18,
-    y: 78,
+    y: 88,
     targetX: null,
     targetY: null,
+    cameraX: 0,
+    cameraY: 0,
     pressed: new Set(),
     frame: 0,
     previousTime: 0,
     ready: false,
     nearestLevel: 0,
+    avoidanceSign: 0,
 };
+
+function worldMapMetrics() {
+    const viewportWidth = Math.max(1, worldMap.clientWidth);
+    const viewportHeight = Math.max(1, worldMap.clientHeight);
+    return {
+        viewportWidth,
+        viewportHeight,
+        worldWidth: viewportWidth * WORLD_MAP_SCALE,
+        worldHeight: viewportHeight * WORLD_MAP_SCALE,
+    };
+}
+
+function renderWorldMapCamera() {
+    const { viewportWidth, viewportHeight, worldWidth, worldHeight } = worldMapMetrics();
+    const frogX = worldWidth * worldMapState.x / 100;
+    const frogY = worldHeight * worldMapState.y / 100;
+    worldMapState.cameraX = clamp(viewportWidth * 0.5 - frogX, viewportWidth - worldWidth, 0);
+    worldMapState.cameraY = clamp(viewportHeight * 0.5 - frogY, viewportHeight - worldHeight, 0);
+    worldMapWorld.style.setProperty('--map-camera-x', `${worldMapState.cameraX.toFixed(2)}px`);
+    worldMapWorld.style.setProperty('--map-camera-y', `${worldMapState.cameraY.toFixed(2)}px`);
+}
 
 function renderWorldMapFrog() {
     worldMapFrog.style.setProperty('--map-x', `${worldMapState.x}%`);
     worldMapFrog.style.setProperty('--map-y', `${worldMapState.y}%`);
+    renderWorldMapCamera();
+}
+
+function renderWorldMapPrompt(level) {
+    const { viewportWidth, viewportHeight, worldWidth, worldHeight } = worldMapMetrics();
+    const levelScreenX = worldWidth * level.x / 100 + worldMapState.cameraX;
+    const levelScreenY = worldHeight * level.y / 100 + worldMapState.cameraY;
+    const promptWidth = Math.min(300, Math.max(190, viewportWidth * 0.44));
+    const gap = Math.min(72, Math.max(44, viewportWidth * 0.06));
+    let promptX = levelScreenX + gap;
+    let opensLeft = false;
+
+    if (promptX + promptWidth > viewportWidth - 8) {
+        promptX = levelScreenX - promptWidth - gap;
+        opensLeft = true;
+    }
+
+    worldMapPrompt.style.setProperty('--prompt-x', `${clamp(promptX, 8, viewportWidth - promptWidth - 8).toFixed(2)}px`);
+    worldMapPrompt.style.setProperty('--prompt-y', `${clamp(levelScreenY, 78, viewportHeight - 78).toFixed(2)}px`);
+    worldMapPrompt.classList.toggle('opens-left', opensLeft);
+}
+
+function worldMapPositionBlocked(x, y) {
+    const frogRadiusX = 1.8;
+    const frogRadiusY = 2.4;
+    return WORLD_MAP_BLOCKERS.some((blocker) => {
+        const radiusX = blocker.width * 0.5 + frogRadiusX;
+        const radiusY = blocker.height * 0.5 + frogRadiusY;
+        const normalizedX = (x - blocker.x) / radiusX;
+        const normalizedY = (y - blocker.y) / radiusY;
+        return normalizedX * normalizedX + normalizedY * normalizedY < 1;
+    });
+}
+
+function moveWorldMapFrog(deltaX, deltaY) {
+    const nextX = clamp(worldMapState.x + deltaX, 2.5, 97.5);
+    const nextY = clamp(worldMapState.y + deltaY, 3.5, 96.5);
+    let moved = false;
+
+    if (!worldMapPositionBlocked(nextX, worldMapState.y)) {
+        worldMapState.x = nextX;
+        moved = moved || Math.abs(deltaX) > 0.001;
+    }
+    if (!worldMapPositionBlocked(worldMapState.x, nextY)) {
+        worldMapState.y = nextY;
+        moved = moved || Math.abs(deltaY) > 0.001;
+    }
+    return moved;
 }
 
 function updateWorldMapProximity() {
@@ -956,20 +1053,23 @@ function updateWorldMapProximity() {
             nearestDistance = distance;
             nearestIndex = index;
         }
-        worldLevelButtons[index]?.classList.toggle('is-near', distance < 7.2);
+        worldLevelButtons[index]?.classList.toggle('is-near', distance < WORLD_LEVEL_REACH);
     });
 
     worldMapState.nearestLevel = nearestIndex;
     const level = WORLD_LEVELS[nearestIndex];
-    const isNear = nearestDistance < 7.2;
+    const isNear = nearestDistance < WORLD_LEVEL_REACH;
+    renderWorldMapPrompt(level);
     worldMapPrompt.classList.toggle('is-visible', isNear);
     worldMapPrompt.setAttribute('aria-hidden', String(!isNear));
     worldMapStageName.textContent = level.name;
     storyMapButton.disabled = !worldMapState.ready || !isNear || !level.unlocked;
+    storyMapButton.hidden = !level.unlocked;
+    difficultyPicker.hidden = !level.unlocked;
 
     if (!worldMapState.ready) storyMapStatus.textContent = 'Preparando o mapa...';
     else if (!isNear) storyMapStatus.textContent = 'Caminhe até uma marca de fase';
-    else if (!level.unlocked) storyMapStatus.textContent = 'Fase ainda bloqueada';
+    else if (!level.unlocked) storyMapStatus.textContent = 'Em construção · em breve';
     else storyMapStatus.textContent = `${DIFFICULTIES[selectedDifficulty].label} selecionado · pronto`;
 }
 
@@ -989,12 +1089,13 @@ function worldMapLoop(currentTime) {
     if (worldMapState.pressed.has('up')) directionY -= 1;
     if (worldMapState.pressed.has('down')) directionY += 1;
 
+    let moved = false;
     if (directionX || directionY) {
         worldMapState.targetX = null;
         worldMapState.targetY = null;
+        worldMapState.avoidanceSign = 0;
         const length = Math.hypot(directionX, directionY) || 1;
-        worldMapState.x += (directionX / length) * 25 * delta;
-        worldMapState.y += (directionY / length) * 34 * delta;
+        moved = moveWorldMapFrog((directionX / length) * 12.5 * delta, (directionY / length) * 17 * delta);
     } else if (worldMapState.targetX !== null && worldMapState.targetY !== null) {
         const dx = worldMapState.targetX - worldMapState.x;
         const dy = worldMapState.targetY - worldMapState.y;
@@ -1005,14 +1106,33 @@ function worldMapLoop(currentTime) {
         } else {
             directionX = dx / distance;
             directionY = dy / distance;
-            worldMapState.x += directionX * 25 * delta;
-            worldMapState.y += directionY * 34 * delta;
+            const stepX = directionX * 12.5 * delta;
+            const stepY = directionY * 17 * delta;
+            const directX = clamp(worldMapState.x + stepX, 2.5, 97.5);
+            const directY = clamp(worldMapState.y + stepY, 3.5, 96.5);
+
+            if (!worldMapPositionBlocked(directX, directY)) {
+                moved = moveWorldMapFrog(stepX, stepY);
+                worldMapState.avoidanceSign = 0;
+            } else {
+                if (!worldMapState.avoidanceSign) worldMapState.avoidanceSign = 1;
+                const tangentX = -directionY * 12.5 * delta * worldMapState.avoidanceSign;
+                const tangentY = directionX * 17 * delta * worldMapState.avoidanceSign;
+                moved = moveWorldMapFrog(tangentX, tangentY);
+                if (!moved) {
+                    worldMapState.avoidanceSign *= -1;
+                    moved = moveWorldMapFrog(-tangentX, -tangentY);
+                }
+            }
+            if (!moved) {
+                worldMapState.targetX = null;
+                worldMapState.targetY = null;
+                worldMapState.avoidanceSign = 0;
+            }
         }
     }
 
-    const isMoving = Boolean(directionX || directionY);
-    worldMapState.x = clamp(worldMapState.x, 4.5, 95.5);
-    worldMapState.y = clamp(worldMapState.y, 7, 92);
+    const isMoving = Boolean(directionX || directionY) && moved;
     if (directionX) worldMapFrog.style.setProperty('--map-facing', directionX < 0 ? -1 : 1);
     worldMapFrog.classList.toggle('is-walking', isMoving);
     renderWorldMapFrog();
@@ -1058,8 +1178,9 @@ function handleWorldMapKey(event, pressed) {
 function moveWorldMapToPointer(event) {
     if (event.target.closest('.world-map-prompt, button')) return;
     const bounds = worldMap.getBoundingClientRect();
-    worldMapState.targetX = clamp(((event.clientX - bounds.left) / bounds.width) * 100, 4.5, 95.5);
-    worldMapState.targetY = clamp(((event.clientY - bounds.top) / bounds.height) * 100, 7, 92);
+    const { worldWidth, worldHeight } = worldMapMetrics();
+    worldMapState.targetX = clamp(((event.clientX - bounds.left - worldMapState.cameraX) / worldWidth) * 100, 2.5, 97.5);
+    worldMapState.targetY = clamp(((event.clientY - bounds.top - worldMapState.cameraY) / worldHeight) * 100, 3.5, 96.5);
 }
 
 const DEFAULT_SKIN = { frog: '#69b83f', tongue: '#e75f86' };
@@ -2075,13 +2196,13 @@ worldLevelButtons.forEach((button, index) => {
     button.addEventListener('click', () => {
         const level = WORLD_LEVELS[index];
         const distance = Math.hypot(worldMapState.x - level.x, (worldMapState.y - level.y) * 1.35);
-        if (distance < 7.2 && level.unlocked && worldMapState.ready) {
+        if (distance < WORLD_LEVEL_REACH && level.unlocked && worldMapState.ready) {
             startGame();
             return;
         }
         worldMapState.targetX = level.x;
         worldMapState.targetY = level.y;
-        storyMapStatus.textContent = level.unlocked ? 'Caminhando até a fase...' : 'Caminhe até a marca para explorar';
+        storyMapStatus.textContent = level.unlocked ? 'Caminhando até a fase...' : 'Indo até a fase em construção...';
     });
 });
 
