@@ -119,7 +119,7 @@ const PHASES = [
     },
     {
         name: 'Campos do Orvalho',
-        startsAt: 45,
+        startsAt: 38,
         background: 'assets/img/cenario-arvores-planaltos-transparente-v2.png',
         speedScale: 1.08,
         paceLabel: 'Ritmo acelerando',
@@ -129,7 +129,7 @@ const PHASES = [
     },
     {
         name: 'Floresta Antiga',
-        startsAt: 90,
+        startsAt: 75,
         background: 'assets/img/cenario-arvores-planaltos-transparente-v2.png',
         speedScale: 1.16,
         paceLabel: 'Corrida veloz',
@@ -139,7 +139,7 @@ const PHASES = [
     },
     {
         name: 'Castelo da Manhã',
-        startsAt: 135,
+        startsAt: 113,
         background: 'assets/img/cenario-arvores-planaltos-transparente-v2.png',
         speedScale: 1.24,
         paceLabel: 'Reta final em alta velocidade',
@@ -265,7 +265,7 @@ const ATTACK_COOLDOWN = 3000;
 const ATTACK_CAPTURE_CLOSE = 360;
 const ATTACK_RETRACT_AT = 430;
 const ATTACK_SWALLOW_AT = 620;
-const JOURNEY_DURATION = 185;
+const JOURNEY_DURATION = 150;
 const HORIZONTAL_SPEED_MIN = 210;
 const HORIZONTAL_SPEED_MAX = 430;
 const RUNNER_MOTION_CLASSES = ['motion-takeoff', 'motion-rise', 'motion-apex', 'motion-fall', 'motion-land'];
@@ -1056,7 +1056,7 @@ function handleWorldMapKey(event, pressed) {
 }
 
 function moveWorldMapToPointer(event) {
-    if (event.target.closest('button')) return;
+    if (event.target.closest('.world-map-prompt, button')) return;
     const bounds = worldMap.getBoundingClientRect();
     worldMapState.targetX = clamp(((event.clientX - bounds.left) / bounds.width) * 100, 4.5, 95.5);
     worldMapState.targetY = clamp(((event.clientY - bounds.top) / bounds.height) * 100, 7, 92);
