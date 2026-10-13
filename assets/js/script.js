@@ -20,8 +20,10 @@ const worldMap = document.querySelector('#world-map');
 const worldMapWorld = document.querySelector('#world-map-world');
 const worldMapFrog = document.querySelector('#world-map-frog');
 const worldMapPrompt = document.querySelector('#world-map-prompt');
+const worldMapPromptKicker = document.querySelector('#world-map-prompt-kicker');
 const worldMapStageName = document.querySelector('#world-map-stage-name');
 const worldMapHelp = document.querySelector('#world-map-help');
+const worldMuseum = document.querySelector('#world-museum');
 const difficultyPicker = document.querySelector('.difficulty-picker');
 const worldLevelButtons = [...document.querySelectorAll('[data-world-level]')];
 const worldMapDirectionButtons = [...document.querySelectorAll('[data-map-direction]')];
@@ -32,6 +34,10 @@ const skinPreviewFrog = document.querySelector('#skin-preview-frog');
 const skinPreviewTongue = document.querySelector('#skin-preview-tongue');
 const skinResetButton = document.querySelector('#skin-reset');
 const skinSavedStatus = document.querySelector('#skin-saved');
+const profileNameForm = document.querySelector('#profile-name-form');
+const playerNameInput = document.querySelector('#player-name');
+const playerNameError = document.querySelector('#player-name-error');
+const profileSavedStatus = document.querySelector('#profile-saved');
 const menuFrog = document.querySelector('.menu-frog');
 const musicEnabledInput = document.querySelector('#setting-music-enabled');
 const musicVolumeInput = document.querySelector('#setting-music-volume');
@@ -215,6 +221,7 @@ const ASSET_URLS = [
     'assets/img/mapa-mundo-grama-v2.png',
     'assets/img/mapa-arvore-simples-v2.png',
     'assets/img/mapa-rocha-simples-v2.png',
+    'assets/img/mapa-museu-brejo-v1.png',
     'assets/img/inseto-voando-sprites.png',
     'assets/img/besouro-ondulante-voando-sprites.png',
     'assets/img/abelha-investida-sprites.png',
@@ -939,6 +946,8 @@ const WORLD_LEVELS = [
 
 const WORLD_MAP_SCALE = 2;
 const WORLD_LEVEL_REACH = 4.8;
+const WORLD_MUSEUM = { name: 'Museu da Mata', x: 17, y: 80 };
+const WORLD_MUSEUM_REACH = 9.5;
 const WORLD_MAP_BLOCKERS = [
     { x: 10, y: 18, width: 4.8, height: 3.2 },
     { x: 52, y: 14, width: 4.6, height: 3.1 },
@@ -954,6 +963,7 @@ const WORLD_MAP_BLOCKERS = [
     { x: 40, y: 32, width: 3.1, height: 2.3 },
     { x: 66, y: 66, width: 3.4, height: 2.5 },
     { x: 83, y: 71, width: 3.1, height: 2.3 },
+    { x: WORLD_MUSEUM.x, y: WORLD_MUSEUM.y, width: 7.2, height: 4.2 },
 ];
 
 const worldMapState = {
@@ -995,7 +1005,7 @@ function renderWorldMapCamera() {
 function renderWorldMapFrog() {
     worldMapFrog.style.setProperty('--map-x', `${worldMapState.x}%`);
     worldMapFrog.style.setProperty('--map-y', `${worldMapState.y}%`);
-    worldMapFrog.style.setProperty('--frog-depth', `${24 + Math.round(worldMapState.y)}`);
+    worldMapFrog.style.setProperty('--frog-depth', `${100 + Math.round(worldMapState.y)}`);
     renderWorldMapCamera();
 }
 
@@ -1063,18 +1073,39 @@ function updateWorldMapProximity() {
     worldMapState.nearestLevel = nearestIndex;
     const level = WORLD_LEVELS[nearestIndex];
     const isNear = nearestDistance < WORLD_LEVEL_REACH;
-    renderWorldMapPrompt(level);
-    worldMapPrompt.classList.toggle('is-visible', isNear);
-    worldMapPrompt.setAttribute('aria-hidden', String(!isNear));
-    worldMapStageName.textContent = level.name;
-    storyMapButton.disabled = !worldMapState.ready || !isNear || !level.unlocked;
-    storyMapButton.hidden = !level.unlocked;
-    difficultyPicker.hidden = !level.unlocked;
+    const museumDistance = Math.hypot(
+        worldMapState.x - WORLD_MUSEUM.x,
+        (worldMapState.y - WORLD_MUSEUM.y) * 1.35,
+    );
+    const isNearMuseum = museumDistance < WORLD_MUSEUM_REACH;
+    const target = isNearMuseum ? WORLD_MUSEUM : level;
+    const hasNearbyTarget = isNearMuseum || isNear;
+
+    renderWorldMapPrompt(target);
+    worldMapPrompt.classList.toggle('is-visible', hasNearbyTarget);
+    worldMapPrompt.setAttribute('aria-hidden', String(!hasNearbyTarget));
+    worldMuseum?.classList.toggle('is-near', isNearMuseum);
+    worldMapPromptKicker.textContent = isNearMuseum ? 'Local encontrado' : 'Fase encontrada';
+    worldMapStageName.textContent = target.name;
+    storyMapButton.dataset.action = isNearMuseum ? 'museum' : 'level';
+    storyMapButton.disabled = !worldMapState.ready || !hasNearbyTarget || (!isNearMuseum && !level.unlocked);
+    storyMapButton.hidden = !isNearMuseum && !level.unlocked;
+    storyMapButton.innerHTML = isNearMuseum
+        ? '<span aria-hidden="true">◆</span> Entrar no museu'
+        : '<span aria-hidden="true">▶</span> Entrar na fase';
+    difficultyPicker.hidden = isNearMuseum || !level.unlocked;
 
     if (!worldMapState.ready) storyMapStatus.textContent = 'Preparando o mapa...';
-    else if (!isNear) storyMapStatus.textContent = 'Caminhe até uma marca de fase';
+    else if (isNearMuseum) storyMapStatus.textContent = 'Documentário da Rota da Manhã';
+    else if (!isNear) storyMapStatus.textContent = 'Caminhe até uma marca de fase ou até o museu';
     else if (!level.unlocked) storyMapStatus.textContent = 'Em construção · em breve';
     else storyMapStatus.textContent = `${DIFFICULTIES[selectedDifficulty].label} selecionado · pronto`;
+}
+
+function activateWorldMapTarget() {
+    if (storyMapButton.disabled || state.mode === 'loading') return;
+    if (storyMapButton.dataset.action === 'museum') showMenuScreen('museum');
+    else startGame();
 }
 
 function worldMapLoop(currentTime) {
@@ -1173,7 +1204,7 @@ function handleWorldMapKey(event, pressed) {
     }
     if (pressed && ['Enter', 'Space', 'KeyE'].includes(event.code) && !storyMapButton.disabled) {
         event.preventDefault();
-        startGame();
+        activateWorldMapTarget();
         return true;
     }
     return false;
@@ -1383,10 +1414,48 @@ function initializeSkins() {
     applySkinColors(false);
 }
 
+const PLAYER_NAME_STORAGE_KEY = 'sapo-player-name';
+
+function readPlayerName() {
+    try {
+        return (localStorage.getItem(PLAYER_NAME_STORAGE_KEY) || '').trim().slice(0, 20);
+    } catch {
+        return '';
+    }
+}
+
+function initializeProfile() {
+    if (!playerNameInput) return;
+    playerNameInput.value = readPlayerName();
+}
+
+function savePlayerName(event) {
+    event.preventDefault();
+    const playerName = playerNameInput.value.trim().replace(/\s+/g, ' ').slice(0, 20);
+    if (playerName.length < 2) {
+        playerNameInput.setAttribute('aria-invalid', 'true');
+        playerNameError.textContent = 'Digite pelo menos 2 caracteres.';
+        profileSavedStatus.textContent = '';
+        playerNameInput.focus();
+        return;
+    }
+
+    try {
+        localStorage.setItem(PLAYER_NAME_STORAGE_KEY, playerName);
+        playerNameInput.value = playerName;
+        playerNameInput.removeAttribute('aria-invalid');
+        playerNameError.textContent = '';
+        profileSavedStatus.textContent = `Nome salvo neste aparelho: ${playerName}`;
+    } catch {
+        profileSavedStatus.textContent = 'O navegador não permitiu salvar o nome neste aparelho.';
+    }
+}
+
 const MENU_PARENTS = {
     play: 'main',
     maps: 'play',
-    museum: 'main',
+    profile: 'main',
+    museum: 'maps',
     skins: 'main',
     settings: 'main',
 };
@@ -2184,7 +2253,28 @@ playButton.addEventListener('click', () => {
 });
 
 storyMapButton.addEventListener('click', () => {
-    if (!storyMapButton.disabled && state.mode !== 'loading') startGame();
+    activateWorldMapTarget();
+});
+
+worldMuseum?.addEventListener('click', () => {
+    const distance = Math.hypot(
+        worldMapState.x - WORLD_MUSEUM.x,
+        (worldMapState.y - WORLD_MUSEUM.y) * 1.35,
+    );
+    if (distance < WORLD_MUSEUM_REACH && worldMapState.ready) {
+        showMenuScreen('museum');
+        return;
+    }
+    worldMapState.targetX = WORLD_MUSEUM.x;
+    worldMapState.targetY = WORLD_MUSEUM.y + 6.2;
+    storyMapStatus.textContent = 'Caminhando até o museu...';
+});
+
+profileNameForm?.addEventListener('submit', savePlayerName);
+playerNameInput?.addEventListener('input', () => {
+    playerNameInput.removeAttribute('aria-invalid');
+    playerNameError.textContent = '';
+    profileSavedStatus.textContent = '';
 });
 
 difficultyInputs.forEach((input) => {
@@ -2359,5 +2449,6 @@ syncOrientationGuard();
 applyGameSettings();
 updateFullscreenLabel();
 initializeSkins();
+initializeProfile();
 initializeGame();
 window.requestAnimationFrame(() => indieIntroContinue.focus({ preventScroll: true }));

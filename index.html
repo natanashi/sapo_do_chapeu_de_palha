@@ -13,9 +13,10 @@
     <link rel="preload" as="image" href="assets/img/mapa-mundo-grama-v2.png">
     <link rel="preload" as="image" href="assets/img/mapa-arvore-simples-v2.png">
     <link rel="preload" as="image" href="assets/img/mapa-rocha-simples-v2.png">
+    <link rel="preload" as="image" href="assets/img/mapa-museu-brejo-v1.png">
     <link rel="preload" as="image" href="assets/img/sapo-corrida-bipede-v3.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=66">
-    <script src="assets/js/script.js?v=66" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=69">
+    <script src="assets/js/script.js?v=69" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body class="has-indie-intro">
@@ -167,9 +168,9 @@
                                     <span class="wood-button__mark" aria-hidden="true">▶</span>
                                     <span><strong>Jogar</strong><small>Começar uma nova jornada</small></span>
                                 </button>
-                                <button class="wood-button" type="button" data-menu-target="museum" onclick="showMenuScreen('museum')">
-                                    <span class="wood-button__mark" aria-hidden="true">◆</span>
-                                    <span><strong>Museu</strong><small>Bichos e medalhas</small></span>
+                                <button class="wood-button" type="button" data-menu-target="profile" onclick="showMenuScreen('profile')">
+                                    <span class="wood-button__mark" aria-hidden="true">●</span>
+                                    <span><strong>Perfil</strong><small>Nome do jogador e conta</small></span>
                                 </button>
                                 <button class="wood-button" type="button" data-menu-target="skins" onclick="showMenuScreen('skins')">
                                     <span class="wood-button__mark" aria-hidden="true">♟</span>
@@ -177,7 +178,7 @@
                                 </button>
                                 <button class="wood-button" type="button" data-menu-target="settings" onclick="showMenuScreen('settings')">
                                     <span class="wood-button__mark" aria-hidden="true">⚙</span>
-                                    <span><strong>Configurações</strong><small>Som e controles</small></span>
+                                    <span><strong>Configurações do jogo</strong><small>Jogabilidade, som e controles</small></span>
                                 </button>
                             </nav>
                         </section>
@@ -234,6 +235,11 @@
                                     <span class="world-prop world-prop--rock" style="--prop-x: 66%; --prop-y: 66%; --prop-width: 4.8%; --prop-depth: 66;"><img src="assets/img/mapa-rocha-simples-v2.png" alt="" draggable="false"></span>
                                     <span class="world-prop world-prop--rock" style="--prop-x: 83%; --prop-y: 71%; --prop-width: 4.2%; --prop-depth: 71; --prop-flip: -1;"><img src="assets/img/mapa-rocha-simples-v2.png" alt="" draggable="false"></span>
 
+                                    <button class="world-landmark world-landmark--museum" id="world-museum" type="button" aria-label="Museu da Rota da Manhã" style="--landmark-x: 17%; --landmark-y: 80%; --landmark-depth: 80;">
+                                        <img src="assets/img/mapa-museu-brejo-v1.png" alt="" draggable="false">
+                                        <span>Museu da Mata</span>
+                                    </button>
+
                                     <button class="world-level is-unlocked" type="button" data-world-level="0" aria-label="Fase 1, Rota da Manhã" style="--level-x: 29%; --level-y: 80%; --level-depth: 80;">
                                         <span><b>1</b></span><strong>Rota da Manhã</strong>
                                     </button>
@@ -256,7 +262,7 @@
                                 </div>
                                 <div class="world-map-future" aria-label="Uma fase disponível e cinco em construção"><span aria-hidden="true">⚒</span> 5 fases em construção · em breve</div>
                                 <div class="world-map-prompt" id="world-map-prompt" aria-live="polite" aria-hidden="true">
-                                    <small>Fase encontrada</small>
+                                    <small id="world-map-prompt-kicker">Fase encontrada</small>
                                     <strong id="world-map-stage-name">Rota da Manhã</strong>
                                     <fieldset class="difficulty-picker">
                                         <legend>Escolha a dificuldade</legend>
@@ -285,23 +291,50 @@
                             </div>
                         </section>
 
+                        <section class="menu-screen" data-menu-screen="profile" aria-labelledby="profile-title" hidden>
+                            <div class="menu-section-heading profile-heading">
+                                <span>Identidade do viajante</span>
+                                <h2 id="profile-title">Perfil</h2>
+                                <p>Seu nome funciona offline e fica salvo somente neste aparelho.</p>
+                            </div>
+                            <div class="profile-grid">
+                                <form class="profile-name-card" id="profile-name-form" novalidate>
+                                    <span class="profile-avatar" aria-hidden="true"></span>
+                                    <div>
+                                        <label for="player-name">Nome do jogador</label>
+                                        <div class="profile-name-row">
+                                            <input id="player-name" name="player-name" type="text" maxlength="20" autocomplete="nickname" placeholder="Viajante do brejo" aria-describedby="player-name-help player-name-error">
+                                            <button type="submit">Salvar nome</button>
+                                        </div>
+                                        <small id="player-name-help">Pode ser alterado quando quiser, mesmo sem internet.</small>
+                                        <strong class="profile-error" id="player-name-error" role="alert"></strong>
+                                        <p class="profile-saved" id="profile-saved" role="status" aria-live="polite"></p>
+                                    </div>
+                                </form>
+                                <section class="profile-account" aria-labelledby="account-title">
+                                    <div><span aria-hidden="true">⌁</span><div><small>Conta Natanashi</small><h3 id="account-title">Leve seu progresso com você</h3></div></div>
+                                    <p>Cadastro, login e sincronização entre aparelhos estão sendo preparados.</p>
+                                    <div class="profile-account-actions">
+                                        <button type="button" disabled>Criar conta <small>Em breve</small></button>
+                                        <button type="button" disabled>Entrar <small>Em breve</small></button>
+                                    </div>
+                                </section>
+                            </div>
+                        </section>
+
                         <section class="menu-screen" data-menu-screen="museum" aria-labelledby="museum-title" hidden>
                             <div class="menu-section-heading">
-                                <span>Arquivo do brejo</span>
-                                <h2 id="museum-title">Museu</h2>
-                                <p>O catálogo está sendo preparado. Estes são os primeiros bichos registrados.</p>
+                                <span>Arquivo da Rota da Manhã</span>
+                                <h2 id="museum-title">Museu da Mata</h2>
+                                <p>Registros dos bichos deste bioma e de como cada encontro acontece durante a jornada.</p>
                             </div>
-                            <ul class="bestiary-list" aria-label="Bichos do jogo">
-                                <li><span class="bestiary-sprite bestiary-sprite--gold"></span><strong>Besouro-dourado</strong></li>
-                                <li><span class="bestiary-sprite bestiary-sprite--wave"></span><strong>Besouro-ondulante</strong></li>
-                                <li><span class="bestiary-sprite bestiary-sprite--ground"></span><strong>Besouro-terrestre</strong></li>
-                                <li><span class="bestiary-sprite bestiary-sprite--jumper"></span><strong>Besouro-saltador</strong></li>
-                                <li><span class="bestiary-sprite bestiary-sprite--bee"></span><strong>Abelha-investida</strong></li>
+                            <ul class="bestiary-list bestiary-list--documentary" aria-label="Documentário dos bichos da Rota da Manhã">
+                                <li><span class="bestiary-sprite bestiary-sprite--gold"></span><div><strong>Besouro-dourado</strong><small>Inseto voador · capturável</small><p>Viaja sozinho ou em pequenos bandos. Surge em linhas altas e baixas; a língua alcança o grupo durante o voo.</p></div></li>
+                                <li><span class="bestiary-sprite bestiary-sprite--wave"></span><div><strong>Besouro-ondulante</strong><small>Inseto voador · hostil e capturável</small><p>Alterna altura em ondas e zigue-zagues. Pode descer perto da trilha, exigindo pulo, agachamento ou uma linguada precisa.</p></div></li>
+                                <li><span class="bestiary-sprite bestiary-sprite--ground"></span><div><strong>Besouro-terrestre</strong><small>Corredor do solo · obstáculo</small><p>Corre rente ao chão e não pode ser engolido. Aparece entre pedras e trechos livres, deixando uma janela segura para o salto.</p></div></li>
+                                <li><span class="bestiary-sprite bestiary-sprite--jumper"></span><div><strong>Besouro-saltador</strong><small>Caçador terrestre · obstáculo</small><p>Menor e mais rápido, aproxima-se antes de saltar na direção do sapinho. O movimento é anunciado pela curta preparação das pernas.</p></div></li>
+                                <li><span class="bestiary-sprite bestiary-sprite--bee"></span><div><strong>Abelha-investida</strong><small>Caçadora aérea · capturável</small><p>Chega em zigue-zague, mira por um instante e mergulha com o ferrão. Depois de iniciar a investida, não muda a trajetória.</p></div></li>
                             </ul>
-                            <div class="museum-medals">
-                                <div><span aria-hidden="true">?</span><strong>Medalhas</strong><small>Em construção</small></div>
-                                <i></i><i></i><i></i>
-                            </div>
                         </section>
 
                         <section class="menu-screen" data-menu-screen="skins" aria-labelledby="skins-title" hidden>
@@ -348,8 +381,8 @@
                         <section class="menu-screen" data-menu-screen="settings" aria-labelledby="settings-title" hidden>
                             <div class="menu-section-heading settings-heading">
                                 <span>Bancada de ajustes</span>
-                                <h2 id="settings-title">Configurações</h2>
-                                <p>Ajuste o jogo ao seu jeito. Tudo fica salvo neste aparelho.</p>
+                                <h2 id="settings-title">Configurações do jogo</h2>
+                                <p>Ajuste jogabilidade, som, imagem e controles. Tudo fica salvo neste aparelho.</p>
                             </div>
                             <div class="settings-grid">
                                 <section class="settings-panel" aria-labelledby="audio-settings-title">

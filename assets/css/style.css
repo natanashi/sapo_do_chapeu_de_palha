@@ -1590,7 +1590,7 @@ kbd {
 
 .world-prop {
     position: absolute;
-    z-index: calc(20 + var(--prop-depth, 20));
+    z-index: calc(100 + var(--prop-depth, 20));
     top: var(--prop-y);
     left: var(--prop-x);
     width: var(--prop-width);
@@ -1629,6 +1629,71 @@ kbd {
 
 .world-prop--rock { aspect-ratio: 1.25 / 1; transform: translate(-50%, -82%); }
 .world-prop--rock::after { width: 78%; height: 18%; bottom: 4%; }
+
+.world-landmark {
+    position: absolute;
+    z-index: calc(100 + var(--landmark-depth, 50));
+    top: var(--landmark-y);
+    left: var(--landmark-x);
+    width: clamp(118px, 12%, 205px);
+    aspect-ratio: 1.2 / 1;
+    padding: 0;
+    border: 0;
+    color: #fff4bf;
+    background: transparent;
+    cursor: pointer;
+    filter: drop-shadow(0 7px 0 rgba(29, 45, 23, 0.3));
+    transform: translate(-50%, -88%);
+    transform-origin: center bottom;
+}
+
+.world-landmark::after {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    left: 50%;
+    bottom: 1%;
+    width: 66%;
+    height: 10%;
+    border-radius: 50%;
+    background: rgba(19, 42, 22, 0.35);
+    transform: translateX(-50%);
+}
+
+.world-landmark img {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: pixelated;
+}
+
+.world-landmark span {
+    position: absolute;
+    z-index: 2;
+    left: 50%;
+    bottom: -11px;
+    width: max-content;
+    max-width: 150px;
+    padding: 3px 7px;
+    border: 2px solid #f3d781;
+    color: #fff6ca;
+    background: #244d34;
+    box-shadow: 0 3px 0 #173421;
+    font-family: var(--font-body);
+    font-size: 0.5rem;
+    font-weight: 900;
+    letter-spacing: 0.03em;
+    text-shadow: 1px 1px 0 #102a1a;
+    transform: translateX(-50%);
+}
+
+.world-landmark:hover,
+.world-landmark:focus-visible,
+.world-landmark.is-near { filter: drop-shadow(0 7px 0 rgba(29, 45, 23, 0.3)) drop-shadow(0 0 7px rgba(255, 231, 129, 0.95)); }
+.world-landmark:focus-visible { outline: 3px solid #fff2a5; outline-offset: 5px; }
 
 .world-level {
     position: absolute;
@@ -2016,6 +2081,7 @@ body.reduce-game-motion .insect,
 body.reduce-game-motion .runner,
 body.reduce-game-motion .world-map-frog,
 body.reduce-game-motion .world-level,
+body.reduce-game-motion .world-landmark,
 body.reduce-game-motion .obstacle--ground-beetle,
 body.reduce-game-motion .obstacle--leaping-beetle { animation: none !important; }
 body.reduce-game-motion .scenery-layer,
@@ -2036,6 +2102,35 @@ body.reduce-game-motion .route-map__fill { transition: none; }
 .bestiary-sprite--ground { background-image: url("../img/besouro-terrestre-correndo-sprites.png"); background-size: 400% 100%; background-position: 0 0; }
 .bestiary-sprite--jumper { width: 62px; height: 62px; margin-inline: auto; background-image: url("../img/besouro-saltador-sprites.png"); background-size: 400% 200%; background-position: 0 0; }
 .bestiary-sprite--bee { background-image: url("../img/abelha-investida-sprites.png"); background-size: 400% 100%; background-position: 0 0; }
+.bestiary-list--documentary li { min-height: 126px; grid-template-columns: 76px 1fr; align-items: start; padding: 10px; }
+.bestiary-list--documentary li > div { min-width: 0; }
+.bestiary-list--documentary strong { display: block; margin-bottom: 2px; color: #233d24; font-size: 0.82rem; }
+.bestiary-list--documentary small { display: block; margin-bottom: 6px; color: #866039; font-size: 0.5rem; font-weight: 900; line-height: 1.25; text-transform: uppercase; }
+.bestiary-list--documentary p { margin: 0; color: #493825; font-size: 0.66rem; font-weight: 700; line-height: 1.45; }
+
+.profile-grid { display: grid; gap: 14px; }
+.profile-name-card,
+.profile-account { border: 3px solid #765031; background: rgba(255, 244, 199, 0.72); box-shadow: inset 0 0 0 2px #e7bd68, 5px 6px 0 rgba(74, 46, 27, 0.18); }
+.profile-name-card { display: grid; grid-template-columns: 86px 1fr; align-items: center; gap: 15px; padding: 15px; }
+.profile-avatar { display: block; width: 82px; aspect-ratio: 1; border: 3px solid #5f4028; border-radius: 9px; background: #7fa84f url("../img/sapo-capa.png") 52% 38% / 138% auto no-repeat; box-shadow: inset 0 -11px 0 rgba(27, 70, 37, 0.2), 3px 4px 0 #b87d3d; image-rendering: pixelated; }
+.profile-name-card label { display: block; margin-bottom: 6px; color: #2c4c2c; font-family: var(--font-display); font-size: 1rem; }
+.profile-name-row { display: grid; grid-template-columns: 1fr auto; gap: 7px; }
+.profile-name-row input { min-width: 0; height: 43px; padding: 0 11px; border: 3px solid #785135; border-radius: 4px; color: #2e291f; background: #fff8db; box-shadow: inset 0 3px 0 rgba(128, 88, 43, 0.12); font: 800 0.72rem/1 var(--font-body); }
+.profile-name-row input:focus { outline: 3px solid #e9b849; outline-offset: 2px; }
+.profile-name-row input[aria-invalid="true"] { border-color: #a83d3d; }
+.profile-name-row button { min-height: 43px; padding: 0 14px; border: 3px solid #183c27; border-radius: 4px; color: #fff1b5; background: #2f7145; box-shadow: inset 0 -4px 0 rgba(13, 47, 28, 0.36), 0 3px 0 #6c472c; font-family: var(--font-display); font-size: 0.72rem; cursor: pointer; }
+.profile-name-card small { display: block; margin-top: 6px; color: #70563c; font-size: 0.56rem; font-weight: 800; }
+.profile-error { display: block; min-height: 15px; margin-top: 3px; color: #983c38; font-size: 0.56rem; }
+.profile-saved { min-height: 16px; margin: 1px 0 0; color: #347044; font-size: 0.58rem; font-weight: 900; }
+.profile-account { padding: 14px 16px; }
+.profile-account > div:first-child { display: flex; align-items: center; gap: 10px; }
+.profile-account > div:first-child > span { display: grid; width: 43px; aspect-ratio: 1; border: 3px solid #69482f; place-items: center; color: #fff0a4; background: #315f3b; box-shadow: 3px 3px 0 #bb7d3b; font: 1.5rem/1 var(--font-display); }
+.profile-account h3 { margin: 1px 0 0; color: #2b472d; font-family: var(--font-display); font-size: 1rem; }
+.profile-account small { color: #8c6034; font-size: 0.52rem; font-weight: 900; text-transform: uppercase; }
+.profile-account > p { margin: 10px 0; color: #57432f; font-size: 0.68rem; font-weight: 700; }
+.profile-account-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.profile-account-actions button { min-height: 43px; border: 2px dashed #9a744b; color: #7a6247; background: rgba(228, 203, 145, 0.36); font: 900 0.65rem/1.1 var(--font-body); }
+.profile-account-actions button small { display: block; margin-top: 3px; font-size: 0.45rem; }
 .museum-medals { display: grid; grid-template-columns: 1fr repeat(3, 38px); align-items: center; gap: 7px; margin-top: 14px; padding-top: 12px; border-top: 2px dashed #a0703f; }
 .museum-medals div { display: grid; grid-template-columns: 32px 1fr; align-items: center; column-gap: 7px; text-align: left; }
 .museum-medals div > span { grid-row: 1 / 3; font-family: var(--font-display); font-size: 1.7rem; }
@@ -2438,6 +2533,12 @@ body.reduce-game-motion .route-map__fill { transition: none; }
     .menu-version { position: static; grid-column: 1; text-align: right; }
     .bestiary-list { grid-template-columns: 1fr; }
     .bestiary-list li { min-height: 72px; }
+    .bestiary-list--documentary li { min-height: 112px; }
+    .profile-name-card { grid-template-columns: 64px 1fr; gap: 10px; padding: 10px; }
+    .profile-avatar { width: 62px; }
+    .profile-name-row { grid-template-columns: 1fr; }
+    .profile-name-row button { min-height: 38px; }
+    .profile-account-actions { grid-template-columns: 1fr; }
     .construction-panel { min-height: 310px; }
     .result-menu-button { display: block; margin: 17px 0 0; }
     .main-menu-shell.is-world-map { min-height: calc(100svh - 16px); padding: 8px; }
@@ -2449,6 +2550,8 @@ body.reduce-game-motion .route-map__fill { transition: none; }
     .world-level { width: clamp(36px, 10vw, 48px); border-width: 3px; }
     .world-level strong { display: none; }
     .world-map-frog { width: clamp(48px, 14vw, 66px); }
+    .world-landmark { width: clamp(88px, 15%, 122px); }
+    .world-landmark span { font-size: 0.43rem; }
     .world-map-prompt { width: min(250px, 52%); min-width: 190px; padding: 7px; }
     .world-map-prompt strong { font-size: 0.82rem; }
     .world-map-prompt button { min-height: 30px; font-size: 0.56rem; }
