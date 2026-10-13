@@ -11,10 +11,11 @@
     <link rel="preload" as="image" href="assets/img/nuvem-pixel-flutuante-v1.png">
     <link rel="preload" as="image" href="assets/img/passaro-horizonte-sprites-v1.png">
     <link rel="preload" as="image" href="assets/img/mapa-mundo-grama-v2.png">
-    <link rel="preload" as="image" href="assets/img/mapa-bosque-pixel-v1.png">
-    <link rel="preload" as="image" href="assets/img/mapa-rochas-pixel-v1.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=65">
-    <script src="assets/js/script.js?v=65" defer></script>
+    <link rel="preload" as="image" href="assets/img/mapa-arvore-simples-v2.png">
+    <link rel="preload" as="image" href="assets/img/mapa-rocha-simples-v2.png">
+    <link rel="preload" as="image" href="assets/img/sapo-corrida-bipede-v3.png">
+    <link rel="stylesheet" href="assets/css/style.css?v=66">
+    <script src="assets/js/script.js?v=66" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body class="has-indie-intro">
@@ -215,34 +216,40 @@
                             </div>
                             <div class="world-map" id="world-map" tabindex="0" aria-label="Mapa explorável da história. Use as setas para caminhar.">
                                 <div class="world-map-world" id="world-map-world">
-                                    <img class="world-prop world-prop--trees" src="assets/img/mapa-bosque-pixel-v1.png" alt="" draggable="false" style="--prop-x: 10%; --prop-y: 14%; --prop-width: 13%;">
-                                    <img class="world-prop world-prop--trees" src="assets/img/mapa-bosque-pixel-v1.png" alt="" draggable="false" style="--prop-x: 52%; --prop-y: 11%; --prop-width: 14%; --prop-flip: -1;">
-                                    <img class="world-prop world-prop--trees" src="assets/img/mapa-bosque-pixel-v1.png" alt="" draggable="false" style="--prop-x: 91%; --prop-y: 22%; --prop-width: 12%;">
-                                    <img class="world-prop world-prop--trees" src="assets/img/mapa-bosque-pixel-v1.png" alt="" draggable="false" style="--prop-x: 50%; --prop-y: 50%; --prop-width: 15%; --prop-flip: -1;">
-                                    <img class="world-prop world-prop--trees" src="assets/img/mapa-bosque-pixel-v1.png" alt="" draggable="false" style="--prop-x: 92%; --prop-y: 85%; --prop-width: 13%;">
-                                    <img class="world-prop world-prop--trees" src="assets/img/mapa-bosque-pixel-v1.png" alt="" draggable="false" style="--prop-x: 19%; --prop-y: 62%; --prop-width: 12%; --prop-flip: -1;">
-                                    <img class="world-prop world-prop--rocks" src="assets/img/mapa-rochas-pixel-v1.png" alt="" draggable="false" style="--prop-x: 24%; --prop-y: 31%; --prop-width: 8%;">
-                                    <img class="world-prop world-prop--rocks" src="assets/img/mapa-rochas-pixel-v1.png" alt="" draggable="false" style="--prop-x: 76%; --prop-y: 44%; --prop-width: 9%; --prop-flip: -1;">
-                                    <img class="world-prop world-prop--rocks" src="assets/img/mapa-rochas-pixel-v1.png" alt="" draggable="false" style="--prop-x: 48%; --prop-y: 82%; --prop-width: 8%;">
-                                    <img class="world-prop world-prop--rocks" src="assets/img/mapa-rochas-pixel-v1.png" alt="" draggable="false" style="--prop-x: 39%; --prop-y: 36%; --prop-width: 7%; --prop-flip: -1;">
-                                    <img class="world-prop world-prop--rocks" src="assets/img/mapa-rochas-pixel-v1.png" alt="" draggable="false" style="--prop-x: 66%; --prop-y: 64%; --prop-width: 8%;">
+                                    <div class="world-map-ground" aria-hidden="true"></div>
 
-                                    <button class="world-level is-unlocked" type="button" data-world-level="0" aria-label="Fase 1, Rota da Manhã" style="--level-x: 29%; --level-y: 80%;">
+                                    <span class="world-prop world-prop--tree" style="--prop-x: 10%; --prop-y: 18%; --prop-width: 7.4%; --prop-depth: 18;"><img src="assets/img/mapa-arvore-simples-v2.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--tree" style="--prop-x: 52%; --prop-y: 14%; --prop-width: 7%; --prop-depth: 14; --prop-flip: -1;"><img src="assets/img/mapa-arvore-simples-v2.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--tree" style="--prop-x: 90%; --prop-y: 24%; --prop-width: 7.8%; --prop-depth: 24;"><img src="assets/img/mapa-arvore-simples-v2.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--tree" style="--prop-x: 51%; --prop-y: 53%; --prop-width: 9%; --prop-depth: 53; --prop-flip: -1;"><img src="assets/img/mapa-arvore-simples-v2.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--tree" style="--prop-x: 91%; --prop-y: 88%; --prop-width: 9.8%; --prop-depth: 88;"><img src="assets/img/mapa-arvore-simples-v2.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--tree" style="--prop-x: 18%; --prop-y: 65%; --prop-width: 8.6%; --prop-depth: 65; --prop-flip: -1;"><img src="assets/img/mapa-arvore-simples-v2.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--tree" style="--prop-x: 31%; --prop-y: 39%; --prop-width: 8%; --prop-depth: 39;"><img src="assets/img/mapa-arvore-simples-v2.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--tree" style="--prop-x: 73%; --prop-y: 38%; --prop-width: 7.8%; --prop-depth: 38; --prop-flip: -1;"><img src="assets/img/mapa-arvore-simples-v2.png" alt="" draggable="false"></span>
+
+                                    <span class="world-prop world-prop--rock" style="--prop-x: 24%; --prop-y: 31%; --prop-width: 4.4%; --prop-depth: 31;"><img src="assets/img/mapa-rocha-simples-v2.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--rock" style="--prop-x: 77%; --prop-y: 46%; --prop-width: 5%; --prop-depth: 46; --prop-flip: -1;"><img src="assets/img/mapa-rocha-simples-v2.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--rock" style="--prop-x: 48%; --prop-y: 83%; --prop-width: 5.2%; --prop-depth: 83;"><img src="assets/img/mapa-rocha-simples-v2.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--rock" style="--prop-x: 40%; --prop-y: 32%; --prop-width: 4.2%; --prop-depth: 32; --prop-flip: -1;"><img src="assets/img/mapa-rocha-simples-v2.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--rock" style="--prop-x: 66%; --prop-y: 66%; --prop-width: 4.8%; --prop-depth: 66;"><img src="assets/img/mapa-rocha-simples-v2.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--rock" style="--prop-x: 83%; --prop-y: 71%; --prop-width: 4.2%; --prop-depth: 71; --prop-flip: -1;"><img src="assets/img/mapa-rocha-simples-v2.png" alt="" draggable="false"></span>
+
+                                    <button class="world-level is-unlocked" type="button" data-world-level="0" aria-label="Fase 1, Rota da Manhã" style="--level-x: 29%; --level-y: 80%; --level-depth: 80;">
                                         <span><b>1</b></span><strong>Rota da Manhã</strong>
                                     </button>
-                                    <button class="world-level is-locked" type="button" data-world-level="1" aria-label="Fase 2, Bosque dos Cogumelos, em construção" style="--level-x: 68%; --level-y: 82%;">
+                                    <button class="world-level is-locked" type="button" data-world-level="1" aria-label="Fase 2, Bosque dos Cogumelos, em construção" style="--level-x: 68%; --level-y: 82%; --level-depth: 82;">
                                         <span><b>2</b></span><strong>Bosque dos Cogumelos</strong>
                                     </button>
-                                    <button class="world-level is-locked" type="button" data-world-level="2" aria-label="Fase 3, Pedreira Musgosa, em construção" style="--level-x: 84%; --level-y: 57%;">
+                                    <button class="world-level is-locked" type="button" data-world-level="2" aria-label="Fase 3, Pedreira Musgosa, em construção" style="--level-x: 84%; --level-y: 57%; --level-depth: 57;">
                                         <span><b>3</b></span><strong>Pedreira Musgosa</strong>
                                     </button>
-                                    <button class="world-level is-locked" type="button" data-world-level="3" aria-label="Fase 4, Clareira dos Ventos, em construção" style="--level-x: 68%; --level-y: 27%;">
+                                    <button class="world-level is-locked" type="button" data-world-level="3" aria-label="Fase 4, Clareira dos Ventos, em construção" style="--level-x: 68%; --level-y: 27%; --level-depth: 27;">
                                         <span><b>4</b></span><strong>Clareira dos Ventos</strong>
                                     </button>
-                                    <button class="world-level is-locked" type="button" data-world-level="4" aria-label="Fase 5, Vale das Folhas, em construção" style="--level-x: 37%; --level-y: 20%;">
+                                    <button class="world-level is-locked" type="button" data-world-level="4" aria-label="Fase 5, Vale das Folhas, em construção" style="--level-x: 37%; --level-y: 20%; --level-depth: 20;">
                                         <span><b>5</b></span><strong>Vale das Folhas</strong>
                                     </button>
-                                    <button class="world-level is-locked" type="button" data-world-level="5" aria-label="Fase 6, Coração da Mata, em construção" style="--level-x: 13%; --level-y: 46%;">
+                                    <button class="world-level is-locked" type="button" data-world-level="5" aria-label="Fase 6, Coração da Mata, em construção" style="--level-x: 13%; --level-y: 46%; --level-depth: 46;">
                                         <span><b>6</b></span><strong>Coração da Mata</strong>
                                     </button>
                                     <div class="world-map-frog" id="world-map-frog" aria-hidden="true"></div>

@@ -213,8 +213,8 @@ const ASSET_URLS = [
     'assets/img/sapo-lingua-limpa-v3.png',
     'assets/img/sapo-capa.png',
     'assets/img/mapa-mundo-grama-v2.png',
-    'assets/img/mapa-bosque-pixel-v1.png',
-    'assets/img/mapa-rochas-pixel-v1.png',
+    'assets/img/mapa-arvore-simples-v2.png',
+    'assets/img/mapa-rocha-simples-v2.png',
     'assets/img/inseto-voando-sprites.png',
     'assets/img/besouro-ondulante-voando-sprites.png',
     'assets/img/abelha-investida-sprites.png',
@@ -940,17 +940,20 @@ const WORLD_LEVELS = [
 const WORLD_MAP_SCALE = 2;
 const WORLD_LEVEL_REACH = 4.8;
 const WORLD_MAP_BLOCKERS = [
-    { x: 10, y: 14, width: 13, height: 13 },
-    { x: 52, y: 11, width: 14, height: 14 },
-    { x: 91, y: 22, width: 12, height: 13 },
-    { x: 50, y: 50, width: 15, height: 16 },
-    { x: 92, y: 85, width: 13, height: 15 },
-    { x: 19, y: 62, width: 12, height: 14 },
-    { x: 24, y: 31, width: 8, height: 7 },
-    { x: 76, y: 44, width: 9, height: 8 },
-    { x: 48, y: 82, width: 8, height: 7 },
-    { x: 39, y: 36, width: 7, height: 6 },
-    { x: 66, y: 64, width: 8, height: 7 },
+    { x: 10, y: 18, width: 4.8, height: 3.2 },
+    { x: 52, y: 14, width: 4.6, height: 3.1 },
+    { x: 90, y: 24, width: 5, height: 3.4 },
+    { x: 51, y: 53, width: 5.4, height: 3.6 },
+    { x: 91, y: 88, width: 5.8, height: 3.8 },
+    { x: 18, y: 65, width: 5.2, height: 3.5 },
+    { x: 31, y: 39, width: 5, height: 3.4 },
+    { x: 73, y: 38, width: 4.9, height: 3.3 },
+    { x: 24, y: 31, width: 3.2, height: 2.4 },
+    { x: 77, y: 46, width: 3.5, height: 2.5 },
+    { x: 48, y: 83, width: 3.6, height: 2.6 },
+    { x: 40, y: 32, width: 3.1, height: 2.3 },
+    { x: 66, y: 66, width: 3.4, height: 2.5 },
+    { x: 83, y: 71, width: 3.1, height: 2.3 },
 ];
 
 const worldMapState = {
@@ -992,6 +995,7 @@ function renderWorldMapCamera() {
 function renderWorldMapFrog() {
     worldMapFrog.style.setProperty('--map-x', `${worldMapState.x}%`);
     worldMapFrog.style.setProperty('--map-y', `${worldMapState.y}%`);
+    worldMapFrog.style.setProperty('--frog-depth', `${24 + Math.round(worldMapState.y)}`);
     renderWorldMapCamera();
 }
 

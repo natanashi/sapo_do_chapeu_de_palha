@@ -1559,31 +1559,80 @@ kbd {
     left: 0;
     width: 200%;
     height: 200%;
-    background: #79aa45 url("../img/mapa-mundo-grama-v2.png") center / 100% 100% no-repeat;
+    overflow: hidden;
+    background: #416b36;
     transform: translate3d(var(--map-camera-x, 0), var(--map-camera-y, 0), 0);
+    transform-style: preserve-3d;
     will-change: transform;
+}
+
+.world-map-ground {
+    position: absolute;
+    z-index: 1;
+    inset: -7% -5%;
+    background:
+        linear-gradient(180deg, rgba(24, 63, 39, 0.3), transparent 32%, rgba(255, 233, 151, 0.1) 100%),
+        repeating-linear-gradient(168deg, transparent 0 52px, rgba(41, 84, 39, 0.08) 53px 55px),
+        #79aa45 url("../img/mapa-mundo-grama-v2.png") center / 100% 100% no-repeat;
+    box-shadow: inset 0 70px 110px rgba(23, 61, 37, 0.2), inset 0 -80px 100px rgba(235, 207, 112, 0.08);
+    image-rendering: pixelated;
+    transform: perspective(900px) rotateX(14deg) scale(1.1);
+    transform-origin: 50% 45%;
+}
+
+.world-map-ground::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent 0 11.8%, rgba(255, 248, 190, 0.045) 12%, transparent 12.35%);
 }
 
 .world-prop {
     position: absolute;
-    z-index: 2;
+    z-index: calc(20 + var(--prop-depth, 20));
     top: var(--prop-y);
     left: var(--prop-x);
     width: var(--prop-width);
-    height: auto;
-    filter: drop-shadow(4px 7px 0 rgba(38, 59, 25, 0.2));
-    image-rendering: pixelated;
+    aspect-ratio: 1;
     pointer-events: none;
-    transform: translate(-50%, -50%) scaleX(var(--prop-flip, 1));
-    transform-origin: center;
+    transform: translate(-50%, -94%);
+    transform-origin: center bottom;
     user-select: none;
 }
 
-.world-prop--rocks { z-index: 3; filter: drop-shadow(3px 5px 0 rgba(38, 52, 27, 0.22)); }
+.world-prop::after {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    left: 50%;
+    bottom: 1%;
+    width: 62%;
+    height: 13%;
+    border-radius: 50%;
+    background: rgba(25, 48, 24, 0.32);
+    filter: blur(1px);
+    transform: translateX(-50%);
+}
+
+.world-prop img {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(2px 3px 0 rgba(31, 52, 25, 0.18));
+    image-rendering: pixelated;
+    transform: scaleX(var(--prop-flip, 1));
+}
+
+.world-prop--rock { aspect-ratio: 1.25 / 1; transform: translate(-50%, -82%); }
+.world-prop--rock::after { width: 78%; height: 18%; bottom: 4%; }
 
 .world-level {
     position: absolute;
-    z-index: 6;
+    z-index: calc(24 + var(--level-depth, 50));
     display: grid;
     width: clamp(48px, 6vw, 72px);
     aspect-ratio: 1;
@@ -1601,6 +1650,19 @@ kbd {
     top: var(--level-y);
     cursor: pointer;
     transform: translate(-50%, -50%);
+}
+
+.world-level::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    left: 50%;
+    bottom: -15%;
+    width: 76%;
+    height: 20%;
+    border-radius: 50%;
+    background: rgba(31, 53, 27, 0.3);
+    transform: translateX(-50%);
 }
 
 .world-level::before {
@@ -1663,23 +1725,36 @@ kbd {
 
 .world-map-frog {
     position: absolute;
-    z-index: 8;
+    z-index: var(--frog-depth, 100);
     left: var(--map-x, 10%);
     top: var(--map-y, 86%);
-    width: clamp(54px, 7vw, 84px);
+    width: clamp(56px, 6.2vw, 76px);
     aspect-ratio: 1;
     background-image: var(--frog-run-sprite);
     background-position: 0 0;
     background-repeat: no-repeat;
-    background-size: 404% 202%;
-    filter: drop-shadow(4px 6px 0 rgba(13, 31, 18, 0.38));
+    background-size: 400% 200%;
+    filter: drop-shadow(3px 4px 0 rgba(13, 31, 18, 0.32));
     image-rendering: pixelated;
     pointer-events: none;
-    transform: translate(-50%, -70%) scaleX(var(--map-facing, 1));
+    transform: translate(-50%, -86%) scaleX(var(--map-facing, 1));
     transform-origin: center bottom;
 }
 
-.world-map-frog.is-walking { animation: frog-run-biped 620ms linear infinite; }
+.world-map-frog::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    left: 50%;
+    bottom: 2%;
+    width: 54%;
+    height: 12%;
+    border-radius: 50%;
+    background: rgba(20, 43, 24, 0.34);
+    transform: translateX(-50%) scaleX(var(--map-facing, 1));
+}
+
+.world-map-frog.is-walking { animation: world-frog-walk 760ms linear infinite; }
 
 .world-map-prompt {
     position: absolute;
@@ -2175,6 +2250,17 @@ body.reduce-game-motion .route-map__fill { transition: none; }
 }
 
 @keyframes frog-run-biped {
+    0%, 13.99% { background-position: 0 0; }
+    14%, 24.99% { background-position: 33.333% 0; }
+    25%, 35.99% { background-position: 66.667% 0; }
+    36%, 47.99% { background-position: 100% 0; }
+    48%, 60.99% { background-position: 0 100%; }
+    61%, 72.99% { background-position: 33.333% 100%; }
+    73%, 85.99% { background-position: 66.667% 100%; }
+    86%, 100% { background-position: 100% 100%; }
+}
+
+@keyframes world-frog-walk {
     0%, 13.99% { background-position: 0 0; }
     14%, 24.99% { background-position: 33.333% 0; }
     25%, 35.99% { background-position: 66.667% 0; }
