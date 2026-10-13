@@ -11,8 +11,8 @@
     <link rel="preload" as="image" href="assets/img/nuvem-pixel-flutuante-v1.png">
     <link rel="preload" as="image" href="assets/img/passaro-horizonte-sprites-v1.png">
     <link rel="preload" as="image" href="assets/img/mapa-mundo-grama-v2.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=56">
-    <script src="assets/js/script.js?v=56" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=58">
+    <script src="assets/js/script.js?v=58" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body>
@@ -278,12 +278,64 @@
                         </section>
 
                         <section class="menu-screen" data-menu-screen="settings" aria-labelledby="settings-title" hidden>
-                            <div class="construction-panel">
-                                <span class="construction-panel__icon" aria-hidden="true">⚙</span>
-                                <small>Bancada de ajustes</small>
-                                <h2 id="settings-title">Configurações em construção</h2>
-                                <p>As opções de som, imagem e controles chegarão em uma próxima versão.</p>
+                            <div class="menu-section-heading settings-heading">
+                                <span>Bancada de ajustes</span>
+                                <h2 id="settings-title">Configurações</h2>
+                                <p>Ajuste o jogo ao seu jeito. Tudo fica salvo neste aparelho.</p>
                             </div>
+                            <div class="settings-grid">
+                                <section class="settings-panel" aria-labelledby="audio-settings-title">
+                                    <div class="settings-panel__title">
+                                        <span aria-hidden="true">♫</span>
+                                        <div><small>Áudio</small><h3 id="audio-settings-title">Som do brejo</h3></div>
+                                    </div>
+                                    <label class="setting-switch" for="setting-music-enabled">
+                                        <span><strong>Música</strong><small>Trilha durante a jornada</small></span>
+                                        <input id="setting-music-enabled" type="checkbox" checked>
+                                        <i aria-hidden="true"></i>
+                                    </label>
+                                    <label class="setting-range" for="setting-music-volume">
+                                        <span><strong>Volume da música</strong><output id="music-volume-value">28%</output></span>
+                                        <input id="setting-music-volume" type="range" min="0" max="100" value="28" step="1">
+                                    </label>
+                                    <label class="setting-switch" for="setting-effects-enabled">
+                                        <span><strong>Efeitos</strong><small>Pulo, impacto e avisos</small></span>
+                                        <input id="setting-effects-enabled" type="checkbox" checked>
+                                        <i aria-hidden="true"></i>
+                                    </label>
+                                    <label class="setting-range" for="setting-effects-volume">
+                                        <span><strong>Volume dos efeitos</strong><output id="effects-volume-value">65%</output></span>
+                                        <input id="setting-effects-volume" type="range" min="0" max="100" value="65" step="1">
+                                    </label>
+                                </section>
+
+                                <section class="settings-panel" aria-labelledby="play-settings-title">
+                                    <div class="settings-panel__title">
+                                        <span aria-hidden="true">◈</span>
+                                        <div><small>Imagem e interface</small><h3 id="play-settings-title">Jeito de jogar</h3></div>
+                                    </div>
+                                    <label class="setting-switch" for="setting-reduced-motion">
+                                        <span><strong>Movimento reduzido</strong><small>Diminui animações de cenário</small></span>
+                                        <input id="setting-reduced-motion" type="checkbox">
+                                        <i aria-hidden="true"></i>
+                                    </label>
+                                    <label class="setting-switch" for="setting-compact-controls">
+                                        <span><strong>Controles compactos</strong><small>Mostra apenas os símbolos</small></span>
+                                        <input id="setting-compact-controls" type="checkbox">
+                                        <i aria-hidden="true"></i>
+                                    </label>
+                                    <button class="settings-fullscreen" id="settings-fullscreen" type="button">
+                                        <span aria-hidden="true">⛶</span><strong id="fullscreen-label">Usar tela cheia</strong>
+                                    </button>
+                                    <div class="settings-controls" aria-label="Resumo dos controles">
+                                        <span><kbd>A</kbd><kbd>D</kbd><small>Andar</small></span>
+                                        <span><kbd>↓</kbd><small>Agachar</small></span>
+                                        <span><kbd>Espaço</kbd><small>Pular</small></span>
+                                        <span><kbd>X</kbd><small>Língua</small></span>
+                                    </div>
+                                </section>
+                            </div>
+                            <p class="settings-saved" id="settings-saved" role="status" aria-live="polite">Configurações salvas</p>
                         </section>
                     </div>
 

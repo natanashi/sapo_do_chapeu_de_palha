@@ -28,6 +28,17 @@ const skinPreviewTongue = document.querySelector('#skin-preview-tongue');
 const skinResetButton = document.querySelector('#skin-reset');
 const skinSavedStatus = document.querySelector('#skin-saved');
 const menuFrog = document.querySelector('.menu-frog');
+const musicEnabledInput = document.querySelector('#setting-music-enabled');
+const musicVolumeInput = document.querySelector('#setting-music-volume');
+const musicVolumeValue = document.querySelector('#music-volume-value');
+const effectsEnabledInput = document.querySelector('#setting-effects-enabled');
+const effectsVolumeInput = document.querySelector('#setting-effects-volume');
+const effectsVolumeValue = document.querySelector('#effects-volume-value');
+const reducedMotionInput = document.querySelector('#setting-reduced-motion');
+const compactControlsInput = document.querySelector('#setting-compact-controls');
+const fullscreenButton = document.querySelector('#settings-fullscreen');
+const fullscreenLabel = document.querySelector('#fullscreen-label');
+const settingsSavedStatus = document.querySelector('#settings-saved');
 const playButton = document.querySelector('#play-button');
 const playLabel = document.querySelector('#play-label');
 const pauseButton = document.querySelector('#pause-button');
@@ -57,8 +68,9 @@ const orientationGuard = document.querySelector('#orientation-guard');
 const jumpAudio = new Audio('assets/aud/pulo.mp3');
 const loseAudio = new Audio('assets/aud/risada_duende.mp3');
 const backgroundMusic = document.querySelector('#background-music');
-backgroundMusic.volume = 0.28;
 const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+const gameSettings = readGameSettings();
+let settingsSavedTimer = 0;
 
 const PHASES = [
     {
@@ -326,12 +338,83 @@ function setStatus(message) {
     });
 }
 
+function readGameSettings() {
+    const defaults = {
+        musicEnabled: true,
+        musicVolume: 0.28,
+        effectsEnabled: true,
+        effectsVolume: 0.65,
+        reducedMotion: false,
+        compactControls: false,
+    };
+    try {
+        const stored = JSON.parse(localStorage.getItem('sapo-game-settings') || '{}');
+        return {
+            musicEnabled: typeof stored.musicEnabled === 'boolean' ? stored.musicEnabled : defaults.musicEnabled,
+            musicVolume: Number.isFinite(stored.musicVolume) ? clamp(stored.musicVolume, 0, 1) : defaults.musicVolume,
+            effectsEnabled: typeof stored.effectsEnabled === 'boolean' ? stored.effectsEnabled : defaults.effectsEnabled,
+            effectsVolume: Number.isFinite(stored.effectsVolume) ? clamp(stored.effectsVolume, 0, 1) : defaults.effectsVolume,
+            reducedMotion: typeof stored.reducedMotion === 'boolean' ? stored.reducedMotion : defaults.reducedMotion,
+            compactControls: typeof stored.compactControls === 'boolean' ? stored.compactControls : defaults.compactControls,
+        };
+    } catch {
+        return defaults;
+    }
+}
+
+function shouldReduceMotion() {
+    return gameSettings.reducedMotion || reducedMotionQuery.matches;
+}
+
+function announceSettingsSaved() {
+    settingsSavedStatus.textContent = 'Configurações salvas neste aparelho';
+    settingsSavedStatus.classList.add('is-visible');
+    window.clearTimeout(settingsSavedTimer);
+    settingsSavedTimer = window.setTimeout(() => settingsSavedStatus.classList.remove('is-visible'), 1300);
+}
+
+function applyGameSettings({ save = false, announce = false } = {}) {
+    backgroundMusic.volume = gameSettings.musicVolume;
+    jumpAudio.volume = gameSettings.effectsVolume;
+    loseAudio.volume = gameSettings.effectsVolume;
+    document.body.classList.toggle('reduce-game-motion', gameSettings.reducedMotion);
+    document.body.classList.toggle('compact-game-controls', gameSettings.compactControls);
+
+    musicEnabledInput.checked = gameSettings.musicEnabled;
+    musicVolumeInput.value = String(Math.round(gameSettings.musicVolume * 100));
+    musicVolumeInput.disabled = !gameSettings.musicEnabled;
+    musicVolumeValue.value = `${musicVolumeInput.value}%`;
+    effectsEnabledInput.checked = gameSettings.effectsEnabled;
+    effectsVolumeInput.value = String(Math.round(gameSettings.effectsVolume * 100));
+    effectsVolumeInput.disabled = !gameSettings.effectsEnabled;
+    effectsVolumeValue.value = `${effectsVolumeInput.value}%`;
+    reducedMotionInput.checked = gameSettings.reducedMotion;
+    compactControlsInput.checked = gameSettings.compactControls;
+
+    if (!gameSettings.musicEnabled) backgroundMusic.pause();
+    else if (state?.mode === 'playing' && backgroundMusic.paused) backgroundMusic.play().catch(() => {});
+
+    if (save) {
+        try {
+            localStorage.setItem('sapo-game-settings', JSON.stringify(gameSettings));
+        } catch {}
+    }
+    if (announce) announceSettingsSaved();
+}
+
+function updateFullscreenLabel() {
+    fullscreenLabel.textContent = document.fullscreenElement ? 'Sair da tela cheia' : 'Usar tela cheia';
+    fullscreenButton.disabled = !document.fullscreenEnabled;
+}
+
 function playSound(audio) {
+    if (!gameSettings.effectsEnabled) return;
     audio.currentTime = 0;
     audio.play().catch(() => {});
 }
 
 function playBackgroundMusic(restart = false) {
+    if (!gameSettings.musicEnabled) return;
     if (restart) backgroundMusic.currentTime = 0;
     backgroundMusic.play().catch(() => {});
 }
@@ -1137,6 +1220,8 @@ function showMenuScreen(screenName, focusFirst = true) {
     });
     menuBackButton.classList.toggle('is-hidden', screenName === 'main');
     mainMenuShell.classList.toggle('is-world-map', screenName === 'maps');
+    overlay.scrollTop = 0;
+    mainMenuShell.scrollTop = 0;
 
     if (screenName === 'maps') {
         window.requestAnimationFrame(startWorldMapNavigation);
@@ -1685,7 +1770,7 @@ function gameLoop(currentTime) {
     runnerLayer.style.setProperty('--run-cycle', `${runCycle.toFixed(0)}ms`);
     if (currentTime >= state.swallowUntil) runnerLayer.classList.remove('is-swallowing');
     updateTongueCooldown(currentTime);
-    if (!reducedMotionQuery.matches) state.sceneTravel += worldSpeed * 0.075 * delta;
+    if (!shouldReduceMotion()) state.sceneTravel += worldSpeed * 0.075 * delta;
     state.groundTravel += worldSpeed * delta;
     updateWorldMotion();
 
@@ -1962,6 +2047,49 @@ skinResetButton.addEventListener('click', () => {
     applySkinColors(true);
 });
 
+musicEnabledInput.addEventListener('change', () => {
+    gameSettings.musicEnabled = musicEnabledInput.checked;
+    applyGameSettings({ save: true, announce: true });
+});
+
+musicVolumeInput.addEventListener('input', () => {
+    gameSettings.musicVolume = Number(musicVolumeInput.value) / 100;
+    applyGameSettings({ save: true, announce: true });
+});
+
+effectsEnabledInput.addEventListener('change', () => {
+    gameSettings.effectsEnabled = effectsEnabledInput.checked;
+    applyGameSettings({ save: true, announce: true });
+});
+
+effectsVolumeInput.addEventListener('input', () => {
+    gameSettings.effectsVolume = Number(effectsVolumeInput.value) / 100;
+    applyGameSettings({ save: true, announce: true });
+});
+
+reducedMotionInput.addEventListener('change', () => {
+    gameSettings.reducedMotion = reducedMotionInput.checked;
+    applyGameSettings({ save: true, announce: true });
+});
+
+compactControlsInput.addEventListener('change', () => {
+    gameSettings.compactControls = compactControlsInput.checked;
+    applyGameSettings({ save: true, announce: true });
+});
+
+fullscreenButton.addEventListener('click', async () => {
+    try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else await document.documentElement.requestFullscreen();
+        announceSettingsSaved();
+    } catch {
+        settingsSavedStatus.textContent = 'Tela cheia não está disponível neste navegador';
+        settingsSavedStatus.classList.add('is-visible');
+    }
+});
+
+document.addEventListener('fullscreenchange', updateFullscreenLabel);
+
 pauseButton.addEventListener('click', () => {
     if (state.mode === 'paused') resumeGame();
     else pauseGame();
@@ -2009,5 +2137,7 @@ if ('ResizeObserver' in window) {
 window.addEventListener('orientationchange', syncOrientationGuard);
 window.addEventListener('resize', syncOrientationGuard);
 syncOrientationGuard();
+applyGameSettings();
+updateFullscreenLabel();
 initializeSkins();
 initializeGame();

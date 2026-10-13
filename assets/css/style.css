@@ -1609,6 +1609,66 @@ kbd {
 .skin-saved { min-height: 18px; margin: 0; color: #315f35; font-size: 0.62rem; font-weight: 900; opacity: 0; text-align: center; transition: opacity 140ms ease; }
 .skin-saved.is-visible { opacity: 1; }
 
+.settings-heading { margin-bottom: 12px; }
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.settings-panel {
+    min-width: 0;
+    padding: 12px;
+    border: 3px solid #674329;
+    background:
+        repeating-linear-gradient(0deg, rgba(120, 76, 35, 0.05) 0 2px, transparent 2px 7px),
+        rgba(255, 241, 190, 0.68);
+    box-shadow: inset 0 0 0 2px rgba(203, 143, 66, 0.54), 3px 4px 0 rgba(73, 44, 24, 0.26);
+}
+.settings-panel__title { display: grid; grid-template-columns: 39px 1fr; align-items: center; gap: 8px; margin-bottom: 9px; padding-bottom: 8px; border-bottom: 2px dashed #aa7440; }
+.settings-panel__title > span { display: grid; width: 37px; aspect-ratio: 1; border: 2px solid #392416; place-items: center; color: #fff0ad; background: #315f35; box-shadow: 3px 3px 0 #6d482a; font-family: var(--font-display); font-size: 1.15rem; }
+.settings-panel__title small { display: block; color: #985525; font-size: 0.52rem; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; }
+.settings-panel__title h3 { margin: 0; color: #173f2a; font-family: var(--font-display); font-size: 1.2rem; line-height: 1; }
+.setting-switch,
+.setting-range { display: block; margin-top: 8px; padding: 8px 9px; border: 2px solid #9b6b3d; background: rgba(255, 249, 217, 0.68); }
+.setting-switch { position: relative; display: grid; min-height: 54px; grid-template-columns: 1fr 45px; align-items: center; gap: 8px; cursor: pointer; }
+.setting-switch span,
+.setting-switch strong,
+.setting-switch small { display: block; }
+.setting-switch strong,
+.setting-range strong { color: #2a3f27; font-size: 0.72rem; }
+.setting-switch small { margin-top: 2px; color: #71523a; font-size: 0.54rem; font-weight: 700; line-height: 1.2; }
+.setting-switch input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.setting-switch i { position: relative; width: 43px; height: 25px; border: 3px solid #49301e; background: #9b8c69; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2); transition: background-color 120ms steps(2, end); }
+.setting-switch i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 13px; height: 13px; background: #fff1b1; box-shadow: 2px 2px 0 #51331e; transition: transform 120ms steps(2, end); }
+.setting-switch input:checked + i { background: #4f913f; }
+.setting-switch input:checked + i::after { transform: translateX(17px); }
+.setting-switch input:focus-visible + i { outline: 3px solid #fff; outline-offset: 3px; }
+.setting-range > span { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+.setting-range output { min-width: 38px; color: #8b4b25; font-family: var(--font-data); font-size: 0.7rem; font-weight: 700; text-align: right; }
+.setting-range input { width: 100%; height: 19px; margin: 0; accent-color: #39743a; cursor: pointer; }
+.setting-range input:disabled { cursor: not-allowed; filter: grayscale(0.8); opacity: 0.45; }
+.settings-fullscreen { display: flex; width: 100%; min-height: 43px; align-items: center; justify-content: center; gap: 7px; margin-top: 8px; border: 3px solid #49301e; color: #fff2bd; background: #6d4728; box-shadow: inset 0 0 0 2px #9d6937, 0 4px 0 #322014; font-size: 0.66rem; text-transform: uppercase; }
+.settings-fullscreen:hover:not(:disabled) { filter: brightness(1.12); transform: translateY(-1px); }
+.settings-fullscreen:active:not(:disabled) { transform: translateY(3px); box-shadow: inset 0 0 0 2px #9d6937, 0 1px 0 #322014; }
+.settings-fullscreen:disabled { cursor: not-allowed; opacity: 0.5; }
+.settings-fullscreen:focus-visible { outline: 4px solid #fff; outline-offset: 3px; }
+.settings-controls { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; margin-top: 10px; }
+.settings-controls > span { display: flex; min-height: 31px; align-items: center; gap: 4px; padding: 4px 6px; border: 1px solid #9e7045; color: #5f4936; background: rgba(255,255,255,0.22); }
+.settings-controls kbd { min-width: 21px; padding: 2px 4px; border: 1px solid #7b5a3e; border-radius: 4px; background: #fff3c7; box-shadow: 0 2px 0 #9f7247; font-family: var(--font-data); font-size: 0.52rem; text-align: center; }
+.settings-controls small { margin-left: auto; font-size: 0.52rem; font-weight: 800; }
+.settings-saved { min-height: 17px; margin: 8px 0 0; color: #315f35; font-size: 0.62rem; font-weight: 900; opacity: 0; text-align: center; transition: opacity 140ms ease; }
+.settings-saved.is-visible { opacity: 1; }
+
+body.compact-game-controls .action-button > span:last-child { display: none; }
+body.compact-game-controls .action-button { width: 64px; min-width: 64px; padding-inline: 6px; border-radius: 50%; }
+body.reduce-game-motion .horizon-birds,
+body.reduce-game-motion .sky-clouds { display: none; }
+body.reduce-game-motion .insect,
+body.reduce-game-motion .runner,
+body.reduce-game-motion .world-map-frog,
+body.reduce-game-motion .world-level,
+body.reduce-game-motion .obstacle--ground-beetle,
+body.reduce-game-motion .obstacle--leaping-beetle { animation: none !important; }
+body.reduce-game-motion .scenery-layer,
+body.reduce-game-motion .game-overlay,
+body.reduce-game-motion .route-map__fill { transition: none; }
+
 @keyframes world-node-pulse {
     from { filter: drop-shadow(0 5px 0 #49301c) drop-shadow(0 0 0 rgba(255, 240, 176, 0)); }
     to { filter: drop-shadow(0 7px 0 #49301c) drop-shadow(0 0 8px rgba(255, 240, 176, 0.92)); }
@@ -2034,6 +2094,12 @@ kbd {
     .skin-preview { min-height: 245px; }
     .skin-preview__stage { height: 185px; }
     #skin-preview-frog { max-height: 185px; }
+    .settings-grid { grid-template-columns: 1fr; }
+    .settings-panel { padding: 10px; }
+    .settings-controls { grid-template-columns: repeat(4, 1fr); }
+    .settings-controls > span { display: grid; justify-items: center; padding: 4px; }
+    .settings-controls small { margin: 2px 0 0; }
+    body.compact-game-controls .action-button { width: 54px; min-width: 54px; height: 54px; min-height: 54px; }
 }
 
 @media (max-height: 560px) and (orientation: landscape) {
