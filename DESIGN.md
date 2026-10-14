@@ -49,6 +49,7 @@ components:
   phaseBanner: {}
   storyWorldMap: {}
   resistanceFrogEncounter: {}
+  resistanceFrogDuel: {}
   skinWorkbench: {}
 ---
 
@@ -90,7 +91,9 @@ Before the navigation, a text-only indie note establishes authorship without int
 
 The playable world-map seal offers three real difficulty settings before entry. Easy lowers travel speed and opens spawn intervals, Medium preserves the canonical balance, and Hard raises speed and encounter pressure within the same reaction-gap safety caps. Medium is the default, the selected option is always visible without relying on color alone, and a restart preserves the current selection.
 
-Winning Rota da Manhã is persisted locally as story progress and reveals Rubro beside the second phase seal. He reuses the player's readable upright-frog proportions but has his own eight-frame walk sheet, deep red hood and cape, and a small gold frog-foot emblem. His first encounter pauses map movement and unfolds as a short native dialogue: Rubro identifies himself as a member of the Frente do Brejo Livre, explains that the organization is tired of the Rat Empire's oppression, and challenges the straw-hat frog to a future test fight. Declining leaves him available on the map; accepting records the choice locally without pretending the unfinished arena is already playable.
+Winning Rota da Manhã is persisted locally as story progress, removes the lock treatment from the second phase seal and reveals Rubro beside it. He reuses the player's readable upright-frog proportions but has his own eight-frame walk sheet, deep red hood and cape, and a small gold frog-foot emblem. Legacy saves infer completion only from a record high enough to be mathematically consistent with finishing the complete route. His first encounter pauses map movement and unfolds as a short native dialogue: Rubro identifies himself as a member of the Frente do Brejo Livre, explains that the organization is tired of suffering under the Rat Empire, and challenges the straw-hat frog to a test fight. The copy remains plain and specific—he says he saw the monster bee defeated and sees potential, without admiration clichés or claims that the whole world noticed.
+
+Rubro's challenge is a separate playable duel in the opening forest, not a running stage. The panorama and ground remain still, both frogs retain the established pixel scale, the player may move and jump freely, and Rubro telegraphs each forward lunge before returning to his side. The existing compact boss health strip becomes a named duel variant and reports five tongue hits. Winning persists locally; losing or pausing offers a clear retry and map return. The second phase stays visibly unlocked after completion while its unfinished stage content remains unavailable rather than pretending it can already be entered.
 
 The Skins destination is a working color workshop rather than a construction placeholder. It offers a live scene preview, four curated presets plus native color pickers for the frog body and tongue, a reset action, and device-local persistence. Recoloring targets only the original green body pixels or pink tongue pixels so the straw hat, eyes, cream muzzle, line art, shading and transparency remain intact. The selected body color applies consistently to menu art, overworld walker, run, crouch, jump and mouth-open gameplay sheets; the tongue color applies to both preview and live attack. Controls remain usable without relying on color alone and report when the choice has been saved.
 
