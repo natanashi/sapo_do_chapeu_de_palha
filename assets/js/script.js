@@ -28,6 +28,13 @@ const worldMapPromptKicker = document.querySelector('#world-map-prompt-kicker');
 const worldMapStageName = document.querySelector('#world-map-stage-name');
 const worldMapHelp = document.querySelector('#world-map-help');
 const worldMuseum = document.querySelector('#world-museum');
+const worldResistanceNpc = document.querySelector('#world-resistance-npc');
+const resistanceDialog = document.querySelector('#resistance-dialog');
+const resistanceDialogKicker = document.querySelector('#resistance-dialog-kicker');
+const resistanceDialogTitle = document.querySelector('#resistance-dialog-title');
+const resistanceDialogCopy = document.querySelector('#resistance-dialog-copy');
+const resistanceDialogLeave = document.querySelector('#resistance-dialog-leave');
+const resistanceDialogNext = document.querySelector('#resistance-dialog-next');
 const difficultyPicker = document.querySelector('.difficulty-picker');
 const worldLevelButtons = [...document.querySelectorAll('[data-world-level]')];
 const worldMapDirectionButtons = [...document.querySelectorAll('[data-map-direction]')];
@@ -64,6 +71,7 @@ const fullscreenLabel = document.querySelector('#fullscreen-label');
 const settingsSavedStatus = document.querySelector('#settings-saved');
 const playButton = document.querySelector('#play-button');
 const playLabel = document.querySelector('#play-label');
+const resultMenuButton = document.querySelector('#result-menu-button');
 const pauseButton = document.querySelector('#pause-button');
 const moveLeftButton = document.querySelector('#move-left-button');
 const moveRightButton = document.querySelector('#move-right-button');
@@ -96,6 +104,8 @@ const CONTROL_LAYOUTS = ['classic', 'left-handed', 'arcade'];
 const CONTROL_STYLES = ['round', 'pixel', 'leaf'];
 const CONTROL_PALETTES = ['forest', 'ocean', 'sunset'];
 const gameSettings = readGameSettings();
+const STORY_PROGRESS_STORAGE_KEY = 'sapo-story-progress';
+let storyProgress = readStoryProgress();
 let settingsSavedTimer = 0;
 
 const DIFFICULTIES = {
@@ -370,6 +380,27 @@ function saveBestScore(score) {
         localStorage.setItem('sapo-best-score', String(score));
     } catch {
         // O jogo continua normalmente quando o navegador bloqueia o armazenamento local.
+    }
+}
+
+function readStoryProgress() {
+    try {
+        const stored = JSON.parse(localStorage.getItem(STORY_PROGRESS_STORAGE_KEY) || '{}');
+        return {
+            phaseOneComplete: Boolean(stored.phaseOneComplete),
+            resistanceEncounterSeen: Boolean(stored.resistanceEncounterSeen),
+            resistanceChallengeAccepted: Boolean(stored.resistanceChallengeAccepted),
+        };
+    } catch {
+        return { phaseOneComplete: false, resistanceEncounterSeen: false, resistanceChallengeAccepted: false };
+    }
+}
+
+function saveStoryProgress() {
+    try {
+        localStorage.setItem(STORY_PROGRESS_STORAGE_KEY, JSON.stringify(storyProgress));
+    } catch {
+        // A progressão continua na sessão mesmo quando o armazenamento local está bloqueado.
     }
 }
 
@@ -1260,6 +1291,8 @@ const WORLD_MAP_SCALE = 2;
 const WORLD_LEVEL_REACH = 4.8;
 const WORLD_MUSEUM = { name: 'Museu da Mata', x: 55, y: 84 };
 const WORLD_MUSEUM_REACH = 10.5;
+const WORLD_RESISTANCE_NPC = { name: 'Sapo encapuzado', x: 74, y: 85 };
+const WORLD_RESISTANCE_NPC_REACH = 6.8;
 const WORLD_MAP_BLOCKERS = [
     { x: 10, y: 18, width: 4.8, height: 3.2 },
     { x: 52, y: 14, width: 4.6, height: 3.1 },
@@ -1291,7 +1324,94 @@ const worldMapState = {
     ready: false,
     nearestLevel: 0,
     avoidanceSign: 0,
+    nearResistanceNpc: false,
+    resistanceApproachStage: 0,
 };
+
+const RESISTANCE_DIALOGUE = [
+    {
+        kicker: 'Depois da vitória',
+        speaker: 'Sapo encapuzado',
+        copy: 'Então é você... o sapo do chapéu de palha que derrotou a Super Abelha. Sua vitória fez barulho por todo o brejo.',
+        action: 'Continuar',
+    },
+    {
+        kicker: 'Frente do Brejo Livre',
+        speaker: 'Rubro',
+        copy: 'Pode me chamar de Rubro. Faço parte da Frente do Brejo Livre, uma organização de sapos cansada de sofrer sob as patas do Império dos Ratos.',
+        action: 'Continuar',
+    },
+    {
+        kicker: 'Um desafio',
+        speaker: 'Rubro',
+        copy: 'Vencer insetos não prova tudo. Quero testar pessoalmente o sapo verde do chapéu de palha. Aceita me enfrentar numa luta?',
+        action: 'Aceitar o desafio',
+    },
+    {
+        kicker: 'Desafio aceito',
+        speaker: 'Rubro',
+        copy: 'Ótimo. Vou preparar a arena perto do Bosque dos Cogumelos. Quando ela estiver pronta, não espere que eu lute devagar.',
+        action: 'Fechar',
+    },
+];
+let resistanceDialogueStep = 0;
+
+function syncResistanceNpc() {
+    if (!worldResistanceNpc) return;
+    worldResistanceNpc.hidden = !storyProgress.phaseOneComplete;
+    worldResistanceNpc.setAttribute('aria-hidden', String(!storyProgress.phaseOneComplete));
+    worldResistanceNpc.classList.toggle('is-challenge-ready', storyProgress.resistanceChallengeAccepted);
+}
+
+function renderResistanceDialogue() {
+    const line = RESISTANCE_DIALOGUE[resistanceDialogueStep];
+    resistanceDialogKicker.textContent = line.kicker;
+    resistanceDialogTitle.textContent = line.speaker;
+    resistanceDialogCopy.textContent = line.copy;
+    resistanceDialogNext.textContent = line.action;
+    resistanceDialogLeave.hidden = resistanceDialogueStep === RESISTANCE_DIALOGUE.length - 1;
+}
+
+function openResistanceDialogue() {
+    if (!storyProgress.phaseOneComplete || !resistanceDialog || resistanceDialog.open) return;
+    resistanceDialogueStep = storyProgress.resistanceChallengeAccepted ? RESISTANCE_DIALOGUE.length - 1 : 0;
+    storyProgress.resistanceEncounterSeen = true;
+    saveStoryProgress();
+    renderResistanceDialogue();
+    worldMapState.pressed.clear();
+    resistanceDialog.showModal();
+    resistanceDialogNext.focus({ preventScroll: true });
+}
+
+function advanceResistanceDialogue() {
+    if (resistanceDialogueStep === 2) {
+        storyProgress.resistanceChallengeAccepted = true;
+        saveStoryProgress();
+        worldResistanceNpc?.classList.add('is-challenge-ready');
+        resistanceDialogueStep = 3;
+        renderResistanceDialogue();
+        return;
+    }
+    if (resistanceDialogueStep < RESISTANCE_DIALOGUE.length - 1) {
+        resistanceDialogueStep += 1;
+        renderResistanceDialogue();
+        return;
+    }
+    resistanceDialog.close();
+}
+
+function handleResistanceNpcInteraction() {
+    if (!storyProgress.phaseOneComplete) return;
+    if (worldMapState.nearResistanceNpc) {
+        openResistanceDialogue();
+        return;
+    }
+    const needsMuseumDetour = worldMapState.x < 63;
+    worldMapState.resistanceApproachStage = needsMuseumDetour ? 1 : 2;
+    worldMapState.targetX = needsMuseumDetour ? 62 : WORLD_RESISTANCE_NPC.x;
+    worldMapState.targetY = needsMuseumDetour ? 70 : WORLD_RESISTANCE_NPC.y;
+    storyMapStatus.textContent = 'Caminhando até o sapo encapuzado...';
+}
 
 function worldMapMetrics() {
     const viewportWidth = Math.max(1, worldMap.clientWidth);
@@ -1390,6 +1510,13 @@ function updateWorldMapProximity() {
         (worldMapState.y - WORLD_MUSEUM.y) * 1.35,
     );
     const isNearMuseum = museumDistance < WORLD_MUSEUM_REACH;
+    const resistanceDistance = Math.hypot(
+        worldMapState.x - WORLD_RESISTANCE_NPC.x,
+        (worldMapState.y - WORLD_RESISTANCE_NPC.y) * 1.35,
+    );
+    worldMapState.nearResistanceNpc = storyProgress.phaseOneComplete
+        && resistanceDistance < WORLD_RESISTANCE_NPC_REACH;
+    worldResistanceNpc?.classList.toggle('is-near', worldMapState.nearResistanceNpc);
     const target = isNearMuseum ? WORLD_MUSEUM : level;
     const hasNearbyTarget = isNearMuseum || isNear;
 
@@ -1409,6 +1536,7 @@ function updateWorldMapProximity() {
 
     if (!worldMapState.ready) storyMapStatus.textContent = 'Preparando o mapa...';
     else if (isNearMuseum) storyMapStatus.textContent = 'Documentário da Rota da Manhã';
+    else if (worldMapState.nearResistanceNpc) storyMapStatus.textContent = 'Pressione E para conversar com o sapo encapuzado';
     else if (!isNear) storyMapStatus.textContent = 'Caminhe até uma marca de fase ou até o museu';
     else if (!level.unlocked) storyMapStatus.textContent = 'Em construção · em breve';
     else storyMapStatus.textContent = `${DIFFICULTIES[selectedDifficulty].label} selecionado · pronto`;
@@ -1441,6 +1569,7 @@ function worldMapLoop(currentTime) {
         worldMapState.targetX = null;
         worldMapState.targetY = null;
         worldMapState.avoidanceSign = 0;
+        worldMapState.resistanceApproachStage = 0;
         const length = Math.hypot(directionX, directionY) || 1;
         moved = moveWorldMapFrog((directionX / length) * 12.5 * delta, (directionY / length) * 17 * delta);
     } else if (worldMapState.targetX !== null && worldMapState.targetY !== null) {
@@ -1448,8 +1577,15 @@ function worldMapLoop(currentTime) {
         const dy = worldMapState.targetY - worldMapState.y;
         const distance = Math.hypot(dx, dy);
         if (distance < 0.7) {
-            worldMapState.targetX = null;
-            worldMapState.targetY = null;
+            if (worldMapState.resistanceApproachStage === 1) {
+                worldMapState.resistanceApproachStage = 2;
+                worldMapState.targetX = WORLD_RESISTANCE_NPC.x;
+                worldMapState.targetY = WORLD_RESISTANCE_NPC.y;
+            } else {
+                worldMapState.targetX = null;
+                worldMapState.targetY = null;
+                worldMapState.resistanceApproachStage = 0;
+            }
         } else {
             directionX = dx / distance;
             directionY = dy / distance;
@@ -1475,6 +1611,7 @@ function worldMapLoop(currentTime) {
                 worldMapState.targetX = null;
                 worldMapState.targetY = null;
                 worldMapState.avoidanceSign = 0;
+                worldMapState.resistanceApproachStage = 0;
             }
         }
     }
@@ -1503,6 +1640,7 @@ function setWorldMapDirection(direction, pressed) {
 
 function handleWorldMapKey(event, pressed) {
     if (activeMenuScreen !== 'maps' || !overlay.classList.contains('is-visible')) return false;
+    if (resistanceDialog?.open) return false;
     const directions = {
         ArrowLeft: 'left', KeyA: 'left',
         ArrowRight: 'right', KeyD: 'right',
@@ -1512,6 +1650,11 @@ function handleWorldMapKey(event, pressed) {
     if (directions[event.code]) {
         event.preventDefault();
         setWorldMapDirection(directions[event.code], pressed);
+        return true;
+    }
+    if (pressed && ['Enter', 'Space', 'KeyE'].includes(event.code) && worldMapState.nearResistanceNpc) {
+        event.preventDefault();
+        openResistanceDialogue();
         return true;
     }
     if (pressed && ['Enter', 'Space', 'KeyE'].includes(event.code) && !storyMapButton.disabled) {
@@ -1528,6 +1671,7 @@ function moveWorldMapToPointer(event) {
     const { worldWidth, worldHeight } = worldMapMetrics();
     worldMapState.targetX = clamp(((event.clientX - bounds.left - worldMapState.cameraX) / worldWidth) * 100, 2.5, 97.5);
     worldMapState.targetY = clamp(((event.clientY - bounds.top - worldMapState.cameraY) / worldHeight) * 100, 3.5, 96.5);
+    worldMapState.resistanceApproachStage = 0;
 }
 
 const DEFAULT_SKIN = { frog: '#69b83f', tongue: '#e75f86' };
@@ -1796,6 +1940,8 @@ function showMenuScreen(screenName, focusFirst = true) {
     const nextScreen = menuScreens.find((screen) => screen.dataset.menuScreen === screenName);
     if (!nextScreen) return;
 
+    if (screenName !== 'maps' && resistanceDialog?.open) resistanceDialog.close();
+
     activeMenuScreen = screenName;
     menuScreens.forEach((screen) => {
         const isActive = screen === nextScreen;
@@ -1808,7 +1954,13 @@ function showMenuScreen(screenName, focusFirst = true) {
     mainMenuShell.scrollTop = 0;
 
     if (screenName === 'maps') {
+        syncResistanceNpc();
         showStoryCategory('map');
+        if (storyProgress.phaseOneComplete && !storyProgress.resistanceEncounterSeen) {
+            window.setTimeout(() => {
+                if (activeMenuScreen === 'maps' && !resistanceDialog.open) openResistanceDialogue();
+            }, 520);
+        }
     } else {
         worldMapState.pressed.clear();
         worldMapFrog.classList.remove('is-walking');
@@ -2078,6 +2230,7 @@ function endGame(hazard = 'obstacle') {
             ? 'Você chegou ao castelo. Agora tente correr ainda mais longe e capture mais besouros.'
             : 'O caminho ficou difícil desta vez. Tente outra corrida e descubra a próxima região.';
     playLabel.textContent = state.isTestArea ? 'Repetir teste' : 'Jogar novamente';
+    resultMenuButton.textContent = 'Voltar ao menu';
     showResultOverlay();
     playButton.focus({ preventScroll: true });
 }
@@ -2096,14 +2249,33 @@ function completeJourney() {
     }
 
     updateScore();
+    if (!state.isTestArea) {
+        storyProgress.phaseOneComplete = true;
+        saveStoryProgress();
+        syncResistanceNpc();
+    }
     overlayKicker.textContent = state.isTestArea ? 'Teste concluído' : 'Jornada concluída';
     overlayTitle.textContent = 'Chefã derrotada!';
     overlayMessage.textContent = state.isTestArea
         ? `Você testou os cinco golpes e venceu a Super Abelha Monstro. Repita o laboratório para praticar a investida especial.`
         : `Você atravessou a rota da manhã em ${formatTime(JOURNEY_DURATION)} e venceu a Super Abelha Monstro. Tente novamente para superar seus ${formatScore(finalScore)} pontos.`;
     playLabel.textContent = state.isTestArea ? 'Repetir teste' : 'Correr novamente';
+    resultMenuButton.textContent = state.isTestArea ? 'Voltar ao menu' : 'Voltar ao mapa';
     showResultOverlay();
     playButton.focus({ preventScroll: true });
+}
+
+function returnFromResult() {
+    if (state.mode !== 'completed' || state.isTestArea) {
+        showMainMenu();
+        return;
+    }
+
+    state.mode = 'idle';
+    mainMenuShell.classList.remove('is-hidden');
+    resultCard.classList.add('is-hidden');
+    overlay.classList.add('is-visible');
+    showMenuScreen('maps');
 }
 
 function updateWorldMotion() {
@@ -2649,6 +2821,14 @@ worldMuseum?.addEventListener('click', () => {
     worldMapState.targetX = WORLD_MUSEUM.x;
     worldMapState.targetY = WORLD_MUSEUM.y + 6.8;
     storyMapStatus.textContent = 'Caminhando até o museu...';
+});
+
+resistanceDialog?.addEventListener('cancel', () => worldMapState.pressed.clear());
+resistanceDialogNext?.addEventListener('click', advanceResistanceDialogue);
+resistanceDialogLeave?.addEventListener('click', () => resistanceDialog.close());
+resistanceDialog?.addEventListener('close', () => {
+    worldMapState.pressed.clear();
+    if (activeMenuScreen === 'maps') worldMap.focus({ preventScroll: true });
 });
 
 profileNameForm?.addEventListener('submit', savePlayerName);

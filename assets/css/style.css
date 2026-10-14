@@ -1938,6 +1938,148 @@ kbd {
 .world-level.is-locked::after { content: "\1F512"; position: absolute; right: -7px; bottom: -5px; font-family: sans-serif; font-size: 0.72rem; }
 .world-level.is-near { filter: drop-shadow(0 7px 0 #49301c) drop-shadow(0 0 10px #fff0a6); }
 
+.world-resistance-npc {
+    position: absolute;
+    z-index: calc(100 + var(--npc-depth, 80));
+    top: var(--npc-y);
+    left: var(--npc-x);
+    width: clamp(58px, 6.5vw, 82px);
+    aspect-ratio: 1;
+    padding: 0;
+    border: 0;
+    color: #ffe8a3;
+    background: transparent;
+    cursor: pointer;
+    filter: drop-shadow(3px 5px 0 rgba(26, 35, 20, 0.36));
+    image-rendering: pixelated;
+    transform: translate(-50%, -88%);
+    transform-origin: center bottom;
+}
+
+.world-resistance-npc[hidden] { display: none; }
+
+.world-resistance-npc::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    left: 50%;
+    bottom: 2%;
+    width: 58%;
+    height: 12%;
+    border-radius: 50%;
+    background: rgba(20, 39, 22, 0.36);
+    transform: translateX(-50%);
+}
+
+.world-resistance-npc__sprite {
+    position: absolute;
+    inset: 0;
+    background: url("../img/sapo-resistencia-capuz-sprites-v1.png") 0 0 / 400% 200% no-repeat;
+    animation: world-resistance-walk 920ms linear infinite;
+}
+
+.world-resistance-npc strong {
+    position: absolute;
+    left: 50%;
+    bottom: -13px;
+    width: max-content;
+    padding: 3px 6px;
+    border: 2px solid #f0c66e;
+    color: #ffeeb4;
+    background: #7d1826;
+    box-shadow: 0 3px 0 #35141a;
+    font-family: var(--font-body);
+    font-size: 0.47rem;
+    letter-spacing: 0.02em;
+    opacity: 0;
+    transform: translateX(-50%) translateY(3px);
+    transition: opacity 120ms steps(2, end), transform 120ms steps(2, end);
+    white-space: nowrap;
+}
+
+.world-resistance-npc:hover,
+.world-resistance-npc:focus-visible,
+.world-resistance-npc.is-near {
+    filter: drop-shadow(3px 5px 0 rgba(26, 35, 20, 0.36)) drop-shadow(0 0 8px rgba(255, 218, 111, 0.9));
+}
+
+.world-resistance-npc:hover strong,
+.world-resistance-npc:focus-visible strong,
+.world-resistance-npc.is-near strong { opacity: 1; transform: translateX(-50%) translateY(0); }
+.world-resistance-npc:focus-visible { outline: 3px solid #fff1a8; outline-offset: 5px; }
+
+.resistance-dialog {
+    width: min(720px, calc(100vw - 30px));
+    max-height: min(520px, calc(100svh - 26px));
+    grid-template-columns: minmax(160px, 0.65fr) minmax(280px, 1.35fr);
+    align-items: center;
+    gap: clamp(18px, 4vw, 38px);
+    padding: clamp(18px, 4vw, 34px);
+    overflow: auto;
+    border: 5px solid #3b2418;
+    border-radius: 8px;
+    color: #34241a;
+    background:
+        repeating-linear-gradient(0deg, rgba(109, 64, 28, 0.08) 0 2px, transparent 2px 7px),
+        #ffe9a9;
+    box-shadow: inset 0 0 0 4px #d58b36, 9px 11px 0 rgba(25, 18, 12, 0.55);
+}
+
+.resistance-dialog[open] { display: grid; animation: menu-page-in 150ms steps(2, end) both; }
+.resistance-dialog::backdrop { background: rgba(9, 25, 16, 0.76); backdrop-filter: blur(3px); }
+
+.resistance-dialog__portrait {
+    width: min(240px, 100%);
+    aspect-ratio: 1;
+    justify-self: center;
+    background: url("../img/sapo-resistencia-capuz-sprites-v1.png") 0 0 / 400% 200% no-repeat;
+    filter: drop-shadow(7px 9px 0 rgba(61, 28, 21, 0.24));
+    image-rendering: pixelated;
+}
+
+.resistance-dialog__copy > span {
+    display: block;
+    color: #a52b35;
+    font-family: var(--font-ui);
+    font-size: 0.66rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.resistance-dialog__copy h3 {
+    margin: 6px 0 12px;
+    color: #173f2a;
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 4vw, 2.45rem);
+    line-height: 0.94;
+}
+
+.resistance-dialog__copy p {
+    min-height: 6.6em;
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: clamp(0.86rem, 1.7vw, 1.04rem);
+    font-weight: 800;
+    line-height: 1.55;
+}
+
+.resistance-dialog__actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 18px; }
+.resistance-dialog__actions button {
+    min-height: 44px;
+    padding: 9px 14px;
+    border: 3px solid #34241a;
+    font-family: var(--font-ui);
+    font-size: 0.64rem;
+    font-weight: 900;
+    cursor: pointer;
+}
+.resistance-dialog__leave { color: #4d3b2b; background: #f3d590; box-shadow: 0 4px 0 #8e6534; }
+.resistance-dialog__next { color: #fff1bd; background: #8f1e2d; box-shadow: 0 4px 0 #45131b; }
+.resistance-dialog__actions button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.resistance-dialog__actions button:active { transform: translateY(3px); box-shadow: 0 1px 0 #45131b; }
+.resistance-dialog__actions button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
 .world-map-future {
     position: absolute;
     z-index: 50;
@@ -2252,6 +2394,7 @@ body.reduce-game-motion .sky-clouds { display: none; }
 body.reduce-game-motion .insect,
 body.reduce-game-motion .runner,
 body.reduce-game-motion .world-map-frog,
+body.reduce-game-motion .world-resistance-npc__sprite,
 body.reduce-game-motion .world-level,
 body.reduce-game-motion .world-landmark,
 body.reduce-game-motion .obstacle--ground-beetle,
@@ -2567,6 +2710,17 @@ body.reduce-game-motion .route-map__fill { transition: none; }
     86%, 100% { background-position: 100% 100%; }
 }
 
+@keyframes world-resistance-walk {
+    0%, 13.99% { background-position: 0 0; }
+    14%, 24.99% { background-position: 33.333% 0; }
+    25%, 35.99% { background-position: 66.667% 0; }
+    36%, 47.99% { background-position: 100% 0; }
+    48%, 60.99% { background-position: 0 100%; }
+    61%, 72.99% { background-position: 33.333% 100%; }
+    73%, 85.99% { background-position: 66.667% 100%; }
+    86%, 100% { background-position: 100% 100%; }
+}
+
 @keyframes frog-crouch-attack {
     0%, 49.99% { background-position: 0 50%; }
     50%, 100% { background-position: 100% 50%; }
@@ -2692,7 +2846,8 @@ body.reduce-game-motion .route-map__fill { transition: none; }
     .boss-bee.is-recovering,
     .boss-bee.is-rage-windup,
     .boss-bee.is-rage-return,
-    .test-area-boss { animation: none; }
+    .test-area-boss,
+    .world-resistance-npc__sprite { animation: none; }
     .insect--bee.is-aiming::before { animation: none; opacity: 0.9; }
     .scenery-layer { transition: none; }
     .game-overlay,
@@ -2757,6 +2912,7 @@ body.reduce-game-motion .route-map__fill { transition: none; }
     .world-level { width: clamp(36px, 10vw, 48px); border-width: 3px; }
     .world-level strong { display: none; }
     .world-map-frog { width: clamp(48px, 14vw, 66px); }
+    .world-resistance-npc { width: clamp(46px, 13vw, 62px); }
     .world-landmark { width: clamp(135px, 23%, 220px); }
     .world-landmark span { font-size: 0.43rem; }
     .world-map-prompt { width: min(250px, 52%); min-width: 190px; padding: 7px; }
@@ -2767,6 +2923,10 @@ body.reduce-game-motion .route-map__fill { transition: none; }
     .difficulty-picker legend { font-size: 0.47rem; }
     .difficulty-picker span { min-height: 28px; font-size: 0.51rem; }
     .world-map-pad { display: grid; }
+    .resistance-dialog { grid-template-columns: 115px 1fr; gap: 12px; padding: 13px; }
+    .resistance-dialog__copy p { min-height: 5.8em; font-size: 0.75rem; line-height: 1.42; }
+    .resistance-dialog__actions { margin-top: 10px; }
+    .resistance-dialog__actions button { min-height: 38px; padding: 7px 10px; font-size: 0.54rem; }
     .skin-workbench { grid-template-columns: 1fr; }
     .skin-preview { min-height: 245px; }
     .skin-preview__stage { height: 185px; }
@@ -2799,7 +2959,14 @@ body.reduce-game-motion .route-map__fill { transition: none; }
     .story-category-tabs { width: min(470px, 100%); margin-bottom: 6px; }
     .story-category-tabs button { min-height: 32px; font-size: 0.54rem; }
     .world-map { width: min(650px, 100%); min-height: 0; margin-inline: auto; }
+    .world-resistance-npc { width: 50px; }
     .world-map-pad { display: none; }
+    .resistance-dialog { width: min(620px, calc(100vw - 18px)); max-height: calc(100svh - 16px); grid-template-columns: 105px 1fr; gap: 10px; padding: 10px; }
+    .resistance-dialog__copy > span { font-size: 0.48rem; }
+    .resistance-dialog__copy h3 { margin: 2px 0 5px; font-size: 1.1rem; }
+    .resistance-dialog__copy p { min-height: 4.2em; font-size: 0.62rem; line-height: 1.35; }
+    .resistance-dialog__actions { margin-top: 7px; }
+    .resistance-dialog__actions button { min-height: 32px; font-size: 0.48rem; }
     .test-area-panel { min-height: 205px; grid-template-columns: minmax(100px, 0.48fr) minmax(300px, 1.52fr); gap: 10px; padding: 7px 15px; }
     .test-area-boss { width: min(120px, 100%); }
     .test-area-copy > span { font-size: 0.46rem; }

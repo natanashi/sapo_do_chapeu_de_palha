@@ -48,6 +48,7 @@ components:
   beetleWave: {}
   phaseBanner: {}
   storyWorldMap: {}
+  resistanceFrogEncounter: {}
   skinWorkbench: {}
 ---
 
@@ -88,6 +89,8 @@ The opening navigation has four destinations: Play, Profile, Skins and Game Sett
 Before the navigation, a text-only indie note establishes authorship without introducing off-style illustration. It uses the same pixel typography, block borders, parchment, forest green and straw gold as the game UI. The message presents Natanashi Studios only as the codename of the small indie startup building the game, plainly explains that AI supports the work while code, characters, environments and animation receive human review, connects the project to programming practice since 2018, and preserves one self-aware joke about hoping the game can also earn money. The tone is candid, playful and human rather than promotional, without a sentimental sign-off.
 
 The playable world-map seal offers three real difficulty settings before entry. Easy lowers travel speed and opens spawn intervals, Medium preserves the canonical balance, and Hard raises speed and encounter pressure within the same reaction-gap safety caps. Medium is the default, the selected option is always visible without relying on color alone, and a restart preserves the current selection.
+
+Winning Rota da Manhã is persisted locally as story progress and reveals Rubro beside the second phase seal. He reuses the player's readable upright-frog proportions but has his own eight-frame walk sheet, deep red hood and cape, and a small gold frog-foot emblem. His first encounter pauses map movement and unfolds as a short native dialogue: Rubro identifies himself as a member of the Frente do Brejo Livre, explains that the organization is tired of the Rat Empire's oppression, and challenges the straw-hat frog to a future test fight. Declining leaves him available on the map; accepting records the choice locally without pretending the unfinished arena is already playable.
 
 The Skins destination is a working color workshop rather than a construction placeholder. It offers a live scene preview, four curated presets plus native color pickers for the frog body and tongue, a reset action, and device-local persistence. Recoloring targets only the original green body pixels or pink tongue pixels so the straw hat, eyes, cream muzzle, line art, shading and transparency remain intact. The selected body color applies consistently to menu art, overworld walker, run, crouch, jump and mouth-open gameplay sheets; the tongue color applies to both preview and live attack. Controls remain usable without relying on color alone and report when the choice has been saved.
 
