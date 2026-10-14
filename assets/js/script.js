@@ -8,6 +8,10 @@ const runnerAttack = document.querySelector('#runner-attack');
 const obstacleLayer = document.querySelector('#obstacle-layer');
 const platformLayer = document.querySelector('#platform-layer');
 const collectibleLayer = document.querySelector('#collectible-layer');
+const bossLayer = document.querySelector('#boss-layer');
+const bossHud = document.querySelector('#boss-hud');
+const bossHealthFill = document.querySelector('#boss-health-fill');
+const bossHealthText = document.querySelector('#boss-health-text');
 const groundTrack = document.querySelector('#ground-track');
 const overlay = document.querySelector('#game-overlay');
 const mainMenuShell = document.querySelector('#main-menu-shell');
@@ -127,7 +131,7 @@ const PHASES = [
     },
     {
         name: 'Campos do Orvalho',
-        startsAt: 38,
+        startsAt: 30,
         background: 'assets/img/cenario-arvores-planaltos-transparente-v3.png',
         speedScale: 1.08,
         paceLabel: 'Ritmo acelerando',
@@ -137,7 +141,7 @@ const PHASES = [
     },
     {
         name: 'Floresta Antiga',
-        startsAt: 75,
+        startsAt: 60,
         background: 'assets/img/cenario-arvores-planaltos-transparente-v3.png',
         speedScale: 1.16,
         paceLabel: 'Corrida veloz',
@@ -147,7 +151,7 @@ const PHASES = [
     },
     {
         name: 'Castelo da Manhã',
-        startsAt: 113,
+        startsAt: 85,
         background: 'assets/img/cenario-arvores-planaltos-transparente-v3.png',
         speedScale: 1.24,
         paceLabel: 'Reta final em alta velocidade',
@@ -225,6 +229,7 @@ const ASSET_URLS = [
     'assets/img/inseto-voando-sprites.png',
     'assets/img/besouro-ondulante-voando-sprites.png',
     'assets/img/abelha-investida-sprites.png',
+    'assets/img/super-abelha-monstro-sprites-v2.png',
     'assets/img/plataforma-musgo.png',
 ];
 
@@ -264,6 +269,9 @@ const state = {
     moveRight: false,
     isCrouching: false,
     difficulty: 'medium',
+    boss: null,
+    bossStarted: false,
+    bossDefeated: false,
 };
 
 const PACE_REFERENCE_SPEED = 270;
@@ -276,7 +284,11 @@ const ATTACK_COOLDOWN = 3000;
 const ATTACK_CAPTURE_CLOSE = 360;
 const ATTACK_RETRACT_AT = 430;
 const ATTACK_SWALLOW_AT = 620;
-const JOURNEY_DURATION = 150;
+const JOURNEY_DURATION = 120;
+const BOSS_START_TIME = 88;
+const BOSS_MAX_HEALTH = 4;
+const BOSS_ATTACK_STAGE_MS = 3600;
+const BOSS_TIRED_STAGE_MS = 2800;
 const HORIZONTAL_SPEED_MIN = 210;
 const HORIZONTAL_SPEED_MAX = 430;
 const RUNNER_MOTION_CLASSES = ['motion-takeoff', 'motion-rise', 'motion-apex', 'motion-fall', 'motion-land'];
@@ -296,6 +308,7 @@ const WORLD_SIZES = {
     '--insect-size': 88,
     '--wave-insect-size': 96,
     '--bee-size': 100,
+    '--boss-size': 238,
 };
 
 function clamp(value, minimum, maximum) {
@@ -635,6 +648,177 @@ function clearActors() {
     obstacleLayer.replaceChildren();
     collectibleLayer.replaceChildren();
     platformLayer.replaceChildren();
+    bossLayer.replaceChildren();
+    bossHud.classList.remove('is-visible');
+    bossHud.setAttribute('aria-hidden', 'true');
+}
+
+function updateBossHud() {
+    const health = state.boss?.health ?? BOSS_MAX_HEALTH;
+    bossHealthFill.style.width = `${clamp(health / BOSS_MAX_HEALTH, 0, 1) * 100}%`;
+    bossHealthText.textContent = `${Math.max(0, health)}/${BOSS_MAX_HEALTH}`;
+}
+
+function startBoss(currentTime) {
+    if (state.bossStarted) return;
+    state.bossStarted = true;
+    clearActors();
+
+    const element = document.createElement('div');
+    element.className = 'boss-bee is-entering';
+    bossLayer.append(element);
+    state.boss = {
+        element,
+        health: BOSS_MAX_HEALTH,
+        stage: 'entering',
+        stageStartedAt: currentTime,
+        nextStageAt: currentTime + 1800,
+        nextSpawnAt: currentTime + 2300,
+        lastHitAttack: 0,
+        defeatedAt: 0,
+    };
+    bossHud.classList.add('is-visible');
+    bossHud.setAttribute('aria-hidden', 'false');
+    updateBossHud();
+    showPhaseBanner(state.phaseIndex);
+    phaseKicker.textContent = 'CHEFÃ FINAL';
+    phaseName.textContent = 'Super Abelha Monstro';
+    setStatus('A Super Abelha chegou! Desvie das crias e espere ela se cansar.');
+}
+
+function spawnBossBee(currentTime) {
+    const boss = state.boss;
+    if (!boss || boss.stage !== 'attacking') return;
+    const boardBox = boardMetrics();
+    const element = document.createElement('div');
+    element.className = 'insect insect--high insect--bee';
+    collectibleLayer.append(element);
+    const insectBox = element.getBoundingClientRect();
+    const startY = boardBox.height * 0.34 + Math.sin(currentTime / 310) * boardBox.height * 0.08;
+    const insect = {
+        element,
+        x: boardBox.width * 0.76,
+        y: startY,
+        speedScale: 0.9,
+        bobPhase: Math.random() * 0.6,
+        species: 'bee',
+        flightPattern: 'bee-zigzag',
+        flightStage: 'zigzag',
+        flightStageStartedAt: currentTime,
+        bobAmplitude: Math.max(38, boardBox.height * 0.065),
+        bobSpeed: 125,
+        minimumY: boardBox.height * 0.29,
+        maximumY: boardBox.height * 0.58 - insectBox.height * 0.1,
+        horizontalDrift: Math.min(20, boardBox.width * 0.016),
+        renderedY: startY,
+        aimY: null,
+        diveFromY: null,
+        diveTargetY: null,
+        diveStartX: null,
+        diveTargetX: null,
+        caught: false,
+    };
+    state.insects.push(insect);
+    renderInsect(insect, currentTime);
+    createCaptureFlash(boardBox.width * 0.78, startY + insectBox.height * 0.5);
+    setStatus('A chefã soltou uma abelha!');
+}
+
+function tongueHitsBoss(currentTime) {
+    const boss = state.boss;
+    if (
+        !boss
+        || boss.stage !== 'tired'
+        || boss.lastHitAttack === state.attackStartedAt
+        || currentTime > state.attackUntil
+        || currentTime - state.attackStartedAt > ATTACK_CAPTURE_CLOSE
+    ) return false;
+
+    const tongueBox = runnerAttack.getBoundingClientRect();
+    const bossBox = boss.element.getBoundingClientRect();
+    return (
+        bossBox.right > tongueBox.left + tongueBox.width * 0.2
+        && bossBox.left < tongueBox.right - tongueBox.width * 0.02
+        && bossBox.bottom > tongueBox.top + tongueBox.height * 0.3
+        && bossBox.top < tongueBox.bottom - tongueBox.height * 0.2
+    );
+}
+
+function damageBoss(currentTime) {
+    const boss = state.boss;
+    if (!boss) return;
+    boss.lastHitAttack = state.attackStartedAt;
+    boss.health -= 1;
+    state.score += 75;
+    boss.element.classList.remove('is-hurt');
+    void boss.element.offsetWidth;
+    boss.element.classList.add('is-hurt');
+    window.setTimeout(() => {
+        if (state.boss === boss && boss.stage !== 'defeated') boss.element.classList.remove('is-hurt');
+    }, 360);
+    updateBossHud();
+    const bossBox = boss.element.getBoundingClientRect();
+    const boardBox = boardMetrics();
+    createCaptureFlash(bossBox.left - boardBox.left + bossBox.width * 0.35, bossBox.top - boardBox.top + bossBox.height * 0.5);
+
+    if (boss.health <= 0) {
+        boss.stage = 'defeated';
+        boss.defeatedAt = currentTime;
+        state.bossDefeated = true;
+        boss.element.classList.remove('is-tired');
+        boss.element.classList.add('is-defeated');
+        state.score += 300;
+        setStatus('Super Abelha derrotada!');
+        return;
+    }
+    setStatus(`Golpe certeiro! Restam ${boss.health} pontos de vida.`);
+}
+
+function updateBoss(currentTime) {
+    const boss = state.boss;
+    if (!boss) return;
+    const boardBox = boardMetrics();
+
+    if (boss.stage === 'entering' && currentTime >= boss.nextStageAt) {
+        boss.stage = 'attacking';
+        boss.stageStartedAt = currentTime;
+        boss.nextStageAt = currentTime + BOSS_ATTACK_STAGE_MS;
+        boss.element.classList.remove('is-entering');
+        boss.element.classList.add('is-attacking');
+    } else if (boss.stage === 'attacking') {
+        if (currentTime >= boss.nextSpawnAt) {
+            spawnBossBee(currentTime);
+            boss.nextSpawnAt = currentTime + 1900 + Math.random() * 750;
+        }
+        if (currentTime >= boss.nextStageAt) {
+            boss.stage = 'tired';
+            boss.stageStartedAt = currentTime;
+            boss.nextStageAt = currentTime + BOSS_TIRED_STAGE_MS;
+            boss.element.classList.remove('is-attacking');
+            boss.element.classList.add('is-tired');
+            setStatus('Ela se cansou e baixou a guarda! Use a língua!');
+        }
+    } else if (boss.stage === 'tired' && currentTime >= boss.nextStageAt) {
+        boss.stage = 'attacking';
+        boss.stageStartedAt = currentTime;
+        boss.nextStageAt = currentTime + BOSS_ATTACK_STAGE_MS;
+        boss.nextSpawnAt = currentTime + 900;
+        boss.element.classList.remove('is-tired', 'is-hurt');
+        boss.element.classList.add('is-attacking');
+        setStatus('A Super Abelha recuperou o fôlego!');
+    }
+
+    if (tongueHitsBoss(currentTime)) damageBoss(currentTime);
+
+    const targetX = boardBox.width * 0.7;
+    const entryProgress = boss.stage === 'entering'
+        ? clamp((currentTime - boss.stageStartedAt) / 1800, 0, 1)
+        : 1;
+    const x = boardBox.width + boardBox.width * 0.1 + (targetX - boardBox.width * 1.1) * entryProgress;
+    const highY = boardBox.height * 0.23 + Math.sin(currentTime / 420) * boardBox.height * 0.045;
+    const tiredY = boardBox.height * 0.58 + Math.sin(currentTime / 540) * 5;
+    const y = boss.stage === 'tired' || boss.stage === 'defeated' ? tiredY : highY;
+    boss.element.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
 }
 
 function chooseObstacleType() {
@@ -917,6 +1101,9 @@ function resetRun() {
     state.landingUntil = 0;
     state.swallowUntil = 0;
     state.runnerMotion = 'run';
+    state.boss = null;
+    state.bossStarted = false;
+    state.bossDefeated = false;
     clearHorizontalInput();
     runnerLayer.classList.remove('is-hit', 'is-airborne', 'is-swallowing', ...RUNNER_MOTION_CLASSES);
     renderRunnerPosition();
@@ -1733,6 +1920,8 @@ function endGame(hazard = 'obstacle') {
             ? 'Um besouro acertou o sapo. Pule para ajustar a altura e use a língua antes que o bando chegue perto.'
         : hazard === 'leaping-beetle'
             ? 'O besouro-saltador atacou de repente. Espere os olhos verdes se aproximarem e pule acima da investida.'
+        : hazard === 'boss-timeout'
+            ? 'O tempo acabou antes do último golpe. Espere a Super Abelha voar baixo e ataque somente quando ela estiver cansada.'
         : state.phaseIndex === PHASES.length - 1
             ? 'Você chegou ao castelo. Agora tente correr ainda mais longe e capture mais besouros.'
             : 'O caminho ficou difícil desta vez. Tente outra corrida e descubra a próxima região.';
@@ -1756,8 +1945,8 @@ function completeJourney() {
 
     updateScore();
     overlayKicker.textContent = 'Jornada concluída';
-    overlayTitle.textContent = '4 mapas completos';
-    overlayMessage.textContent = `Você atravessou toda a rota da manhã em ${formatTime(JOURNEY_DURATION)}. Tente novamente para capturar mais besouros e superar seus ${formatScore(finalScore)} pontos.`;
+    overlayTitle.textContent = 'Chefã derrotada!';
+    overlayMessage.textContent = `Você atravessou a rota da manhã em ${formatTime(JOURNEY_DURATION)} e venceu a Super Abelha Monstro. Tente novamente para superar seus ${formatScore(finalScore)} pontos.`;
     playLabel.textContent = 'Correr novamente';
     showResultOverlay();
     playButton.focus({ preventScroll: true });
@@ -1984,6 +2173,7 @@ function updateInsects(delta, currentTime) {
 }
 
 function scheduleActors(delta) {
+    if (state.bossStarted) return;
     const difficulty = DIFFICULTIES[state.difficulty];
     state.obstacleCooldown -= delta;
     state.insectCooldown -= delta;
@@ -2042,13 +2232,21 @@ function gameLoop(currentTime) {
     updateRunnerPhysics(delta, currentTime);
     updateObstacles(delta, currentTime);
     updateInsects(delta, currentTime);
+    if (!state.bossStarted && state.elapsedTime >= BOSS_START_TIME) startBoss(currentTime);
+    updateBoss(currentTime);
     state.score += delta * 3.1;
     state.elapsedTime += delta;
     resolvePhase();
     updateScore();
 
-    if (state.elapsedTime >= JOURNEY_DURATION) {
+    if (state.bossDefeated && state.boss && currentTime - state.boss.defeatedAt >= 1250) {
         completeJourney();
+        return;
+    }
+
+    if (state.elapsedTime >= JOURNEY_DURATION) {
+        if (state.bossDefeated) completeJourney();
+        else endGame('boss-timeout');
         return;
     }
 

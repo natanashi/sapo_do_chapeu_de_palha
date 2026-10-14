@@ -15,8 +15,8 @@
     <link rel="preload" as="image" href="assets/img/mapa-rocha-simples-v2.png">
     <link rel="preload" as="image" href="assets/img/mapa-museu-brejo-v1.png">
     <link rel="preload" as="image" href="assets/img/sapo-corrida-bipede-v3.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=75">
-    <script src="assets/js/script.js?v=75" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=76">
+    <script src="assets/js/script.js?v=76" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body class="has-indie-intro">
@@ -86,7 +86,7 @@
                 <div class="route-map" aria-label="Mapa da jornada pelas quatro regiões">
                     <div class="route-map__header">
                         <span>Jornada</span>
-                        <strong id="route-time">0:00 / 2:30</strong>
+                        <strong id="route-time">0:00 / 2:00</strong>
                     </div>
                     <div class="route-map__track">
                         <span class="route-map__base" aria-hidden="true"></span>
@@ -115,6 +115,13 @@
             </div>
             <div class="obstacle-layer" id="obstacle-layer" aria-hidden="true"></div>
             <div class="collectible-layer" id="collectible-layer" aria-hidden="true"></div>
+            <div class="boss-layer" id="boss-layer" aria-hidden="true"></div>
+
+            <div class="boss-hud" id="boss-hud" aria-hidden="true">
+                <span>Chefã · Super Abelha</span>
+                <div class="boss-health-track"><i id="boss-health-fill"></i></div>
+                <strong id="boss-health-text">4/4</strong>
+            </div>
 
             <div class="phase-banner" id="phase-banner" aria-hidden="true">
                 <span id="phase-kicker">Fase 1</span>
