@@ -32,6 +32,11 @@ const difficultyPicker = document.querySelector('.difficulty-picker');
 const worldLevelButtons = [...document.querySelectorAll('[data-world-level]')];
 const worldMapDirectionButtons = [...document.querySelectorAll('[data-map-direction]')];
 const difficultyInputs = [...document.querySelectorAll('input[name="stage-difficulty"]')];
+const storyMapTab = document.querySelector('#story-map-tab');
+const testAreaTab = document.querySelector('#test-area-tab');
+const storyMapCategory = document.querySelector('#story-map-category');
+const testAreaCategory = document.querySelector('#test-area-category');
+const startBossTestButton = document.querySelector('#start-boss-test');
 const frogColorInput = document.querySelector('#frog-color');
 const tongueColorInput = document.querySelector('#tongue-color');
 const skinPreviewFrog = document.querySelector('#skin-preview-frog');
@@ -272,6 +277,7 @@ const state = {
     boss: null,
     bossStarted: false,
     bossDefeated: false,
+    isTestArea: false,
 };
 
 const PACE_REFERENCE_SPEED = 270;
@@ -286,9 +292,13 @@ const ATTACK_RETRACT_AT = 430;
 const ATTACK_SWALLOW_AT = 620;
 const JOURNEY_DURATION = 120;
 const BOSS_START_TIME = 88;
-const BOSS_MAX_HEALTH = 4;
+const BOSS_MAX_HEALTH = 5;
 const BOSS_ATTACK_STAGE_MS = 3600;
 const BOSS_TIRED_STAGE_MS = 2800;
+const BOSS_RECOVER_MS = 650;
+const BOSS_RAGE_WINDUP_MS = 900;
+const BOSS_RAGE_CHARGE_MS = 760;
+const BOSS_RAGE_RETURN_MS = 900;
 const HORIZONTAL_SPEED_MIN = 210;
 const HORIZONTAL_SPEED_MAX = 430;
 const RUNNER_MOTION_CLASSES = ['motion-takeoff', 'motion-rise', 'motion-apex', 'motion-fall', 'motion-land'];
@@ -381,7 +391,9 @@ function updateScore() {
 
     const progress = (state.elapsedTime / JOURNEY_DURATION) * 100;
     journeyProgress.style.width = `${clamp(progress, 0, 100)}%`;
-    routeTimeDisplay.textContent = `${formatTime(state.elapsedTime)} / ${formatTime(JOURNEY_DURATION)}`;
+    routeTimeDisplay.textContent = state.isTestArea
+        ? `TESTE · ${formatTime(Math.max(0, state.elapsedTime - BOSS_START_TIME))}`
+        : `${formatTime(state.elapsedTime)} / ${formatTime(JOURNEY_DURATION)}`;
     routeMapStops.forEach((stop, index) => {
         stop.classList.toggle('is-passed', index < state.phaseIndex);
         stop.classList.toggle('is-active', index === state.phaseIndex);
@@ -676,6 +688,7 @@ function startBoss(currentTime) {
         nextSpawnAt: currentTime + 2300,
         lastHitAttack: 0,
         defeatedAt: 0,
+        rageHitResolved: false,
     };
     bossHud.classList.add('is-visible');
     bossHud.setAttribute('aria-hidden', 'false');
@@ -771,12 +784,33 @@ function damageBoss(currentTime) {
         setStatus('Super Abelha derrotada!');
         return;
     }
-    setStatus(`Golpe certeiro! Restam ${boss.health} pontos de vida.`);
+
+    const landedHits = BOSS_MAX_HEALTH - boss.health;
+    boss.element.classList.remove('is-tired', 'is-attacking');
+    boss.stageStartedAt = currentTime;
+    boss.nextSpawnAt = currentTime + 1050;
+
+    if (landedHits === 3) {
+        state.insects.forEach((insect) => insect.element.remove());
+        state.insects = [];
+        collectibleLayer.replaceChildren();
+        boss.stage = 'rage-windup';
+        boss.nextStageAt = currentTime + BOSS_RAGE_WINDUP_MS;
+        boss.rageHitResolved = false;
+        boss.element.classList.add('is-rage-windup');
+        setStatus('Ela ficou furiosa! Prepare o pulo: o ferrão vem em sua direção!');
+        return;
+    }
+
+    boss.stage = 'recovering';
+    boss.nextStageAt = currentTime + BOSS_RECOVER_MS;
+    boss.element.classList.add('is-recovering');
+    setStatus(`Golpe certeiro! Ela despertou. Restam ${boss.health} pontos de vida.`);
 }
 
 function updateBoss(currentTime) {
     const boss = state.boss;
-    if (!boss) return;
+    if (!boss) return false;
     const boardBox = boardMetrics();
 
     if (boss.stage === 'entering' && currentTime >= boss.nextStageAt) {
@@ -785,6 +819,14 @@ function updateBoss(currentTime) {
         boss.nextStageAt = currentTime + BOSS_ATTACK_STAGE_MS;
         boss.element.classList.remove('is-entering');
         boss.element.classList.add('is-attacking');
+    } else if (boss.stage === 'recovering' && currentTime >= boss.nextStageAt) {
+        boss.stage = 'attacking';
+        boss.stageStartedAt = currentTime;
+        boss.nextStageAt = currentTime + BOSS_ATTACK_STAGE_MS;
+        boss.nextSpawnAt = currentTime + 700;
+        boss.element.classList.remove('is-recovering', 'is-hurt');
+        boss.element.classList.add('is-attacking');
+        setStatus('Ela voltou ao alto e chamou mais abelhas!');
     } else if (boss.stage === 'attacking') {
         if (currentTime >= boss.nextSpawnAt) {
             spawnBossBee(currentTime);
@@ -806,6 +848,29 @@ function updateBoss(currentTime) {
         boss.element.classList.remove('is-tired', 'is-hurt');
         boss.element.classList.add('is-attacking');
         setStatus('A Super Abelha recuperou o fôlego!');
+    } else if (boss.stage === 'rage-windup' && currentTime >= boss.nextStageAt) {
+        boss.stage = 'rage-charge';
+        boss.stageStartedAt = currentTime;
+        boss.nextStageAt = currentTime + BOSS_RAGE_CHARGE_MS;
+        boss.rageHitResolved = false;
+        boss.element.classList.remove('is-rage-windup', 'is-hurt');
+        boss.element.classList.add('is-rage-charge');
+        setStatus('Pule agora! A Super Abelha lançou o ferrão!');
+    } else if (boss.stage === 'rage-charge' && currentTime >= boss.nextStageAt) {
+        boss.stage = 'rage-return';
+        boss.stageStartedAt = currentTime;
+        boss.nextStageAt = currentTime + BOSS_RAGE_RETURN_MS;
+        boss.element.classList.remove('is-rage-charge');
+        boss.element.classList.add('is-rage-return');
+        setStatus('Ela errou a investida e está voltando para o alto.');
+    } else if (boss.stage === 'rage-return' && currentTime >= boss.nextStageAt) {
+        boss.stage = 'attacking';
+        boss.stageStartedAt = currentTime;
+        boss.nextStageAt = currentTime + BOSS_ATTACK_STAGE_MS;
+        boss.nextSpawnAt = currentTime + 700;
+        boss.element.classList.remove('is-rage-return');
+        boss.element.classList.add('is-attacking');
+        setStatus('A Super Abelha voltou ao ataque e chamou mais abelhas!');
     }
 
     if (tongueHitsBoss(currentTime)) damageBoss(currentTime);
@@ -814,11 +879,41 @@ function updateBoss(currentTime) {
     const entryProgress = boss.stage === 'entering'
         ? clamp((currentTime - boss.stageStartedAt) / 1800, 0, 1)
         : 1;
-    const x = boardBox.width + boardBox.width * 0.1 + (targetX - boardBox.width * 1.1) * entryProgress;
+    let x = boardBox.width + boardBox.width * 0.1 + (targetX - boardBox.width * 1.1) * entryProgress;
     const highY = boardBox.height * 0.23 + Math.sin(currentTime / 420) * boardBox.height * 0.045;
     const tiredY = boardBox.height * 0.58 + Math.sin(currentTime / 540) * 5;
-    const y = boss.stage === 'tired' || boss.stage === 'defeated' ? tiredY : highY;
+    const chargeY = boardBox.height * 0.55;
+    let y = boss.stage === 'tired' || boss.stage === 'defeated' ? tiredY : highY;
+
+    if (boss.stage === 'recovering') {
+        const progress = clamp((currentTime - boss.stageStartedAt) / BOSS_RECOVER_MS, 0, 1);
+        const eased = 1 - ((1 - progress) * (1 - progress));
+        y = tiredY + (highY - tiredY) * eased;
+    } else if (boss.stage === 'rage-windup') {
+        const progress = clamp((currentTime - boss.stageStartedAt) / BOSS_RAGE_WINDUP_MS, 0, 1);
+        y = tiredY + (highY - tiredY) * progress;
+    } else if (boss.stage === 'rage-charge') {
+        const progress = clamp((currentTime - boss.stageStartedAt) / BOSS_RAGE_CHARGE_MS, 0, 1);
+        const eased = progress * progress;
+        x = targetX + (boardBox.width * 0.1 - targetX) * eased;
+        y = highY + (chargeY - highY) * Math.min(1, progress * 2.2);
+
+        if (!boss.rageHitResolved && progress >= 0.5 && progress <= 0.82) {
+            boss.rageHitResolved = true;
+            if (state.runnerY < boardBox.height * 0.115) {
+                endGame('boss-sting');
+                return true;
+            }
+            setStatus('Pulo perfeito! O ferrão passou por baixo do sapo.');
+        }
+    } else if (boss.stage === 'rage-return') {
+        const progress = clamp((currentTime - boss.stageStartedAt) / BOSS_RAGE_RETURN_MS, 0, 1);
+        x = boardBox.width * 0.1 + (targetX - boardBox.width * 0.1) * progress;
+        y = chargeY + (highY - chargeY) * progress;
+    }
+
     boss.element.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
+    return false;
 }
 
 function chooseObstacleType() {
@@ -1104,6 +1199,7 @@ function resetRun() {
     state.boss = null;
     state.bossStarted = false;
     state.bossDefeated = false;
+    state.isTestArea = false;
     clearHorizontalInput();
     runnerLayer.classList.remove('is-hit', 'is-airborne', 'is-swallowing', ...RUNNER_MOTION_CLASSES);
     renderRunnerPosition();
@@ -1296,7 +1392,7 @@ function activateWorldMapTarget() {
 }
 
 function worldMapLoop(currentTime) {
-    if (activeMenuScreen !== 'maps' || !overlay.classList.contains('is-visible')) {
+    if (activeMenuScreen !== 'maps' || storyMapCategory.hidden || !overlay.classList.contains('is-visible')) {
         worldMapFrog.classList.remove('is-walking');
         worldMapState.frame = 0;
         return;
@@ -1649,6 +1745,24 @@ const MENU_PARENTS = {
 
 let activeMenuScreen = 'main';
 
+function showStoryCategory(category) {
+    const showTestArea = category === 'test';
+    storyMapCategory.hidden = showTestArea;
+    testAreaCategory.hidden = !showTestArea;
+    storyMapTab.classList.toggle('is-active', !showTestArea);
+    testAreaTab.classList.toggle('is-active', showTestArea);
+    storyMapTab.setAttribute('aria-selected', String(!showTestArea));
+    testAreaTab.setAttribute('aria-selected', String(showTestArea));
+    storyMapTab.tabIndex = showTestArea ? -1 : 0;
+    testAreaTab.tabIndex = showTestArea ? 0 : -1;
+    worldMapState.pressed.clear();
+    worldMapFrog.classList.remove('is-walking');
+
+    if (!showTestArea && activeMenuScreen === 'maps') {
+        window.requestAnimationFrame(startWorldMapNavigation);
+    }
+}
+
 function showMenuScreen(screenName, focusFirst = true) {
     const nextScreen = menuScreens.find((screen) => screen.dataset.menuScreen === screenName);
     if (!nextScreen) return;
@@ -1665,7 +1779,7 @@ function showMenuScreen(screenName, focusFirst = true) {
     mainMenuShell.scrollTop = 0;
 
     if (screenName === 'maps') {
-        window.requestAnimationFrame(startWorldMapNavigation);
+        showStoryCategory('map');
     } else {
         worldMapState.pressed.clear();
         worldMapFrog.classList.remove('is-walking');
@@ -1699,18 +1813,25 @@ function showResultOverlay() {
     overlay.classList.add('is-visible');
 }
 
-function startGame() {
+function startGame({ testArea = false } = {}) {
     state.difficulty = selectedDifficulty;
     resetRun();
+    state.isTestArea = testArea;
+    if (testArea) {
+        state.elapsedTime = BOSS_START_TIME;
+        applyPhase(PHASES.length - 1, false);
+    }
     state.mode = 'playing';
     playBackgroundMusic(true);
-    state.previousTime = performance.now();
+    const startTime = performance.now();
+    state.previousTime = startTime;
     overlay.classList.remove('is-visible');
     setPlayingControls(true);
     pauseButton.textContent = 'Pausar';
     pauseButton.setAttribute('aria-label', 'Pausar jogo');
     updateScore();
-    setStatus(`Valendo! · ${DIFFICULTIES[state.difficulty].label}`);
+    if (testArea) startBoss(startTime);
+    else setStatus(`Valendo! · ${DIFFICULTIES[state.difficulty].label}`);
     board.focus({ preventScroll: true });
     state.animationFrame = window.requestAnimationFrame(gameLoop);
 }
@@ -1922,10 +2043,12 @@ function endGame(hazard = 'obstacle') {
             ? 'O besouro-saltador atacou de repente. Espere os olhos verdes se aproximarem e pule acima da investida.'
         : hazard === 'boss-timeout'
             ? 'O tempo acabou antes do último golpe. Espere a Super Abelha voar baixo e ataque somente quando ela estiver cansada.'
+        : hazard === 'boss-sting'
+            ? 'A Super Abelha acertou o sapo com a investida especial. Depois do terceiro golpe, espere o aviso e pule por cima do ferrão.'
         : state.phaseIndex === PHASES.length - 1
             ? 'Você chegou ao castelo. Agora tente correr ainda mais longe e capture mais besouros.'
             : 'O caminho ficou difícil desta vez. Tente outra corrida e descubra a próxima região.';
-    playLabel.textContent = 'Jogar novamente';
+    playLabel.textContent = state.isTestArea ? 'Repetir teste' : 'Jogar novamente';
     showResultOverlay();
     playButton.focus({ preventScroll: true });
 }
@@ -1944,10 +2067,12 @@ function completeJourney() {
     }
 
     updateScore();
-    overlayKicker.textContent = 'Jornada concluída';
+    overlayKicker.textContent = state.isTestArea ? 'Teste concluído' : 'Jornada concluída';
     overlayTitle.textContent = 'Chefã derrotada!';
-    overlayMessage.textContent = `Você atravessou a rota da manhã em ${formatTime(JOURNEY_DURATION)} e venceu a Super Abelha Monstro. Tente novamente para superar seus ${formatScore(finalScore)} pontos.`;
-    playLabel.textContent = 'Correr novamente';
+    overlayMessage.textContent = state.isTestArea
+        ? `Você testou os cinco golpes e venceu a Super Abelha Monstro. Repita o laboratório para praticar a investida especial.`
+        : `Você atravessou a rota da manhã em ${formatTime(JOURNEY_DURATION)} e venceu a Super Abelha Monstro. Tente novamente para superar seus ${formatScore(finalScore)} pontos.`;
+    playLabel.textContent = state.isTestArea ? 'Repetir teste' : 'Correr novamente';
     showResultOverlay();
     playButton.focus({ preventScroll: true });
 }
@@ -2233,7 +2358,7 @@ function gameLoop(currentTime) {
     updateObstacles(delta, currentTime);
     updateInsects(delta, currentTime);
     if (!state.bossStarted && state.elapsedTime >= BOSS_START_TIME) startBoss(currentTime);
-    updateBoss(currentTime);
+    if (updateBoss(currentTime)) return;
     state.score += delta * 3.1;
     state.elapsedTime += delta;
     resolvePhase();
@@ -2244,7 +2369,7 @@ function gameLoop(currentTime) {
         return;
     }
 
-    if (state.elapsedTime >= JOURNEY_DURATION) {
+    if (!state.isTestArea && state.elapsedTime >= JOURNEY_DURATION) {
         if (state.bossDefeated) completeJourney();
         else endGame('boss-timeout');
         return;
@@ -2447,8 +2572,26 @@ function syncBoardSize(width, height) {
 
 playButton.addEventListener('click', () => {
     if (state.mode === 'paused') resumeGame();
-    else if (state.mode !== 'loading') startGame();
+    else if (state.mode !== 'loading') startGame({ testArea: state.isTestArea });
 });
+
+storyMapTab?.addEventListener('click', () => showStoryCategory('map'));
+testAreaTab?.addEventListener('click', () => showStoryCategory('test'));
+[storyMapTab, testAreaTab].forEach((tab, index, tabs) => {
+    tab?.addEventListener('keydown', (event) => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        const nextIndex = event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+                ? tabs.length - 1
+                : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+        const nextTab = tabs[nextIndex];
+        showStoryCategory(nextTab === testAreaTab ? 'test' : 'map');
+        nextTab?.focus({ preventScroll: true });
+    });
+});
+startBossTestButton?.addEventListener('click', () => startGame({ testArea: true }));
 
 storyMapButton.addEventListener('click', () => {
     activateWorldMapTarget();

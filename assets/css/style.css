@@ -778,6 +778,10 @@ button { cursor: pointer; }
 
 .boss-bee.is-entering { filter: drop-shadow(0 8px 5px rgba(32, 7, 9, 0.4)) saturate(0.8); }
 .boss-bee.is-tired { animation: boss-bee-tired 620ms steps(1, end) infinite; }
+.boss-bee.is-recovering { animation: boss-bee-fly 190ms steps(1, end) infinite; filter: saturate(1.2) drop-shadow(0 8px 5px rgba(32, 7, 9, 0.4)); }
+.boss-bee.is-rage-windup { animation: boss-rage-warning 180ms steps(2, end) infinite; }
+.boss-bee.is-rage-charge { background-position: 100% 0; filter: saturate(1.45) brightness(1.08) drop-shadow(0 0 12px rgba(255, 55, 35, 0.88)); }
+.boss-bee.is-rage-return { animation: boss-bee-fly 190ms steps(1, end) infinite; filter: drop-shadow(0 8px 5px rgba(32, 7, 9, 0.4)) saturate(1.2); }
 .boss-bee.is-hurt {
     background-position: 100% 100%;
     animation: boss-hurt-flash 360ms steps(2, end) both;
@@ -828,7 +832,7 @@ button { cursor: pointer; }
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, #b92f26, #ed7137 72%, #ffd15d);
-    transition: width 220ms steps(4, end);
+    transition: width 220ms steps(5, end);
 }
 
 .obstacle {
@@ -1597,6 +1601,102 @@ kbd {
     font-weight: 800;
     line-height: 1.35;
     text-align: right;
+}
+
+.story-category-tabs {
+    display: grid;
+    width: min(520px, 100%);
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    margin: 0 auto 10px;
+    padding: 5px;
+    border: 3px solid #52351f;
+    background: #d49a4d;
+    box-shadow: inset 0 0 0 2px #f7cf77, 0 4px 0 #342114;
+}
+
+.story-category-tabs button {
+    min-height: 39px;
+    border: 2px solid transparent;
+    color: #5b432d;
+    background: transparent;
+    font-family: var(--font-display);
+    font-size: clamp(0.58rem, 1vw, 0.76rem);
+    letter-spacing: 0.035em;
+    text-transform: uppercase;
+}
+
+.story-category-tabs button:hover { color: #193d28; background: rgba(255, 242, 179, 0.48); }
+.story-category-tabs button.is-active {
+    border-color: #274d31;
+    color: #fff0ad;
+    background: #315f3b;
+    box-shadow: inset 0 0 0 2px #4f8151, 0 3px 0 #1e2f20;
+}
+
+.story-category-tabs button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+#story-map-category[hidden],
+.test-area-panel[hidden] { display: none; }
+
+.test-area-panel {
+    display: grid;
+    min-height: 430px;
+    grid-template-columns: minmax(220px, 0.8fr) minmax(300px, 1.2fr);
+    align-items: center;
+    gap: clamp(18px, 4vw, 48px);
+    padding: clamp(20px, 4vw, 44px);
+    border: 5px solid #5a381f;
+    background:
+        linear-gradient(rgba(255, 246, 198, 0.74), rgba(255, 232, 157, 0.9)),
+        repeating-linear-gradient(0deg, transparent 0 20px, rgba(108, 72, 38, 0.08) 21px 22px),
+        #e5bd68;
+    box-shadow: inset 0 0 0 4px #ffe6a2, 0 7px 0 #2e1e14;
+}
+
+.test-area-boss {
+    width: min(310px, 100%);
+    aspect-ratio: 0.75;
+    justify-self: center;
+    background: url("../img/super-abelha-monstro-sprites-v2.png") 0 0 / 400% 200% no-repeat;
+    filter: drop-shadow(0 14px 7px rgba(62, 26, 18, 0.28));
+    image-rendering: pixelated;
+    animation: boss-bee-fly 420ms steps(1, end) infinite;
+}
+
+.test-area-copy > span { color: #a44a27; font-family: var(--font-data); font-size: 0.68rem; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; }
+.test-area-copy h3 { margin: 7px 0 10px; color: #193d28; font-family: var(--font-display); font-size: clamp(1.45rem, 3vw, 2.35rem); line-height: 1.05; }
+.test-area-copy p { margin: 0; color: #5d452f; font-weight: 800; line-height: 1.48; }
+.test-area-copy ul { margin: 14px 0 18px; padding-left: 20px; color: #513b29; font-size: 0.82rem; font-weight: 800; line-height: 1.5; }
+.test-area-copy button {
+    width: 100%;
+    min-height: 48px;
+    border: 3px solid #1d3422;
+    color: #fff2b1;
+    background: #315f3b;
+    box-shadow: inset 0 0 0 2px #4f8151, 0 5px 0 #1b2b1d;
+    font-family: var(--font-display);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+}
+.test-area-copy button:hover { background: #40794a; transform: translateY(-2px); box-shadow: inset 0 0 0 2px #62985f, 0 7px 0 #1b2b1d; }
+.test-area-copy button:active { transform: translateY(3px); box-shadow: inset 0 0 0 2px #4f8151, 0 2px 0 #1b2b1d; }
+.test-area-copy small { display: block; margin-top: 12px; color: #76583a; font-size: 0.62rem; font-weight: 900; line-height: 1.4; }
+
+@media (max-width: 720px) {
+    .story-category-tabs { width: min(440px, 100%); margin-bottom: 7px; }
+    .story-category-tabs button { min-height: 34px; font-size: 0.55rem; }
+    .test-area-panel { min-height: 300px; grid-template-columns: minmax(115px, 0.55fr) minmax(250px, 1.45fr); gap: 12px; padding: 12px; }
+    .test-area-boss { width: min(180px, 100%); }
+    .test-area-copy h3 { margin: 4px 0 6px; font-size: clamp(1.05rem, 4vw, 1.5rem); }
+    .test-area-copy p, .test-area-copy ul { font-size: 0.64rem; line-height: 1.35; }
+    .test-area-copy ul { margin: 7px 0 9px; }
+    .test-area-copy button { min-height: 38px; font-size: 0.57rem; }
+    .test-area-copy small { margin-top: 7px; font-size: 0.5rem; }
+}
+
+@media (max-width: 520px) and (orientation: portrait) {
+    .test-area-panel { grid-template-columns: 1fr; }
+    .test-area-boss { width: 130px; }
 }
 
 .world-map {
@@ -2424,6 +2524,11 @@ body.reduce-game-motion .route-map__fill { transition: none; }
     66%, 100% { background-position: 66.667% 100%; }
 }
 
+@keyframes boss-rage-warning {
+    0%, 49.99% { background-position: 66.667% 0; filter: saturate(1.25) brightness(1) drop-shadow(0 8px 5px rgba(32, 7, 9, 0.4)); }
+    50%, 100% { background-position: 100% 0; filter: saturate(1.65) brightness(1.35) drop-shadow(0 0 16px rgba(255, 52, 34, 0.95)); }
+}
+
 @keyframes boss-hurt-flash {
     0%, 100% { filter: brightness(1) drop-shadow(0 8px 5px rgba(32, 7, 9, 0.4)); }
     50% { filter: brightness(1.9) saturate(0.35) drop-shadow(0 0 16px rgba(255, 236, 128, 0.95)); }
@@ -2583,7 +2688,11 @@ body.reduce-game-motion .route-map__fill { transition: none; }
     .obstacle--ground-beetle,
     .obstacle--leaping-beetle,
     .obstacle--leaping-beetle.is-leaping,
-    .boss-bee { animation: none; }
+    .boss-bee,
+    .boss-bee.is-recovering,
+    .boss-bee.is-rage-windup,
+    .boss-bee.is-rage-return,
+    .test-area-boss { animation: none; }
     .insect--bee.is-aiming::before { animation: none; opacity: 0.9; }
     .scenery-layer { transition: none; }
     .game-overlay,
@@ -2685,9 +2794,20 @@ body.reduce-game-motion .route-map__fill { transition: none; }
     .main-menu-shell.is-world-map { min-height: 0; grid-template-columns: 1fr; padding: 8px; }
     .main-menu-shell.is-world-map .menu-book { min-height: 0; padding: 36px 10px 10px; }
     .world-map-heading { margin-bottom: 6px; }
+    .world-map-heading h2 { font-size: 1.3rem; white-space: nowrap; }
     .world-map-heading p { font-size: 0.56rem; }
+    .story-category-tabs { width: min(470px, 100%); margin-bottom: 6px; }
+    .story-category-tabs button { min-height: 32px; font-size: 0.54rem; }
     .world-map { width: min(650px, 100%); min-height: 0; margin-inline: auto; }
     .world-map-pad { display: none; }
+    .test-area-panel { min-height: 205px; grid-template-columns: minmax(100px, 0.48fr) minmax(300px, 1.52fr); gap: 10px; padding: 7px 15px; }
+    .test-area-boss { width: min(120px, 100%); }
+    .test-area-copy > span { font-size: 0.46rem; }
+    .test-area-copy h3 { margin: 2px 0 4px; font-size: 1rem; }
+    .test-area-copy p, .test-area-copy ul { font-size: 0.52rem; line-height: 1.25; }
+    .test-area-copy ul { margin: 4px 0 6px; }
+    .test-area-copy button { min-height: 32px; font-size: 0.5rem; }
+    .test-area-copy small { display: none; }
     .skin-workbench { grid-template-columns: 0.9fr 1.1fr; }
     .skin-preview { min-height: 300px; }
 }

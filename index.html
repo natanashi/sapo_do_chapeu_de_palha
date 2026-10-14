@@ -15,8 +15,8 @@
     <link rel="preload" as="image" href="assets/img/mapa-rocha-simples-v2.png">
     <link rel="preload" as="image" href="assets/img/mapa-museu-brejo-v1.png">
     <link rel="preload" as="image" href="assets/img/sapo-corrida-bipede-v3.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=76">
-    <script src="assets/js/script.js?v=76" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=82">
+    <script src="assets/js/script.js?v=82" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body class="has-indie-intro">
@@ -120,7 +120,7 @@
             <div class="boss-hud" id="boss-hud" aria-hidden="true">
                 <span>Chefã · Super Abelha</span>
                 <div class="boss-health-track"><i id="boss-health-fill"></i></div>
-                <strong id="boss-health-text">4/4</strong>
+                <strong id="boss-health-text">5/5</strong>
             </div>
 
             <div class="phase-banner" id="phase-banner" aria-hidden="true">
@@ -222,7 +222,12 @@
                                 </div>
                                 <p id="world-map-help">Explore a mata com as setas ou toque no mapa. A Rota da Manhã é a única fase disponível.</p>
                             </div>
-                            <div class="world-map" id="world-map" tabindex="0" aria-label="Mapa explorável da história. Use as setas para caminhar.">
+                            <div class="story-category-tabs" role="tablist" aria-label="Categorias do modo história">
+                                <button class="is-active" id="story-map-tab" type="button" role="tab" aria-selected="true" aria-controls="story-map-category" tabindex="0">Mapa das fases</button>
+                                <button id="test-area-tab" type="button" role="tab" aria-selected="false" aria-controls="test-area-category" tabindex="-1">Área de testes</button>
+                            </div>
+                            <div id="story-map-category" role="tabpanel" aria-labelledby="story-map-tab">
+                                <div class="world-map" id="world-map" tabindex="0" aria-label="Mapa explorável da história. Use as setas para caminhar.">
                                 <div class="world-map-world" id="world-map-world">
                                     <div class="world-map-ground" aria-hidden="true"></div>
 
@@ -289,13 +294,28 @@
                                     <button id="story-map-button" type="button" disabled><span aria-hidden="true">▶</span> Entrar na fase</button>
                                     <em id="story-map-status">Preparando o mapa...</em>
                                 </div>
+                                </div>
+                                <div class="world-map-pad" aria-label="Controles do mapa">
+                                    <button type="button" data-map-direction="up" aria-label="Andar para cima">↑</button>
+                                    <button type="button" data-map-direction="left" aria-label="Andar para a esquerda">←</button>
+                                    <button type="button" data-map-direction="down" aria-label="Andar para baixo">↓</button>
+                                    <button type="button" data-map-direction="right" aria-label="Andar para a direita">→</button>
+                                </div>
                             </div>
-                            <div class="world-map-pad" aria-label="Controles do mapa">
-                                <button type="button" data-map-direction="up" aria-label="Andar para cima">↑</button>
-                                <button type="button" data-map-direction="left" aria-label="Andar para a esquerda">←</button>
-                                <button type="button" data-map-direction="down" aria-label="Andar para baixo">↓</button>
-                                <button type="button" data-map-direction="right" aria-label="Andar para a direita">→</button>
-                            </div>
+                            <section class="test-area-panel" id="test-area-category" role="tabpanel" aria-labelledby="test-area-tab" hidden>
+                                <div class="test-area-boss" aria-hidden="true"></div>
+                                <div class="test-area-copy">
+                                    <span>Laboratório temporário</span>
+                                    <h3>Batalha da Super Abelha</h3>
+                                    <p>Comece diretamente na chefã para testar os cinco golpes, as abelhas invocadas e a investida especial do ferrão.</p>
+                                    <ul>
+                                        <li>Acerte somente quando ela estiver cansada e voando baixo.</li>
+                                        <li>Depois do terceiro golpe, pule para escapar da investida.</li>
+                                    </ul>
+                                    <button id="start-boss-test" type="button"><span aria-hidden="true">▶</span> Iniciar teste da chefã</button>
+                                    <small>Área temporária de desenvolvimento. A fase normal continua disponível no mapa.</small>
+                                </div>
+                            </section>
                         </section>
 
                         <section class="menu-screen" data-menu-screen="profile" aria-labelledby="profile-title" hidden>
