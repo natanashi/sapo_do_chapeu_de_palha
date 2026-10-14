@@ -118,7 +118,7 @@ const PHASES = [
     {
         name: 'Vila do Sol',
         startsAt: 0,
-        background: 'assets/img/cenario-arvores-planaltos-transparente-v2.png',
+        background: 'assets/img/cenario-arvores-planaltos-transparente-v3.png',
         speedScale: 1,
         paceLabel: 'Ritmo padrão',
         obstacleGap: [1.65, 2.2],
@@ -128,7 +128,7 @@ const PHASES = [
     {
         name: 'Campos do Orvalho',
         startsAt: 38,
-        background: 'assets/img/cenario-arvores-planaltos-transparente-v2.png',
+        background: 'assets/img/cenario-arvores-planaltos-transparente-v3.png',
         speedScale: 1.08,
         paceLabel: 'Ritmo acelerando',
         obstacleGap: [1.55, 2.1],
@@ -138,7 +138,7 @@ const PHASES = [
     {
         name: 'Floresta Antiga',
         startsAt: 75,
-        background: 'assets/img/cenario-arvores-planaltos-transparente-v2.png',
+        background: 'assets/img/cenario-arvores-planaltos-transparente-v3.png',
         speedScale: 1.16,
         paceLabel: 'Corrida veloz',
         obstacleGap: [1.45, 1.98],
@@ -148,7 +148,7 @@ const PHASES = [
     {
         name: 'Castelo da Manhã',
         startsAt: 113,
-        background: 'assets/img/cenario-arvores-planaltos-transparente-v2.png',
+        background: 'assets/img/cenario-arvores-planaltos-transparente-v3.png',
         speedScale: 1.24,
         paceLabel: 'Reta final em alta velocidade',
         obstacleGap: [1.36, 1.88],
