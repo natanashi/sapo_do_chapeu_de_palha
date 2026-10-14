@@ -1635,7 +1635,7 @@ kbd {
     z-index: calc(100 + var(--landmark-depth, 50));
     top: var(--landmark-y);
     left: var(--landmark-x);
-    width: clamp(118px, 12%, 205px);
+    width: clamp(180px, 17%, 320px);
     aspect-ratio: 1.2 / 1;
     padding: 0;
     border: 0;
@@ -1643,7 +1643,7 @@ kbd {
     background: transparent;
     cursor: pointer;
     filter: drop-shadow(0 7px 0 rgba(29, 45, 23, 0.3));
-    transform: translate(-50%, -88%);
+    transform: translate(-50%, -60%);
     transform-origin: center bottom;
 }
 
@@ -1783,6 +1783,7 @@ kbd {
     letter-spacing: 0.04em;
     text-align: center;
     text-transform: uppercase;
+    pointer-events: none;
     transform: rotate(1deg);
 }
 
@@ -2550,7 +2551,7 @@ body.reduce-game-motion .route-map__fill { transition: none; }
     .world-level { width: clamp(36px, 10vw, 48px); border-width: 3px; }
     .world-level strong { display: none; }
     .world-map-frog { width: clamp(48px, 14vw, 66px); }
-    .world-landmark { width: clamp(88px, 15%, 122px); }
+    .world-landmark { width: clamp(135px, 23%, 220px); }
     .world-landmark span { font-size: 0.43rem; }
     .world-map-prompt { width: min(250px, 52%); min-width: 190px; padding: 7px; }
     .world-map-prompt strong { font-size: 0.82rem; }

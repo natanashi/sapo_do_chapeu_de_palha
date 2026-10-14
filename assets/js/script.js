@@ -946,8 +946,8 @@ const WORLD_LEVELS = [
 
 const WORLD_MAP_SCALE = 2;
 const WORLD_LEVEL_REACH = 4.8;
-const WORLD_MUSEUM = { name: 'Museu da Mata', x: 17, y: 80 };
-const WORLD_MUSEUM_REACH = 9.5;
+const WORLD_MUSEUM = { name: 'Museu da Mata', x: 55, y: 84 };
+const WORLD_MUSEUM_REACH = 10.5;
 const WORLD_MAP_BLOCKERS = [
     { x: 10, y: 18, width: 4.8, height: 3.2 },
     { x: 52, y: 14, width: 4.6, height: 3.1 },
@@ -959,11 +959,11 @@ const WORLD_MAP_BLOCKERS = [
     { x: 73, y: 38, width: 4.9, height: 3.3 },
     { x: 24, y: 31, width: 3.2, height: 2.4 },
     { x: 77, y: 46, width: 3.5, height: 2.5 },
-    { x: 48, y: 83, width: 3.6, height: 2.6 },
+    { x: 62, y: 91, width: 3.6, height: 2.6 },
     { x: 40, y: 32, width: 3.1, height: 2.3 },
     { x: 66, y: 66, width: 3.4, height: 2.5 },
     { x: 83, y: 71, width: 3.1, height: 2.3 },
-    { x: WORLD_MUSEUM.x, y: WORLD_MUSEUM.y, width: 7.2, height: 4.2 },
+    { x: WORLD_MUSEUM.x, y: WORLD_MUSEUM.y, width: 10.5, height: 6.2 },
 ];
 
 const worldMapState = {
@@ -2266,7 +2266,7 @@ worldMuseum?.addEventListener('click', () => {
         return;
     }
     worldMapState.targetX = WORLD_MUSEUM.x;
-    worldMapState.targetY = WORLD_MUSEUM.y + 6.2;
+    worldMapState.targetY = WORLD_MUSEUM.y + 6.8;
     storyMapStatus.textContent = 'Caminhando até o museu...';
 });
 
