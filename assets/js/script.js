@@ -299,6 +299,8 @@ const BOSS_RECOVER_MS = 650;
 const BOSS_RAGE_WINDUP_MS = 900;
 const BOSS_RAGE_CHARGE_MS = 760;
 const BOSS_RAGE_RETURN_MS = 900;
+const BEE_AIM_DURATION_MS = 520;
+const BEE_PREDICTION_SECONDS = 0.18;
 const HORIZONTAL_SPEED_MIN = 210;
 const HORIZONTAL_SPEED_MAX = 430;
 const RUNNER_MOTION_CLASSES = ['motion-takeoff', 'motion-rise', 'motion-apex', 'motion-fall', 'motion-land'];
@@ -808,6 +810,27 @@ function damageBoss(currentTime) {
     setStatus(`Golpe certeiro! Ela despertou. Restam ${boss.health} pontos de vida.`);
 }
 
+function bossChargeHitsRunner() {
+    const runnerBox = runner.getBoundingClientRect();
+    const bossBox = state.boss?.element.getBoundingClientRect();
+    if (!bossBox) return false;
+
+    const runnerInsetX = runnerBox.width * 0.3;
+    const runnerInsetTop = runnerBox.height * (isRunnerCrouched() ? 0.48 : 0.2);
+    const runnerInsetBottom = runnerBox.height * 0.18;
+    const bossInsetLeft = bossBox.width * 0.13;
+    const bossInsetRight = bossBox.width * 0.03;
+    const bossInsetTop = bossBox.height * 0.17;
+    const bossInsetBottom = bossBox.height * 0.11;
+
+    return (
+        runnerBox.right - runnerInsetX > bossBox.left + bossInsetLeft
+        && runnerBox.left + runnerInsetX < bossBox.right - bossInsetRight
+        && runnerBox.bottom - runnerInsetBottom > bossBox.top + bossInsetTop
+        && runnerBox.top + runnerInsetTop < bossBox.bottom - bossInsetBottom
+    );
+}
+
 function updateBoss(currentTime) {
     const boss = state.boss;
     if (!boss) return false;
@@ -898,13 +921,17 @@ function updateBoss(currentTime) {
         x = targetX + (boardBox.width * 0.1 - targetX) * eased;
         y = highY + (chargeY - highY) * Math.min(1, progress * 2.2);
 
-        if (!boss.rageHitResolved && progress >= 0.5 && progress <= 0.82) {
+        boss.element.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
+
+        if (!boss.rageHitResolved && progress >= 0.28 && bossChargeHitsRunner()) {
             boss.rageHitResolved = true;
-            if (state.runnerY < boardBox.height * 0.115) {
+            if (state.mode === 'playing') {
                 endGame('boss-sting');
                 return true;
             }
-            setStatus('Pulo perfeito! O ferrão passou por baixo do sapo.');
+        } else if (!boss.rageHitResolved && progress >= 0.92) {
+            boss.rageHitResolved = true;
+            setStatus('Investida evitada! O ferrão passou longe do sapo.');
         }
     } else if (boss.stage === 'rage-return') {
         const progress = clamp((currentTime - boss.stageStartedAt) / BOSS_RAGE_RETURN_MS, 0, 1);
@@ -912,7 +939,9 @@ function updateBoss(currentTime) {
         y = chargeY + (highY - chargeY) * progress;
     }
 
-    boss.element.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
+    if (boss.stage !== 'rage-charge') {
+        boss.element.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
+    }
     return false;
 }
 
@@ -2249,18 +2278,29 @@ function updateInsects(delta, currentTime) {
                 insect.flightStageStartedAt = currentTime;
                 insect.aimY = insect.renderedY;
                 insect.element.classList.add('is-aiming');
-            } else if (insect.flightStage === 'aiming' && currentTime - insect.flightStageStartedAt >= 440) {
+            } else if (insect.flightStage === 'aiming' && currentTime - insect.flightStageStartedAt >= BEE_AIM_DURATION_MS) {
                 const runnerBox = runner.getBoundingClientRect();
                 const insectBox = insect.element.getBoundingClientRect();
+                const horizontalDirection = Number(state.moveRight) - Number(state.moveLeft);
+                const horizontalSpeed = clamp(state.boardWidth * 0.34, HORIZONTAL_SPEED_MIN, HORIZONTAL_SPEED_MAX);
+                const predictedRunnerX = horizontalDirection * horizontalSpeed * BEE_PREDICTION_SECONDS;
+                const predictedRunnerLift = state.velocityY * BEE_PREDICTION_SECONDS
+                    - 0.5 * GRAVITY * BEE_PREDICTION_SECONDS * BEE_PREDICTION_SECONDS;
+                const runnerCenterX = runnerBox.left - boardBox.left + runnerBox.width * 0.5 + predictedRunnerX;
+                const runnerCenterY = runnerBox.top - boardBox.top + runnerBox.height * (isRunnerCrouched() ? 0.7 : 0.52);
                 insect.flightStage = 'diving';
                 insect.flightStageStartedAt = currentTime;
                 insect.diveFromY = insect.renderedY;
                 insect.diveStartX = insect.x;
-                insect.diveTargetX = runnerBox.left - boardBox.left - runnerBox.width * 1.15;
+                insect.diveTargetX = clamp(
+                    runnerCenterX - insectBox.width * 0.5 - runnerBox.width * 0.72,
+                    -insectBox.width,
+                    boardBox.width * 0.52,
+                );
                 insect.diveTargetY = clamp(
-                    runnerBox.top - boardBox.top + runnerBox.height * 0.52 - insectBox.height * 0.5,
-                    boardBox.height * 0.62,
-                    boardBox.height * 0.76,
+                    runnerCenterY - predictedRunnerLift - insectBox.height * 0.5,
+                    boardBox.height * 0.3,
+                    boardBox.height * 0.8,
                 );
                 insect.element.classList.remove('is-aiming');
                 insect.element.classList.add('is-diving');
