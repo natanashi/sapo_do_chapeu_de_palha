@@ -17,12 +17,38 @@
     <link rel="preload" as="image" href="assets/img/sapo-corrida-bipede-v3.png">
     <link rel="preload" as="image" href="assets/img/sapo-resistencia-capuz-sprites-v1.png">
     <link rel="preload" as="image" href="assets/img/sapo-resistencia-guarda-v1.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=100">
-    <script src="assets/js/script.js?v=100" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=102">
+    <script src="assets/js/script.js?v=102" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
-<body class="has-indie-intro">
+<body class="is-app-loading has-indie-intro">
     <audio id="background-music" src="assets/aud/sapinho-aventura-no-sonho.mp3" preload="auto" loop></audio>
+    <section class="boot-loader is-visible" id="boot-loader" role="status" aria-live="polite" aria-label="Carregando o jogo">
+        <div class="boot-loader__scene" aria-hidden="true">
+            <span class="boot-loader__sun"></span>
+            <span class="boot-loader__cloud boot-loader__cloud--one"></span>
+            <span class="boot-loader__cloud boot-loader__cloud--two"></span>
+            <span class="boot-loader__frog"></span>
+            <span class="boot-loader__ground"></span>
+        </div>
+        <div class="boot-loader__panel">
+            <p class="boot-loader__eyebrow">Natanashi Studios apresenta</p>
+            <h1>Preparando a aventura</h1>
+            <p class="boot-loader__message" id="boot-loader-message">Abrindo a trilha...</p>
+            <div class="boot-loader__track" role="progressbar" aria-label="Progresso do carregamento" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="boot-loader-progress">
+                <i id="boot-loader-fill"></i>
+            </div>
+            <div class="boot-loader__footer">
+                <span id="boot-loader-percent">0%</span>
+                <small>Não feche o jogo</small>
+            </div>
+            <ol class="boot-loader__steps" aria-label="Etapas do carregamento">
+                <li data-loading-step="sprites"><i></i> Personagens</li>
+                <li data-loading-step="world"><i></i> Cenário</li>
+                <li data-loading-step="sound"><i></i> Som</li>
+            </ol>
+        </div>
+    </section>
     <section class="indie-intro is-visible" id="indie-intro" role="dialog" aria-modal="true" aria-labelledby="indie-intro-title" aria-describedby="indie-intro-copy">
         <div class="indie-intro__panel">
             <div class="indie-intro__pixels" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
@@ -35,7 +61,7 @@
                 <aside>Claro que eu também quero ganhar dinheiro com ele, se for possível — ninguém vive só de capturar besouros, né? <span>kkkkk</span></aside>
                 <p>Mas, antes de qualquer coisa, este projeto existe por diversão, curiosidade e gostos certamente humanos.</p>
             </div>
-            <button class="indie-intro__continue" id="indie-intro-continue" type="button" onclick="closeIndieIntro()">Entrar no jogo</button>
+            <button class="indie-intro__continue" id="indie-intro-continue" type="button" onclick="closeIndieIntro()" disabled>Carregando...</button>
         </div>
     </section>
     <section class="orientation-guard" id="orientation-guard" role="dialog" aria-modal="true" aria-labelledby="orientation-title" aria-describedby="orientation-message" aria-hidden="true" tabindex="-1" inert>
@@ -129,6 +155,16 @@
                 <span id="phase-kicker">Fase 1</span>
                 <strong id="phase-name">Vila do Sol</strong>
             </div>
+
+            <section class="stage-loader" id="stage-loader" role="status" aria-live="polite" aria-hidden="true" hidden>
+                <div class="stage-loader__card">
+                    <div class="stage-loader__frog" aria-hidden="true"></div>
+                    <p id="stage-loader-kicker">Rota da Manhã</p>
+                    <h2 id="stage-loader-title">Preparando a trilha</h2>
+                    <div class="stage-loader__track" aria-hidden="true"><i></i></div>
+                    <span id="stage-loader-tip">Separando os obstáculos para uma partida justa...</span>
+                </div>
+            </section>
 
             <div class="game-controls" aria-label="Controles do jogo">
                 <div class="control-group control-group--movement" aria-label="Movimento e postura">

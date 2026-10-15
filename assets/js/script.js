@@ -1,4 +1,14 @@
 const board = document.querySelector('#game-board');
+const bootLoader = document.querySelector('#boot-loader');
+const bootLoaderMessage = document.querySelector('#boot-loader-message');
+const bootLoaderProgress = document.querySelector('#boot-loader-progress');
+const bootLoaderFill = document.querySelector('#boot-loader-fill');
+const bootLoaderPercent = document.querySelector('#boot-loader-percent');
+const bootLoadingSteps = [...document.querySelectorAll('[data-loading-step]')];
+const stageLoader = document.querySelector('#stage-loader');
+const stageLoaderKicker = document.querySelector('#stage-loader-kicker');
+const stageLoaderTitle = document.querySelector('#stage-loader-title');
+const stageLoaderTip = document.querySelector('#stage-loader-tip');
 const indieIntro = document.querySelector('#indie-intro');
 const indieIntroContinue = document.querySelector('#indie-intro-continue');
 const gameShell = document.querySelector('.game-shell');
@@ -549,6 +559,7 @@ function updateFullscreenLabel() {
 }
 
 function closeIndieIntro() {
+    if (!bootReady) return;
     indieIntro.classList.remove('is-visible');
     indieIntro.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('has-indie-intro');
@@ -1960,6 +1971,8 @@ const MENU_PARENTS = {
 };
 
 let activeMenuScreen = 'main';
+let bootReady = false;
+let stageTransitionPromise = null;
 
 function showStoryCategory(category) {
     const showTestArea = category === 'test';
@@ -2037,7 +2050,7 @@ function showResultOverlay() {
     overlay.classList.add('is-visible');
 }
 
-function startGame({ testArea = false } = {}) {
+function startGameNow({ testArea = false } = {}) {
     state.difficulty = selectedDifficulty;
     resetRun();
     state.isTestArea = testArea;
@@ -2060,7 +2073,7 @@ function startGame({ testArea = false } = {}) {
     state.animationFrame = window.requestAnimationFrame(gameLoop);
 }
 
-function startResistanceDuel() {
+function startResistanceDuelNow() {
     resetRun();
     state.isDuel = true;
     board.classList.add('is-duel');
@@ -2128,6 +2141,81 @@ function startResistanceDuel() {
     pauseButton.setAttribute('aria-label', 'Pausar duelo');
     board.focus({ preventScroll: true });
     state.animationFrame = window.requestAnimationFrame(gameLoop);
+}
+
+const STAGE_LOADING_TIPS = [
+    'Conferindo o terreno antes de liberar os controles...',
+    'Alinhando personagens e colisões...',
+    'Separando os obstáculos para uma partida justa...',
+    'Ajustando o ritmo da aventura...',
+];
+
+function waitForDelay(duration) {
+    return new Promise((resolve) => window.setTimeout(resolve, duration));
+}
+
+function stageAssets(kind, testArea = false) {
+    const common = [
+        PHASES[0].background,
+        'assets/img/sapo-corrida-bipede-v3.png',
+        'assets/img/sapo-ciclo-natural-v2.png',
+        'assets/img/sapo-boca-aberta-sprites.png',
+        'assets/img/sapo-lingua-limpa-v3.png',
+    ];
+    if (kind === 'duel') return [...common, 'assets/img/sapo-resistencia-capuz-sprites-v1.png'];
+    if (testArea) return [...common, 'assets/img/super-abelha-monstro-sprites-v2.png', 'assets/img/abelha-investida-sprites.png'];
+    return [...common, ...Object.values(OBSTACLES).map((obstacle) => obstacle.src), 'assets/img/inseto-voando-sprites.png', 'assets/img/besouro-ondulante-voando-sprites.png', 'assets/img/abelha-investida-sprites.png'];
+}
+
+function runStageLoading({ kind = 'route', testArea = false } = {}, startAction) {
+    if (!bootReady || stageTransitionPromise) return stageTransitionPromise;
+    state.mode = 'loading';
+    setPlayingControls(false);
+    worldMapState.pressed.clear();
+    worldMapFrog.classList.remove('is-walking');
+    if (resistanceDialog?.open) resistanceDialog.close();
+
+    const isDuel = kind === 'duel';
+    stageLoaderKicker.textContent = isDuel ? 'Luta livre · Clareira inicial' : testArea ? 'Área de testes · Chefã' : 'Corrida · Rota da Manhã';
+    stageLoaderTitle.textContent = isDuel ? 'Preparando o duelo' : 'Preparando a trilha';
+    stageLoaderTip.textContent = STAGE_LOADING_TIPS[Math.floor(Math.random() * STAGE_LOADING_TIPS.length)];
+    stageLoader.hidden = false;
+    stageLoader.setAttribute('aria-hidden', 'false');
+
+    const assets = [...new Set(stageAssets(kind, testArea))];
+    let stageStarted = false;
+    const beginStage = () => {
+        if (stageStarted) return;
+        stageStarted = true;
+        startAction();
+    };
+    stageTransitionPromise = (async () => {
+        await Promise.all([
+            Promise.allSettled(assets.map(preloadImage)),
+            document.fonts?.ready || Promise.resolve(),
+            waitForDelay(720),
+        ]);
+        stageLoaderTip.textContent = 'Tudo pronto. Boa sorte!';
+        await waitForDelay(180);
+        stageLoader.hidden = true;
+        stageLoader.setAttribute('aria-hidden', 'true');
+        beginStage();
+    })().catch(() => {
+        stageLoader.hidden = true;
+        stageLoader.setAttribute('aria-hidden', 'true');
+        beginStage();
+    }).finally(() => {
+        stageTransitionPromise = null;
+    });
+    return stageTransitionPromise;
+}
+
+function startGame(options = {}) {
+    return runStageLoading({ kind: 'route', testArea: Boolean(options.testArea) }, () => startGameNow(options));
+}
+
+function startResistanceDuel() {
+    return runStageLoading({ kind: 'duel' }, startResistanceDuelNow);
 }
 
 function renderResistanceDuel(duel) {
@@ -3137,18 +3225,89 @@ function bindCrouchButton() {
 function preloadImage(source) {
     return new Promise((resolve, reject) => {
         const image = new Image();
-        image.addEventListener('load', resolve, { once: true });
-        image.addEventListener('error', reject, { once: true });
+        let settled = false;
+        const finish = (callback, value) => {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timeout);
+            callback(value);
+        };
+        const timeout = window.setTimeout(() => finish(reject, new Error(`Tempo esgotado: ${source}`)), 12000);
+        image.addEventListener('load', () => finish(resolve, source), { once: true });
+        image.addEventListener('error', () => finish(reject, new Error(`Falha ao carregar: ${source}`)), { once: true });
         image.src = source;
+        if (image.complete && image.naturalWidth > 0) finish(resolve, source);
+    });
+}
+
+function preloadAudio(audio) {
+    return new Promise((resolve, reject) => {
+        if (audio.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+            resolve(audio.currentSrc || audio.src);
+            return;
+        }
+        let settled = false;
+        const finish = (callback, value) => {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timeout);
+            audio.removeEventListener('loadeddata', handleReady);
+            audio.removeEventListener('error', handleError);
+            callback(value);
+        };
+        const handleReady = () => finish(resolve, audio.currentSrc || audio.src);
+        const handleError = () => finish(reject, new Error(`Falha ao carregar áudio: ${audio.src}`));
+        const timeout = window.setTimeout(() => finish(resolve, audio.currentSrc || audio.src), 6500);
+        audio.addEventListener('loadeddata', handleReady, { once: true });
+        audio.addEventListener('error', handleError, { once: true });
+        audio.load();
+    });
+}
+
+function updateBootLoading(completed, total, groupProgress, activeGroup = 'sprites') {
+    const percent = Math.round((completed / Math.max(total, 1)) * 100);
+    bootLoaderFill.style.width = `${percent}%`;
+    bootLoaderPercent.textContent = `${percent}%`;
+    bootLoaderProgress.setAttribute('aria-valuenow', String(percent));
+    const messages = {
+        sprites: 'Acordando os personagens...',
+        world: 'Montando o caminho e o mapa...',
+        sound: 'Afinando os sons da aventura...',
+    };
+    bootLoaderMessage.textContent = percent >= 100 ? 'A aventura está pronta!' : messages[activeGroup];
+    bootLoadingSteps.forEach((step) => {
+        const progress = groupProgress.get(step.dataset.loadingStep);
+        step.classList.toggle('is-ready', Boolean(progress && progress.done >= progress.total));
     });
 }
 
 async function initializeGame() {
+    const loadingStartedAt = performance.now();
     applyPhase(0, false);
     updateScore();
     const uniqueAssets = [...new Set(ASSET_URLS)];
-    const results = await Promise.allSettled(uniqueAssets.map(preloadImage));
+    const classifyImage = (source) => /cenario|mapa|textura|plataforma|pedras|roda/.test(source) ? 'world' : 'sprites';
+    const jobs = uniqueAssets.map((source) => ({ group: classifyImage(source), promise: preloadImage(source) }));
+    jobs.push(
+        { group: 'sound', promise: preloadAudio(backgroundMusic) },
+        { group: 'sound', promise: preloadAudio(jumpAudio) },
+        { group: 'sound', promise: preloadAudio(loseAudio) },
+        { group: 'world', promise: document.fonts?.load('700 32px "Pixelify Sans"') || Promise.resolve() },
+    );
+    const groupProgress = new Map(['sprites', 'world', 'sound'].map((group) => [group, { done: 0, total: jobs.filter((job) => job.group === group).length }]));
+    let completed = 0;
+    updateBootLoading(completed, jobs.length, groupProgress);
+    const trackedJobs = jobs.map(({ group, promise }) => Promise.resolve(promise).finally(() => {
+        completed += 1;
+        groupProgress.get(group).done += 1;
+        updateBootLoading(completed, jobs.length, groupProgress, group);
+    }));
+    const results = await Promise.allSettled(trackedJobs);
     const failedAssets = results.filter((result) => result.status === 'rejected').length;
+
+    const minimumLoadingTime = Math.max(0, 900 - (performance.now() - loadingStartedAt));
+    if (minimumLoadingTime > 0) await waitForDelay(minimumLoadingTime);
+    updateBootLoading(jobs.length, jobs.length, groupProgress, 'sound');
 
     state.mode = 'idle';
     playButton.disabled = false;
@@ -3158,6 +3317,15 @@ async function initializeGame() {
     if (failedAssets > 0) {
         worldMapHelp.textContent = 'O mapa está pronto. Alguns detalhes visuais ainda podem carregar durante a caminhada.';
     }
+
+    bootReady = true;
+    indieIntroContinue.disabled = false;
+    indieIntroContinue.textContent = 'Entrar no jogo';
+    await waitForDelay(260);
+    bootLoader.classList.remove('is-visible');
+    document.body.classList.remove('is-app-loading');
+    window.setTimeout(() => bootLoader.setAttribute('hidden', ''), 260);
+    window.requestAnimationFrame(() => indieIntroContinue.focus({ preventScroll: true }));
 
     const preloadLaterScenes = () => {
         [...new Set(PHASES.slice(1).map((phase) => phase.background))]
@@ -3445,4 +3613,3 @@ updateFullscreenLabel();
 initializeSkins();
 initializeProfile();
 initializeGame();
-window.requestAnimationFrame(() => indieIntroContinue.focus({ preventScroll: true }));
