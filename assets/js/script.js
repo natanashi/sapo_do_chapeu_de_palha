@@ -27,6 +27,7 @@ const worldMapFrog = document.querySelector('#world-map-frog');
 const worldMapPrompt = document.querySelector('#world-map-prompt');
 const worldMapPromptKicker = document.querySelector('#world-map-prompt-kicker');
 const worldMapStageName = document.querySelector('#world-map-stage-name');
+const worldMapCategory = document.querySelector('#world-map-category');
 const worldMapHelp = document.querySelector('#world-map-help');
 const worldMuseum = document.querySelector('#world-museum');
 const worldResistanceNpc = document.querySelector('#world-resistance-npc');
@@ -313,9 +314,17 @@ const BOSS_RAGE_WINDUP_MS = 900;
 const BOSS_RAGE_CHARGE_MS = 760;
 const BOSS_RAGE_RETURN_MS = 900;
 const DUEL_MAX_HEALTH = 5;
-const DUEL_WARNING_MS = 680;
-const DUEL_LUNGE_MS = 520;
-const DUEL_RETURN_MS = 720;
+const DUEL_THINK_MIN_MS = 620;
+const DUEL_THINK_MAX_MS = 1050;
+const DUEL_TONGUE_WINDUP_MS = 360;
+const DUEL_TONGUE_DURATION_MS = 700;
+const DUEL_TONGUE_HIT_START_MS = 170;
+const DUEL_TONGUE_HIT_END_MS = 390;
+const DUEL_RECOVER_MS = 620;
+const DUEL_DODGE_COOLDOWN_MS = 1900;
+const DUEL_MOVE_SPEED = 132;
+const DUEL_GRAVITY = 2200;
+const DUEL_JUMP_FORCE = 730;
 const BEE_AIM_DURATION_MS = 520;
 const BEE_PREDICTION_SECONDS = 0.18;
 const HORIZONTAL_SPEED_MIN = 210;
@@ -1296,12 +1305,12 @@ function setPlayingControls(enabled) {
 }
 
 const WORLD_LEVELS = [
-    { name: 'Rota da Manhã', x: 29, y: 80, unlocked: true, playable: true },
-    { name: 'Bosque dos Cogumelos', x: 68, y: 82, unlocked: false, playable: false },
-    { name: 'Pedreira Musgosa', x: 84, y: 57, unlocked: false, playable: false },
-    { name: 'Clareira dos Ventos', x: 68, y: 27, unlocked: false, playable: false },
-    { name: 'Vale das Folhas', x: 37, y: 20, unlocked: false, playable: false },
-    { name: 'Coração da Mata', x: 13, y: 46, unlocked: false, playable: false },
+    { name: 'Rota da Manhã', category: 'Corrida', x: 29, y: 80, unlocked: true, playable: true },
+    { name: 'Bosque dos Cogumelos', category: 'Luta livre', x: 68, y: 82, unlocked: false, playable: false },
+    { name: 'Pedreira Musgosa', category: 'Corrida', x: 84, y: 57, unlocked: false, playable: false },
+    { name: 'Clareira dos Ventos', category: 'Luta livre', x: 68, y: 27, unlocked: false, playable: false },
+    { name: 'Vale das Folhas', category: 'Corrida', x: 37, y: 20, unlocked: false, playable: false },
+    { name: 'Coração da Mata', category: 'Luta livre', x: 13, y: 46, unlocked: false, playable: false },
 ];
 
 const WORLD_MAP_SCALE = 2;
@@ -1382,8 +1391,8 @@ function syncResistanceNpc() {
     phaseTwoButton?.setAttribute(
         'aria-label',
         storyProgress.phaseOneComplete
-            ? 'Fase 2, Bosque dos Cogumelos, desbloqueada e em construção'
-            : 'Fase 2, Bosque dos Cogumelos, bloqueada',
+            ? 'Fase 2, Bosque dos Cogumelos, categoria Luta livre, desbloqueada e em construção'
+            : 'Fase 2, Bosque dos Cogumelos, categoria Luta livre, bloqueada',
     );
     worldResistanceNpc.hidden = !storyProgress.phaseOneComplete;
     worldResistanceNpc.setAttribute('aria-hidden', String(!storyProgress.phaseOneComplete));
@@ -1554,6 +1563,8 @@ function updateWorldMapProximity() {
     worldMuseum?.classList.toggle('is-near', isNearMuseum);
     worldMapPromptKicker.textContent = isNearMuseum ? 'Local encontrado' : 'Fase encontrada';
     worldMapStageName.textContent = target.name;
+    worldMapCategory.hidden = isNearMuseum;
+    if (!isNearMuseum) worldMapCategory.textContent = `Categoria · ${level.category}`;
     storyMapButton.dataset.action = isNearMuseum ? 'museum' : 'level';
     storyMapButton.disabled = !worldMapState.ready || !hasNearbyTarget || (!isNearMuseum && !level.playable);
     storyMapButton.hidden = !isNearMuseum && !level.playable;
@@ -2058,16 +2069,30 @@ function startResistanceDuel() {
     const element = document.createElement('div');
     element.className = 'resistance-duelist is-idle';
     element.setAttribute('aria-hidden', 'true');
+    const tongue = document.createElement('img');
+    tongue.className = 'resistance-duelist__tongue';
+    tongue.src = runnerAttack.currentSrc || runnerAttack.src;
+    tongue.alt = '';
+    const sprite = document.createElement('span');
+    sprite.className = 'resistance-duelist__sprite';
+    element.append(tongue, sprite);
     bossLayer.append(element);
     state.duel = {
         element,
+        sprite,
+        tongue,
         health: DUEL_MAX_HEALTH,
         homeX: state.boardWidth * 0.72,
         x: state.boardWidth * 0.72,
-        stage: 'idle',
+        y: 0,
+        velocityY: 0,
+        stage: 'moving',
         stageStartedAt: currentTime,
-        nextAttackAt: currentTime + 1700,
-        targetX: state.runnerX,
+        nextDecisionAt: currentTime + 900,
+        nextDodgeAt: currentTime,
+        dodgeInvulnerableUntil: 0,
+        dodgePattern: 0,
+        lastObservedPlayerAttack: -1,
         attackResolved: false,
         lastTongueAttack: -1,
         completedAt: 0,
@@ -2096,7 +2121,7 @@ function startResistanceDuel() {
 }
 
 function renderResistanceDuel(duel) {
-    duel.element.style.transform = `translate3d(${duel.x.toFixed(2)}px, 0, 0) scaleX(-1)`;
+    duel.element.style.transform = `translate3d(${duel.x.toFixed(2)}px, ${(-duel.y).toFixed(2)}px, 0)`;
 }
 
 function tongueHitsResistanceDuel(duel, currentTime) {
@@ -2105,10 +2130,11 @@ function tongueHitsResistanceDuel(duel, currentTime) {
         || currentTime - state.attackStartedAt > ATTACK_CAPTURE_CLOSE
         || duel.lastTongueAttack === state.attackStartedAt
         || ['hurt', 'defeated'].includes(duel.stage)
+        || currentTime < duel.dodgeInvulnerableUntil
     ) return false;
 
     const tongueBox = runnerAttack.getBoundingClientRect();
-    const duelBox = duel.element.getBoundingClientRect();
+    const duelBox = duel.sprite.getBoundingClientRect();
     return (
         duelBox.right > tongueBox.left + tongueBox.width * 0.2
         && duelBox.left < tongueBox.right - tongueBox.width * 0.02
@@ -2117,15 +2143,69 @@ function tongueHitsResistanceDuel(duel, currentTime) {
     );
 }
 
-function resistanceDuelHitsRunner(duel) {
+function resistanceDuelTongueHitsRunner(duel, currentTime) {
+    const attackElapsed = currentTime - duel.stageStartedAt;
+    if (
+        duel.stage !== 'attacking'
+        || duel.attackResolved
+        || attackElapsed < DUEL_TONGUE_HIT_START_MS
+        || attackElapsed > DUEL_TONGUE_HIT_END_MS
+    ) return false;
+
     const runnerBox = runner.getBoundingClientRect();
-    const duelBox = duel.element.getBoundingClientRect();
+    const tongueBox = duel.tongue.getBoundingClientRect();
     return (
-        runnerBox.right - runnerBox.width * 0.3 > duelBox.left + duelBox.width * 0.28
-        && runnerBox.left + runnerBox.width * 0.3 < duelBox.right - duelBox.width * 0.25
-        && runnerBox.bottom - runnerBox.height * 0.12 > duelBox.top + duelBox.height * 0.25
-        && runnerBox.top + runnerBox.height * 0.22 < duelBox.bottom - duelBox.height * 0.12
+        runnerBox.right - runnerBox.width * 0.28 > tongueBox.left + tongueBox.width * 0.03
+        && runnerBox.left + runnerBox.width * 0.28 < tongueBox.right - tongueBox.width * 0.16
+        && runnerBox.bottom - runnerBox.height * 0.12 > tongueBox.top + tongueBox.height * 0.34
+        && runnerBox.top + runnerBox.height * 0.24 < tongueBox.bottom - tongueBox.height * 0.28
     );
+}
+
+function clearResistanceDuelAttack(duel) {
+    duel.element.classList.remove('is-winding-up', 'is-attacking');
+    duel.tongue.classList.remove('is-visible');
+}
+
+function startResistanceDuelJump(duel, currentTime, reason = 'jumping') {
+    if (duel.y > 3) return;
+    duel.velocityY = DUEL_JUMP_FORCE;
+    duel.stage = reason;
+    duel.stageStartedAt = currentTime;
+    duel.element.className = `resistance-duelist is-${reason}`;
+}
+
+function startResistanceDuelTongue(duel, currentTime) {
+    duel.stage = 'windup';
+    duel.stageStartedAt = currentTime;
+    duel.attackResolved = false;
+    duel.element.className = 'resistance-duelist is-winding-up';
+    setStatus('Rubro preparou a língua. Pule ou recue!');
+}
+
+function observePlayerAttack(duel, currentTime) {
+    if (
+        state.attackStartedAt <= 0
+        || state.attackStartedAt === duel.lastObservedPlayerAttack
+        || currentTime > state.attackUntil
+    ) return;
+
+    duel.lastObservedPlayerAttack = state.attackStartedAt;
+    duel.dodgePattern = (duel.dodgePattern + 1) % 3;
+    const distance = duel.x - state.runnerX;
+    const playerCanReach = distance < Math.min(490, state.boardWidth * 0.43);
+    const canDodge = duel.dodgePattern !== 0
+        && playerCanReach
+        && duel.y < 3
+        && currentTime >= duel.nextDodgeAt
+        && !['hurt', 'defeated', 'attacking'].includes(duel.stage);
+
+    if (!canDodge) return;
+    clearResistanceDuelAttack(duel);
+    duel.nextDodgeAt = currentTime + DUEL_DODGE_COOLDOWN_MS;
+    duel.dodgeInvulnerableUntil = currentTime + 420;
+    startResistanceDuelJump(duel, currentTime, 'dodging');
+    setStatus('Rubro leu o golpe e saltou. Espere a aterrissagem.');
 }
 
 function damageResistanceDuel(duel, currentTime) {
@@ -2134,9 +2214,10 @@ function damageResistanceDuel(duel, currentTime) {
     bossHealthFill.style.width = `${Math.max(0, duel.health) / DUEL_MAX_HEALTH * 100}%`;
     bossHealthText.textContent = `${Math.max(0, duel.health)}/${DUEL_MAX_HEALTH}`;
     createCaptureFlash(
-        duel.element.getBoundingClientRect().left - boardMetrics().left + duel.element.offsetWidth * 0.5,
-        duel.element.getBoundingClientRect().top - boardMetrics().top + duel.element.offsetHeight * 0.5,
+        duel.sprite.getBoundingClientRect().left - boardMetrics().left + duel.sprite.offsetWidth * 0.5,
+        duel.sprite.getBoundingClientRect().top - boardMetrics().top + duel.sprite.offsetHeight * 0.5,
     );
+    clearResistanceDuelAttack(duel);
     duel.element.className = 'resistance-duelist is-hurt';
     playSound(jumpAudio);
 
@@ -2150,15 +2231,32 @@ function damageResistanceDuel(duel, currentTime) {
 
     duel.stage = 'hurt';
     duel.stageStartedAt = currentTime;
-    duel.nextAttackAt = currentTime + 1150;
+    duel.nextDecisionAt = currentTime + 900;
     setStatus(`Golpe em Rubro · faltam ${duel.health}`);
 }
 
-function updateResistanceDuel(currentTime) {
+function updateResistanceDuel(currentTime, delta) {
     const duel = state.duel;
     if (!duel) return false;
 
     duel.homeX = state.boardWidth * 0.72;
+    observePlayerAttack(duel, currentTime);
+
+    if (duel.y > 0 || duel.velocityY > 0) {
+        duel.y += duel.velocityY * delta;
+        duel.velocityY -= DUEL_GRAVITY * delta;
+        if (duel.y <= 0) {
+            duel.y = 0;
+            duel.velocityY = 0;
+            if (['jumping', 'dodging'].includes(duel.stage)) {
+                duel.stage = 'moving';
+                duel.stageStartedAt = currentTime;
+                duel.nextDecisionAt = currentTime + 360;
+                duel.element.className = 'resistance-duelist is-moving';
+            }
+        }
+    }
+
     if (tongueHitsResistanceDuel(duel, currentTime)) damageResistanceDuel(duel, currentTime);
 
     if (duel.stage === 'defeated') {
@@ -2168,46 +2266,65 @@ function updateResistanceDuel(currentTime) {
     }
 
     if (duel.stage === 'hurt') {
-        if (currentTime >= duel.nextAttackAt) {
-            duel.stage = 'idle';
+        if (currentTime >= duel.nextDecisionAt) {
+            duel.stage = 'moving';
             duel.stageStartedAt = currentTime;
-            duel.nextAttackAt = currentTime + 900;
-            duel.element.className = 'resistance-duelist is-idle';
+            duel.nextDecisionAt = currentTime + 500;
+            duel.element.className = 'resistance-duelist is-moving';
         }
-    } else if (duel.stage === 'idle' && currentTime >= duel.nextAttackAt) {
-        duel.stage = 'warning';
+    } else if (duel.stage === 'windup' && currentTime - duel.stageStartedAt >= DUEL_TONGUE_WINDUP_MS) {
+        duel.stage = 'attacking';
         duel.stageStartedAt = currentTime;
-        duel.targetX = clamp(state.runnerX + runnerLayer.offsetWidth * 0.48, state.boardWidth * 0.08, state.boardWidth * 0.55);
-        duel.attackResolved = false;
-        duel.element.className = 'resistance-duelist is-warning';
-        setStatus('Rubro vai avançar. Pule ou recue!');
-    } else if (duel.stage === 'warning' && currentTime - duel.stageStartedAt >= DUEL_WARNING_MS) {
-        duel.stage = 'lunge';
-        duel.stageStartedAt = currentTime;
-        duel.element.className = 'resistance-duelist is-lunging';
-    } else if (duel.stage === 'lunge') {
-        const progress = clamp((currentTime - duel.stageStartedAt) / DUEL_LUNGE_MS, 0, 1);
-        duel.x = duel.homeX + (duel.targetX - duel.homeX) * (1 - Math.cos(progress * Math.PI * 0.5));
-        if (!duel.attackResolved && progress > 0.2 && resistanceDuelHitsRunner(duel)) {
+        duel.element.className = 'resistance-duelist is-attacking';
+        duel.tongue.classList.remove('is-visible');
+        void duel.tongue.offsetWidth;
+        duel.tongue.classList.add('is-visible');
+    } else if (duel.stage === 'attacking') {
+        if (resistanceDuelTongueHitsRunner(duel, currentTime)) {
             duel.attackResolved = true;
-            endGame('duel-hit');
+            endGame('duel-tongue');
             return true;
         }
-        if (progress >= 1) {
-            duel.stage = 'returning';
+        if (currentTime - duel.stageStartedAt >= DUEL_TONGUE_DURATION_MS) {
+            clearResistanceDuelAttack(duel);
+            duel.stage = 'recovering';
             duel.stageStartedAt = currentTime;
-            duel.element.className = 'resistance-duelist is-returning';
+            duel.element.className = 'resistance-duelist is-recovering';
         }
-    } else if (duel.stage === 'returning') {
-        const progress = clamp((currentTime - duel.stageStartedAt) / DUEL_RETURN_MS, 0, 1);
-        duel.x = duel.targetX + (duel.homeX - duel.targetX) * progress;
-        if (progress >= 1) {
-            duel.x = duel.homeX;
-            duel.stage = 'idle';
+    } else if (duel.stage === 'recovering') {
+        if (currentTime - duel.stageStartedAt >= DUEL_RECOVER_MS) {
+            duel.stage = 'moving';
             duel.stageStartedAt = currentTime;
-            duel.nextAttackAt = currentTime + 1150;
-            duel.element.className = 'resistance-duelist is-idle';
-            setStatus('Rubro voltou à posição. Procure uma abertura.');
+            duel.nextDecisionAt = currentTime + 520;
+            duel.element.className = 'resistance-duelist is-moving';
+            setStatus('Rubro terminou o golpe. Esta é a abertura.');
+        }
+    } else if (['moving', 'idle'].includes(duel.stage)) {
+        const distance = duel.x - state.runnerX;
+        const preferredDistance = clamp(state.boardWidth * 0.2, 190, 285);
+        let direction = 0;
+        if (distance > preferredDistance + 34) direction = -1;
+        else if (distance < preferredDistance - 42) direction = 1;
+
+        duel.x += direction * DUEL_MOVE_SPEED * delta;
+        duel.x = clamp(duel.x, state.runnerX + runnerLayer.offsetWidth * 1.15, state.boardWidth * 0.84);
+        duel.element.className = direction === 0
+            ? 'resistance-duelist is-idle'
+            : 'resistance-duelist is-moving';
+
+        if (currentTime >= duel.nextDecisionAt) {
+            const playerNearGround = state.runnerY < state.boardHeight * 0.12;
+            const inTongueRange = distance < Math.min(330, state.boardWidth * 0.3);
+            if (inTongueRange && playerNearGround) {
+                startResistanceDuelTongue(duel, currentTime);
+            } else if (duel.y < 3 && distance < state.boardWidth * 0.38 && Math.random() < 0.38) {
+                startResistanceDuelJump(duel, currentTime);
+                duel.nextDecisionAt = currentTime + 760;
+                setStatus('Rubro mudou a altura do combate.');
+            } else {
+                duel.nextDecisionAt = currentTime + DUEL_THINK_MIN_MS
+                    + Math.random() * (DUEL_THINK_MAX_MS - DUEL_THINK_MIN_MS);
+            }
         }
     }
 
@@ -2425,7 +2542,9 @@ function endGame(hazard = 'obstacle') {
     if (state.isDuel) {
         overlayKicker.textContent = 'Duelo na floresta';
         overlayTitle.textContent = 'Rubro venceu esta rodada';
-        overlayMessage.textContent = 'A investida alcançou o sapo. Observe o aviso vermelho, pule ou recue e ataque quando Rubro voltar à posição.';
+        overlayMessage.textContent = hazard === 'duel-tongue'
+            ? 'A língua de Rubro alcançou o sapo. Observe quando ele firma os pés, pule ou recue e responda durante a recuperação.'
+            : 'Rubro alcançou o sapo. Mude a distância, pule e procure uma abertura para responder.';
         playLabel.textContent = 'Tentar novamente';
         resultMenuButton.textContent = 'Voltar ao mapa';
         showResultOverlay();
@@ -2799,7 +2918,7 @@ function gameLoop(currentTime) {
         updateTongueCooldown(currentTime);
         updateRunnerHorizontalMovement(delta);
         updateRunnerPhysics(delta, currentTime);
-        if (updateResistanceDuel(currentTime) || state.mode !== 'playing') return;
+        if (updateResistanceDuel(currentTime, delta) || state.mode !== 'playing') return;
         state.animationFrame = window.requestAnimationFrame(gameLoop);
         return;
     }
