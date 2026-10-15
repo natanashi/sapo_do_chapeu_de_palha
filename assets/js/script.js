@@ -300,11 +300,11 @@ const BASE_RUN_SPEED = PACE_REFERENCE_SPEED * 1.1;
 const RUN_SPEED_GAIN = 170;
 const GRAVITY = 1850;
 const JUMP_FORCE = 820;
-const ATTACK_DURATION = 700;
+const ATTACK_DURATION = 560;
 const ATTACK_COOLDOWN = 3000;
-const ATTACK_CAPTURE_CLOSE = 360;
-const ATTACK_RETRACT_AT = 430;
-const ATTACK_SWALLOW_AT = 620;
+const ATTACK_CAPTURE_CLOSE = 290;
+const ATTACK_RETRACT_AT = 320;
+const ATTACK_SWALLOW_AT = 485;
 const JOURNEY_DURATION = 120;
 const BOSS_START_TIME = 88;
 const BOSS_MAX_HEALTH = 5;
@@ -625,7 +625,7 @@ function updateRunnerHorizontalMovement(delta) {
         const speed = clamp(state.boardWidth * 0.34, HORIZONTAL_SPEED_MIN, HORIZONTAL_SPEED_MAX);
         const bounds = runnerHorizontalBounds();
         state.runnerX = clamp(state.runnerX + direction * speed * delta, bounds.minimum, bounds.maximum);
-        if (state.isDuel) state.runnerFacing = direction;
+        if (state.isDuel && performance.now() >= state.attackUntil) state.runnerFacing = direction;
     }
     runnerLayer.classList.toggle('is-retreating', direction < 0);
     runnerLayer.classList.toggle('is-advancing', direction > 0);
@@ -2972,6 +2972,7 @@ function gameLoop(currentTime) {
         runnerLayer.style.setProperty('--run-cycle', `${runCycle}ms`);
         if (currentTime >= state.swallowUntil) runnerLayer.classList.remove('is-swallowing');
         updateTongueCooldown(currentTime);
+        if (state.attackUntil > 0 && currentTime >= state.attackUntil) clearAttack();
         updateRunnerHorizontalMovement(delta);
         updateRunnerPhysics(delta, currentTime);
         if (updateResistanceDuel(currentTime, delta) || state.mode !== 'playing') return;
@@ -2983,6 +2984,7 @@ function gameLoop(currentTime) {
     const runCycle = clamp(680 / currentPaceMultiplier(), 410, 680);
     runnerLayer.style.setProperty('--run-cycle', `${runCycle.toFixed(0)}ms`);
     if (currentTime >= state.swallowUntil) runnerLayer.classList.remove('is-swallowing');
+    if (state.attackUntil > 0 && currentTime >= state.attackUntil) clearAttack();
     updateTongueCooldown(currentTime);
     if (!shouldReduceMotion()) state.sceneTravel += worldSpeed * 0.075 * delta;
     state.groundTravel += worldSpeed * delta;

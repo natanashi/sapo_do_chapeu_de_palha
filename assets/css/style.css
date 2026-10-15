@@ -741,13 +741,13 @@ button { cursor: pointer; }
     will-change: transform, opacity;
 }
 
-.runner-attack.is-visible { animation: tongue-strike 700ms cubic-bezier(0.2, 0.82, 0.25, 1) both; }
+.runner-attack.is-visible { animation: player-tongue-strike 560ms cubic-bezier(0.2, 0.82, 0.25, 1) both; }
 .game-board.is-duel .runner-layer.faces-left .runner-attack {
     left: var(--mouth-x);
     transform: translateY(-50%) scaleX(-0.035);
 }
 .game-board.is-duel .runner-layer.faces-left .runner-attack.is-visible {
-    animation-name: resistance-tongue-strike;
+    animation-name: player-tongue-strike-left;
 }
 .runner-layer.is-swallowing .runner { animation: frog-swallow 360ms ease-out both; }
 .runner-layer.is-swallowing::after {
@@ -2758,6 +2758,24 @@ body.reduce-game-motion .resistance-duelist.faces-right .resistance-duelist__ton
     34%, 62% { opacity: 1; transform: translateY(-50%) scaleX(1); }
     80% { opacity: 1; transform: translateY(-50%) scaleX(0.55); }
     100% { opacity: 0; transform: translateY(-50%) scaleX(0.02); }
+}
+
+@keyframes player-tongue-strike {
+    0% { opacity: 0; transform: translateY(-50%) scaleX(0.02); }
+    9% { opacity: 1; transform: translateY(-50%) scaleX(0.05); }
+    27% { opacity: 1; transform: translateY(-50%) scaleX(1.02); }
+    33%, 48% { opacity: 1; transform: translateY(-50%) scaleX(1); }
+    72% { opacity: 1; transform: translateY(-50%) scaleX(0.45); }
+    100% { opacity: 0; transform: translateY(-50%) scaleX(0.02); }
+}
+
+@keyframes player-tongue-strike-left {
+    0% { opacity: 0; transform: translateY(-50%) scaleX(-0.02); }
+    9% { opacity: 1; transform: translateY(-50%) scaleX(-0.05); }
+    27% { opacity: 1; transform: translateY(-50%) scaleX(-1.02); }
+    33%, 48% { opacity: 1; transform: translateY(-50%) scaleX(-1); }
+    72% { opacity: 1; transform: translateY(-50%) scaleX(-0.45); }
+    100% { opacity: 0; transform: translateY(-50%) scaleX(-0.02); }
 }
 
 @keyframes resistance-tongue-strike {
