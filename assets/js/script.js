@@ -315,8 +315,6 @@ const BOSS_RAGE_WINDUP_MS = 900;
 const BOSS_RAGE_CHARGE_MS = 760;
 const BOSS_RAGE_RETURN_MS = 900;
 const DUEL_MAX_HEALTH = 5;
-const DUEL_THINK_MIN_MS = 620;
-const DUEL_THINK_MAX_MS = 1050;
 const DUEL_TONGUE_WINDUP_MS = 360;
 const DUEL_TONGUE_DURATION_MS = 700;
 const DUEL_TONGUE_HIT_START_MS = 170;
@@ -2104,8 +2102,7 @@ function startResistanceDuel() {
         lastPlayerX: state.runnerX,
         playerVelocityX: 0,
         tactic: 'guard',
-        tacticUntil: currentTime + 900,
-        decisionCount: 0,
+        tacticUntil: currentTime,
         attackResolved: false,
         lastTongueAttack: -1,
         completedAt: 0,
@@ -2206,8 +2203,15 @@ function observePlayerAttack(duel, currentTime) {
     ) return;
 
     duel.lastObservedPlayerAttack = state.attackStartedAt;
+    const runnerCenter = state.runnerX + runnerLayer.offsetWidth * 0.5;
+    const duelCenter = duel.x + duel.element.offsetWidth * 0.5;
+    const distance = Math.abs(duelCenter - runnerCenter);
+    const attackPointsAtRubro = duelCenter >= runnerCenter
+        ? state.runnerFacing > 0
+        : state.runnerFacing < 0;
+    if (!attackPointsAtRubro) return;
+
     duel.dodgePattern = (duel.dodgePattern + 1) % 3;
-    const distance = duel.x - state.runnerX;
     const playerCanReach = distance < Math.min(490, state.boardWidth * 0.43);
     const canDodge = duel.dodgePattern !== 0
         && playerCanReach
@@ -2316,7 +2320,7 @@ function updateResistanceDuel(currentTime, delta) {
         if (currentTime - duel.stageStartedAt >= DUEL_RECOVER_MS) {
             duel.stage = 'moving';
             duel.stageStartedAt = currentTime;
-            duel.nextDecisionAt = currentTime + 520;
+            duel.nextDecisionAt = currentTime + 760;
             duel.element.className = 'resistance-duelist is-moving';
             setStatus('Rubro terminou o golpe. Esta é a abertura.');
         }
@@ -2324,25 +2328,39 @@ function updateResistanceDuel(currentTime, delta) {
         const signedDistance = duel.x - state.runnerX;
         const distance = Math.abs(signedDistance);
         const pressure = 1 - duel.health / DUEL_MAX_HEALTH;
-        if (currentTime >= duel.tacticUntil) {
-            duel.tactic = distance > state.boardWidth * 0.3
-                ? 'pressure'
-                : duel.playerVelocityX > 90
-                    ? 'retreat'
-                    : currentTime < state.attackReadyAt - 420
-                        ? 'counter'
-                        : 'guard';
-            duel.tacticUntil = currentTime + 780 + Math.random() * 650;
+        const playerAttacking = currentTime <= state.attackUntil;
+        const playerAttackAimedAtRubro = playerAttacking && (signedDistance >= 0
+            ? state.runnerFacing > 0
+            : state.runnerFacing < 0);
+        const playerCoolingDown = currentTime < state.attackReadyAt;
+        const playerApproaching = signedDistance >= 0
+            ? duel.playerVelocityX > 85
+            : duel.playerVelocityX < -85;
+        const playerCrowdingRubro = playerApproaching
+            && distance < clamp(state.boardWidth * 0.26, 255, 335);
+        const forcedRetreat = duel.tactic === 'retreat' && currentTime < duel.tacticUntil;
+        const counterWindow = duel.tactic === 'counter' && currentTime < duel.tacticUntil;
+
+        let preferredMinimum;
+        let preferredMaximum;
+        if (forcedRetreat || playerAttackAimedAtRubro || playerCrowdingRubro) {
+            preferredMinimum = clamp(state.boardWidth * 0.245, 235, 315);
+            preferredMaximum = clamp(state.boardWidth * 0.29, 285, 365);
+        } else if (counterWindow || playerCoolingDown) {
+            preferredMinimum = clamp(state.boardWidth * 0.155, 150, 205);
+            preferredMaximum = clamp(state.boardWidth * 0.205, 205, 270);
+        } else {
+            preferredMinimum = clamp(state.boardWidth * 0.19, 185, 250);
+            preferredMaximum = clamp(state.boardWidth * 0.245, 240, 320);
         }
 
-        const preferredDistance = duel.tactic === 'pressure'
-            ? clamp(state.boardWidth * 0.15, 145, 215)
-            : duel.tactic === 'retreat'
-                ? clamp(state.boardWidth * 0.27, 255, 350)
-                : clamp(state.boardWidth * 0.2, 190, 285);
         let direction = 0;
-        if (distance > preferredDistance + 30) direction = Math.sign(state.runnerX - duel.x);
-        else if (distance < preferredDistance - 36) direction = Math.sign(duel.x - state.runnerX);
+        if (distance > preferredMaximum + 12) direction = Math.sign(state.runnerX - duel.x);
+        else if (distance < preferredMinimum - 12) direction = Math.sign(duel.x - state.runnerX);
+
+        if (direction < 0) duel.tactic = counterWindow ? 'counter' : 'pressure';
+        else if (direction > 0) duel.tactic = 'retreat';
+        else duel.tactic = counterWindow ? 'counter' : 'guard';
 
         const adaptiveSpeed = DUEL_MOVE_SPEED * (1 + pressure * 0.2) * (duel.tactic === 'pressure' ? 1.08 : 1);
         duel.x += direction * adaptiveSpeed * delta;
@@ -2356,25 +2374,12 @@ function updateResistanceDuel(currentTime, delta) {
         if (currentTime >= duel.nextDecisionAt) {
             const playerNearGround = state.runnerY < state.boardHeight * 0.12;
             const inTongueRange = distance < Math.min(330, state.boardWidth * 0.3);
-            const playerCoolingDown = currentTime < state.attackReadyAt - 420;
-            const attackChance = clamp(0.48 + pressure * 0.18 + (playerCoolingDown ? 0.22 : 0), 0.48, 0.84);
-            duel.decisionCount += 1;
-            if (inTongueRange && playerNearGround && Math.random() < attackChance) {
+            const safelyAligned = distance > runnerLayer.offsetWidth * 1.05;
+            if (inTongueRange && safelyAligned && playerNearGround && !playerAttackAimedAtRubro) {
                 startResistanceDuelTongue(duel, currentTime);
-            } else if (
-                duel.y < 3
-                && distance < state.boardWidth * 0.38
-                && (Math.abs(duel.playerVelocityX) > 120 || Math.random() < 0.34)
-            ) {
-                startResistanceDuelJump(duel, currentTime);
-                duel.nextDecisionAt = currentTime + 760;
-                setStatus('Rubro mudou a altura do combate.');
             } else {
-                duel.tactic = playerCoolingDown ? 'pressure' : duel.decisionCount % 2 === 0 ? 'retreat' : 'guard';
-                duel.tacticUntil = currentTime + 620 + Math.random() * 520;
-                const thinkScale = 1 - pressure * 0.18;
-                duel.nextDecisionAt = currentTime + (DUEL_THINK_MIN_MS
-                    + Math.random() * (DUEL_THINK_MAX_MS - DUEL_THINK_MIN_MS)) * thinkScale;
+                const alignmentDelay = playerAttackAimedAtRubro || !playerNearGround ? 260 : 420;
+                duel.nextDecisionAt = currentTime + alignmentDelay;
             }
         }
     }
