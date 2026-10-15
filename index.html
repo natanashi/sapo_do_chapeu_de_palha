@@ -17,8 +17,8 @@
     <link rel="preload" as="image" href="assets/img/sapo-corrida-bipede-v3.png">
     <link rel="preload" as="image" href="assets/img/sapo-resistencia-capuz-sprites-v1.png">
     <link rel="preload" as="image" href="assets/img/sapo-resistencia-guarda-v1.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=103">
-    <script src="assets/js/script.js?v=103" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=106">
+    <script src="assets/js/script.js?v=106" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body class="is-app-loading has-indie-intro">
@@ -256,6 +256,20 @@
                             </div>
                             <div class="save-slots" id="save-slots" aria-live="polite"></div>
                             <p class="save-slots-note">Os personagens e seus progressos ficam guardados somente neste aparelho.</p>
+                            <p class="save-slots-status" id="save-slots-status" role="status" aria-live="polite"></p>
+                            <dialog class="save-delete-dialog" id="save-delete-dialog" aria-labelledby="save-delete-title" aria-describedby="save-delete-copy">
+                                <span class="save-delete-dialog__seal" aria-hidden="true">×</span>
+                                <div>
+                                    <small>Apagar diário</small>
+                                    <h3 id="save-delete-title">Apagar personagem?</h3>
+                                    <p id="save-delete-copy">O personagem e todo o progresso deste diário serão apagados deste aparelho.</p>
+                                    <strong class="save-delete-dialog__name" id="save-delete-name"></strong>
+                                    <div class="save-delete-dialog__actions">
+                                        <button class="save-delete-dialog__cancel" id="save-delete-cancel" type="button">Manter personagem</button>
+                                        <button class="save-delete-dialog__confirm" id="save-delete-confirm" type="button">Apagar personagem</button>
+                                    </div>
+                                </div>
+                            </dialog>
                         </section>
 
                         <section class="menu-screen" data-menu-screen="character" aria-labelledby="character-creator-title" hidden>

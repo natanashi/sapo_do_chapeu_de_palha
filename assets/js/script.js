@@ -67,6 +67,11 @@ const characterCreatorForm = document.querySelector('#character-creator-form');
 const characterNameInput = document.querySelector('#character-name');
 const characterNameError = document.querySelector('#character-name-error');
 const characterPreviewName = document.querySelector('#character-preview-name');
+const saveSlotsStatus = document.querySelector('#save-slots-status');
+const saveDeleteDialog = document.querySelector('#save-delete-dialog');
+const saveDeleteName = document.querySelector('#save-delete-name');
+const saveDeleteCancel = document.querySelector('#save-delete-cancel');
+const saveDeleteConfirm = document.querySelector('#save-delete-confirm');
 const profileNameForm = document.querySelector('#profile-name-form');
 const playerNameInput = document.querySelector('#player-name');
 const playerNameError = document.querySelector('#player-name-error');
@@ -124,6 +129,7 @@ const gameSettings = readGameSettings();
 const STORY_PROGRESS_STORAGE_KEY = 'sapo-story-progress';
 const CHARACTER_SLOTS_STORAGE_KEY = 'sapo-character-slots-v1';
 const ACTIVE_CHARACTER_SLOT_KEY = 'sapo-active-character-slot';
+const CHARACTER_SLOTS_MIGRATED_KEY = 'sapo-character-slots-migrated-v1';
 const EMPTY_STORY_PROGRESS = Object.freeze({
     phaseOneComplete: false,
     resistanceEncounterSeen: false,
@@ -133,6 +139,7 @@ const EMPTY_STORY_PROGRESS = Object.freeze({
 let characterSlots = readCharacterSlots();
 let activeCharacterSlotIndex = readActiveCharacterSlotIndex();
 let editingCharacterSlotIndex = -1;
+let pendingDeleteSlotIndex = -1;
 let storyProgress = readStoryProgress();
 let settingsSavedTimer = 0;
 
@@ -459,6 +466,7 @@ function persistCharacterSlots() {
     try {
         localStorage.setItem(CHARACTER_SLOTS_STORAGE_KEY, JSON.stringify(characterSlots));
         if (activeCharacterSlotIndex >= 0) localStorage.setItem(ACTIVE_CHARACTER_SLOT_KEY, String(activeCharacterSlotIndex));
+        else localStorage.removeItem(ACTIVE_CHARACTER_SLOT_KEY);
     } catch {
         // A sessão continua mesmo quando o navegador bloqueia o armazenamento local.
     }
@@ -2023,7 +2031,12 @@ function hasLegacyJourney() {
 }
 
 function initializeCharacterSlots() {
-    if (characterSlots.every((slot) => !slot) && hasLegacyJourney()) {
+    let legacyAlreadyHandled = false;
+    try {
+        legacyAlreadyHandled = localStorage.getItem(CHARACTER_SLOTS_MIGRATED_KEY) === '1';
+    } catch {}
+
+    if (!legacyAlreadyHandled && characterSlots.every((slot) => !slot) && hasLegacyJourney()) {
         const legacySkin = readSkin();
         const legacyName = (readPlayerName() || 'Viajante').slice(0, 16);
         characterSlots[0] = {
@@ -2038,6 +2051,10 @@ function initializeCharacterSlots() {
         activeCharacterSlotIndex = 0;
         persistCharacterSlots();
     }
+
+    try {
+        localStorage.setItem(CHARACTER_SLOTS_MIGRATED_KEY, '1');
+    } catch {}
 
     if (!activeCharacterSlot()) activeCharacterSlotIndex = -1;
     storyProgress = readStoryProgress();
@@ -2054,9 +2071,12 @@ function renderCharacterSlots() {
     if (!saveSlotsContainer) return;
     saveSlotsContainer.replaceChildren();
     characterSlots.forEach((slot, index) => {
+        const card = document.createElement('article');
+        card.className = `save-slot ${slot ? 'is-occupied' : 'is-empty'}${index === activeCharacterSlotIndex ? ' is-active' : ''}`;
+
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = `save-slot ${slot ? 'is-occupied' : 'is-empty'}${index === activeCharacterSlotIndex ? ' is-active' : ''}`;
+        button.className = 'save-slot__open';
         button.dataset.slotIndex = String(index);
 
         const number = document.createElement('span');
@@ -2090,6 +2110,14 @@ function renderCharacterSlots() {
             meta.innerHTML = `<i style="--swatch:${slot.frog}" aria-hidden="true"></i><i style="--swatch:${slot.tongue}" aria-hidden="true"></i><b>${formatScore(slot.best)} pts</b>`;
             details.append(name, status, meta);
             button.append(portrait, details);
+
+            const deleteButton = document.createElement('button');
+            deleteButton.type = 'button';
+            deleteButton.className = 'save-slot__delete';
+            deleteButton.dataset.deleteSlot = String(index);
+            deleteButton.setAttribute('aria-label', `Apagar o personagem ${slot.name}`);
+            deleteButton.innerHTML = '<span aria-hidden="true">×</span> Apagar';
+            card.append(button, deleteButton);
         } else {
             button.setAttribute('aria-label', `Criar personagem no diário ${index + 1}`);
             const plus = document.createElement('span');
@@ -2100,9 +2128,68 @@ function renderCharacterSlots() {
             details.className = 'save-slot__details';
             details.innerHTML = '<strong>Novo personagem</strong><small>Abrir este diário</small>';
             button.append(plus, details);
+            card.append(button);
         }
-        saveSlotsContainer.append(button);
+        saveSlotsContainer.append(card);
     });
+}
+
+function openDeleteCharacterDialog(slotIndex) {
+    const slot = characterSlots[slotIndex];
+    if (!slot || !saveDeleteDialog) return;
+    pendingDeleteSlotIndex = slotIndex;
+    saveDeleteName.textContent = slot.name;
+    saveDeleteDialog.showModal();
+    window.requestAnimationFrame(() => saveDeleteCancel.focus({ preventScroll: true }));
+}
+
+function clearLegacyJourneyStorage() {
+    try {
+        localStorage.removeItem('sapo-best-score');
+        localStorage.removeItem(STORY_PROGRESS_STORAGE_KEY);
+        localStorage.removeItem('sapo-skin-colors');
+    } catch {}
+}
+
+function mirrorActiveCharacterToLegacyStorage() {
+    const slot = activeCharacterSlot();
+    if (!slot) {
+        clearLegacyJourneyStorage();
+        return;
+    }
+    try {
+        localStorage.setItem('sapo-best-score', String(slot.best));
+        localStorage.setItem(STORY_PROGRESS_STORAGE_KEY, JSON.stringify(slot.progress));
+        localStorage.setItem('sapo-skin-colors', JSON.stringify({ frog: slot.frog, tongue: slot.tongue }));
+    } catch {}
+}
+
+async function deletePendingCharacter() {
+    const deletedIndex = pendingDeleteSlotIndex;
+    const deletedSlot = characterSlots[deletedIndex];
+    if (!deletedSlot) return;
+
+    characterSlots[deletedIndex] = null;
+    if (activeCharacterSlotIndex === deletedIndex) {
+        activeCharacterSlotIndex = characterSlots.findIndex(Boolean);
+        const fallbackSlot = activeCharacterSlot();
+        storyProgress = fallbackSlot ? normalizeStoryProgress(fallbackSlot.progress) : { ...EMPTY_STORY_PROGRESS };
+        state.best = fallbackSlot?.best ?? 0;
+        const fallbackSkin = fallbackSlot ? { frog: fallbackSlot.frog, tongue: fallbackSlot.tongue } : DEFAULT_SKIN;
+        frogColorInput.value = fallbackSkin.frog;
+        tongueColorInput.value = fallbackSkin.tongue;
+        mirrorActiveCharacterToLegacyStorage();
+        applySkinColors(false);
+        updateScore();
+    }
+    persistCharacterSlots();
+    pendingDeleteSlotIndex = -1;
+    saveDeleteDialog.close('deleted');
+    renderCharacterSlots();
+    saveSlotsStatus.textContent = `${deletedSlot.name} foi apagado deste aparelho.`;
+    const nextFocus = saveSlotsContainer.querySelector(`[data-slot-index="${deletedIndex}"]`) || saveSlotsContainer.querySelector('button');
+    nextFocus?.focus({ preventScroll: true });
+    fitMenuToViewport();
 }
 
 function beginCharacterCreation(slotIndex) {
@@ -2216,6 +2303,24 @@ const MENU_PARENTS = {
 let activeMenuScreen = 'main';
 let bootReady = false;
 let stageTransitionPromise = null;
+let menuFitFrame = 0;
+
+function fitMenuToViewport() {
+    window.cancelAnimationFrame(menuFitFrame);
+    menuFitFrame = window.requestAnimationFrame(() => {
+        if (!overlay.classList.contains('is-visible') || mainMenuShell.classList.contains('is-hidden')) return;
+        mainMenuShell.style.setProperty('--menu-fit-scale', '1');
+        mainMenuShell.style.setProperty('--menu-fit-top', '0px');
+        const overlayStyle = window.getComputedStyle(overlay);
+        const availableWidth = overlay.clientWidth - Number.parseFloat(overlayStyle.paddingLeft) - Number.parseFloat(overlayStyle.paddingRight);
+        const availableHeight = overlay.clientHeight - Number.parseFloat(overlayStyle.paddingTop) - Number.parseFloat(overlayStyle.paddingBottom);
+        const naturalWidth = Math.max(mainMenuShell.offsetWidth, mainMenuShell.scrollWidth);
+        const naturalHeight = Math.max(mainMenuShell.offsetHeight, mainMenuShell.scrollHeight);
+        const scale = clamp(Math.min(availableWidth / naturalWidth, availableHeight / naturalHeight), 0.34, 1);
+        mainMenuShell.style.setProperty('--menu-fit-scale', scale.toFixed(4));
+        mainMenuShell.style.setProperty('--menu-fit-top', `${Math.max(0, (availableHeight - naturalHeight * scale) / 2).toFixed(2)}px`);
+    });
+}
 
 function showStoryCategory(category) {
     const showTestArea = category === 'test';
@@ -2273,6 +2378,7 @@ function showMenuScreen(screenName, focusFirst = true) {
         const firstControl = nextScreen.querySelector('button:not(:disabled)');
         if (screenName !== 'maps') (firstControl || menuBackButton).focus({ preventScroll: true });
     }
+    fitMenuToViewport();
 }
 
 function goBackMenu() {
@@ -2293,6 +2399,7 @@ function showMainMenu() {
     resultCard.classList.add('is-hidden');
     overlay.classList.add('is-visible');
     showMenuScreen('main');
+    fitMenuToViewport();
 }
 
 function showResultOverlay() {
@@ -3738,11 +3845,26 @@ worldMapDirectionButtons.forEach((button) => {
 });
 
 saveSlotsContainer?.addEventListener('click', (event) => {
+    const deleteButton = event.target.closest('[data-delete-slot]');
+    if (deleteButton) {
+        openDeleteCharacterDialog(Number.parseInt(deleteButton.dataset.deleteSlot, 10));
+        return;
+    }
     const slotButton = event.target.closest('[data-slot-index]');
     if (!slotButton) return;
     const slotIndex = Number.parseInt(slotButton.dataset.slotIndex, 10);
     if (characterSlots[slotIndex]) activateCharacterSlot(slotIndex);
     else beginCharacterCreation(slotIndex);
+});
+
+saveDeleteCancel?.addEventListener('click', () => {
+    pendingDeleteSlotIndex = -1;
+    saveDeleteDialog.close('cancelled');
+});
+
+saveDeleteConfirm?.addEventListener('click', deletePendingCharacter);
+saveDeleteDialog?.addEventListener('cancel', () => {
+    pendingDeleteSlotIndex = -1;
 });
 
 characterNameInput?.addEventListener('input', () => {
@@ -3876,7 +3998,11 @@ if ('ResizeObserver' in window) {
 }
 
 window.addEventListener('orientationchange', syncOrientationGuard);
-window.addEventListener('resize', syncOrientationGuard);
+window.addEventListener('orientationchange', fitMenuToViewport);
+window.addEventListener('resize', () => {
+    syncOrientationGuard();
+    fitMenuToViewport();
+});
 syncOrientationGuard();
 applyGameSettings();
 updateFullscreenLabel();

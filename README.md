@@ -16,7 +16,8 @@ Ao abrir o jogo, uma mensagem apresenta sua origem indie: a **Natanashi Studios*
 - Mapa-múndi explorável 2×2 antes da partida: a câmera acompanha o mesmo sapinho da corrida por um gramado em perspectiva, com árvores, pedras e um museu em pixel art. A profundidade muda conforme o sapo passa na frente ou atrás dos elementos, todos com colisão. Há seis selos de fase; apenas **Rota da Manhã** está disponível e os outros cinco aparecem como “Em construção · em breve”. As quatro regiões continuam fazendo parte dessa mesma fase.
 - Museu da Mata acessível dentro do mapa, com um pequeno documentário sobre os cinco bichos do bioma, seus comportamentos e como aparecem na fase.
 - Perfil offline com nome do jogador editável e salvo no aparelho; cadastro, login e sincronização estão marcados como recursos futuros.
-- Três diários de jornada no Modo História. Cada personagem tem nome, cores do corpo e da língua, recorde e progresso próprios, tudo salvo no aparelho.
+- Três diários de jornada no Modo História. Cada personagem tem nome, cores do corpo e da língua, recorde e progresso próprios, tudo salvo no aparelho; a exclusão pede confirmação antes de apagar.
+- Menus ajustados automaticamente à área visível do navegador, sem rolagem nas telas horizontais; celulares e tablets em pé continuam exibindo o aviso para girar o aparelho.
 - Aba **Configurações do jogo** com música e efeitos separados, volumes independentes, movimento reduzido, tela cheia e personalização dos controles: posição padrão, canhota ou arcade, três formatos de botão e três paletas de cores. As escolhas ficam salvas no aparelho.
 - Panoramas ultralargos criados para corrida lateral, com construções detalhadas e legíveis, terreno plano e bordas preparadas para não revelar emendas.
 - Pedras compactas, rodas e dois tipos de besouro terrestre: o corredor preto comum e o pequeno besouro-saltador de olhos verdes, que acelera e salta na direção do sapo quando chega perto.
