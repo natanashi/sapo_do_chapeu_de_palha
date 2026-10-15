@@ -257,6 +257,7 @@ const state = {
     best: readBestScore(),
     runnerX: 0,
     runnerY: 0,
+    runnerFacing: 1,
     velocityY: 0,
     phaseIndex: 0,
     activeScene: 0,
@@ -626,9 +627,11 @@ function updateRunnerHorizontalMovement(delta) {
         const speed = clamp(state.boardWidth * 0.34, HORIZONTAL_SPEED_MIN, HORIZONTAL_SPEED_MAX);
         const bounds = runnerHorizontalBounds();
         state.runnerX = clamp(state.runnerX + direction * speed * delta, bounds.minimum, bounds.maximum);
+        if (state.isDuel) state.runnerFacing = direction;
     }
     runnerLayer.classList.toggle('is-retreating', direction < 0);
     runnerLayer.classList.toggle('is-advancing', direction > 0);
+    runnerLayer.classList.toggle('faces-left', state.isDuel && state.runnerFacing < 0);
     renderRunnerPosition();
 }
 
@@ -1285,7 +1288,9 @@ function resetRun() {
     state.isTestArea = false;
     state.isDuel = false;
     state.duel = null;
+    state.runnerFacing = 1;
     board.classList.remove('is-duel');
+    runnerLayer.classList.remove('faces-left');
     clearHorizontalInput();
     runnerLayer.classList.remove('is-hit', 'is-airborne', 'is-swallowing', ...RUNNER_MOTION_CLASSES);
     renderRunnerPosition();
@@ -2063,6 +2068,8 @@ function startResistanceDuel() {
     board.classList.add('is-duel');
     applyPhase(0, false);
     state.runnerX = clamp(state.boardWidth * 0.16, 54, 190);
+    state.runnerFacing = 1;
+    runnerLayer.classList.remove('faces-left');
     renderRunnerPosition();
 
     const currentTime = performance.now();
@@ -2086,13 +2093,19 @@ function startResistanceDuel() {
         x: state.boardWidth * 0.72,
         y: 0,
         velocityY: 0,
+        facing: -1,
         stage: 'moving',
         stageStartedAt: currentTime,
-        nextDecisionAt: currentTime + 900,
+        nextDecisionAt: currentTime + 1850,
         nextDodgeAt: currentTime,
         dodgeInvulnerableUntil: 0,
         dodgePattern: 0,
         lastObservedPlayerAttack: -1,
+        lastPlayerX: state.runnerX,
+        playerVelocityX: 0,
+        tactic: 'guard',
+        tacticUntil: currentTime + 900,
+        decisionCount: 0,
         attackResolved: false,
         lastTongueAttack: -1,
         completedAt: 0,
@@ -2121,6 +2134,7 @@ function startResistanceDuel() {
 }
 
 function renderResistanceDuel(duel) {
+    duel.element.classList.toggle('faces-right', duel.facing > 0);
     duel.element.style.transform = `translate3d(${duel.x.toFixed(2)}px, ${(-duel.y).toFixed(2)}px, 0)`;
 }
 
@@ -2176,6 +2190,7 @@ function startResistanceDuelJump(duel, currentTime, reason = 'jumping') {
 }
 
 function startResistanceDuelTongue(duel, currentTime) {
+    duel.facing = state.runnerX + runnerLayer.offsetWidth * 0.5 < duel.x + duel.element.offsetWidth * 0.5 ? -1 : 1;
     duel.stage = 'windup';
     duel.stageStartedAt = currentTime;
     duel.attackResolved = false;
@@ -2204,6 +2219,8 @@ function observePlayerAttack(duel, currentTime) {
     clearResistanceDuelAttack(duel);
     duel.nextDodgeAt = currentTime + DUEL_DODGE_COOLDOWN_MS;
     duel.dodgeInvulnerableUntil = currentTime + 420;
+    duel.tactic = 'counter';
+    duel.tacticUntil = currentTime + 1350;
     startResistanceDuelJump(duel, currentTime, 'dodging');
     setStatus('Rubro leu o golpe e saltou. Espere a aterrissagem.');
 }
@@ -2231,6 +2248,8 @@ function damageResistanceDuel(duel, currentTime) {
 
     duel.stage = 'hurt';
     duel.stageStartedAt = currentTime;
+    duel.tactic = 'retreat';
+    duel.tacticUntil = currentTime + 1450;
     duel.nextDecisionAt = currentTime + 900;
     setStatus(`Golpe em Rubro · faltam ${duel.health}`);
 }
@@ -2240,6 +2259,8 @@ function updateResistanceDuel(currentTime, delta) {
     if (!duel) return false;
 
     duel.homeX = state.boardWidth * 0.72;
+    duel.playerVelocityX = (state.runnerX - duel.lastPlayerX) / Math.max(delta, 0.001);
+    duel.lastPlayerX = state.runnerX;
     observePlayerAttack(duel, currentTime);
 
     if (duel.y > 0 || duel.velocityY > 0) {
@@ -2251,7 +2272,7 @@ function updateResistanceDuel(currentTime, delta) {
             if (['jumping', 'dodging'].includes(duel.stage)) {
                 duel.stage = 'moving';
                 duel.stageStartedAt = currentTime;
-                duel.nextDecisionAt = currentTime + 360;
+                duel.nextDecisionAt = currentTime + (duel.tactic === 'counter' ? 180 : 360);
                 duel.element.className = 'resistance-duelist is-moving';
             }
         }
@@ -2300,14 +2321,34 @@ function updateResistanceDuel(currentTime, delta) {
             setStatus('Rubro terminou o golpe. Esta é a abertura.');
         }
     } else if (['moving', 'idle'].includes(duel.stage)) {
-        const distance = duel.x - state.runnerX;
-        const preferredDistance = clamp(state.boardWidth * 0.2, 190, 285);
-        let direction = 0;
-        if (distance > preferredDistance + 34) direction = -1;
-        else if (distance < preferredDistance - 42) direction = 1;
+        const signedDistance = duel.x - state.runnerX;
+        const distance = Math.abs(signedDistance);
+        const pressure = 1 - duel.health / DUEL_MAX_HEALTH;
+        if (currentTime >= duel.tacticUntil) {
+            duel.tactic = distance > state.boardWidth * 0.3
+                ? 'pressure'
+                : duel.playerVelocityX > 90
+                    ? 'retreat'
+                    : currentTime < state.attackReadyAt - 420
+                        ? 'counter'
+                        : 'guard';
+            duel.tacticUntil = currentTime + 780 + Math.random() * 650;
+        }
 
-        duel.x += direction * DUEL_MOVE_SPEED * delta;
+        const preferredDistance = duel.tactic === 'pressure'
+            ? clamp(state.boardWidth * 0.15, 145, 215)
+            : duel.tactic === 'retreat'
+                ? clamp(state.boardWidth * 0.27, 255, 350)
+                : clamp(state.boardWidth * 0.2, 190, 285);
+        let direction = 0;
+        if (distance > preferredDistance + 30) direction = Math.sign(state.runnerX - duel.x);
+        else if (distance < preferredDistance - 36) direction = Math.sign(duel.x - state.runnerX);
+
+        const adaptiveSpeed = DUEL_MOVE_SPEED * (1 + pressure * 0.2) * (duel.tactic === 'pressure' ? 1.08 : 1);
+        duel.x += direction * adaptiveSpeed * delta;
         duel.x = clamp(duel.x, state.runnerX + runnerLayer.offsetWidth * 1.15, state.boardWidth * 0.84);
+        if (direction !== 0) duel.facing = direction;
+        else duel.facing = signedDistance >= 0 ? -1 : 1;
         duel.element.className = direction === 0
             ? 'resistance-duelist is-idle'
             : 'resistance-duelist is-moving';
@@ -2315,15 +2356,25 @@ function updateResistanceDuel(currentTime, delta) {
         if (currentTime >= duel.nextDecisionAt) {
             const playerNearGround = state.runnerY < state.boardHeight * 0.12;
             const inTongueRange = distance < Math.min(330, state.boardWidth * 0.3);
-            if (inTongueRange && playerNearGround) {
+            const playerCoolingDown = currentTime < state.attackReadyAt - 420;
+            const attackChance = clamp(0.48 + pressure * 0.18 + (playerCoolingDown ? 0.22 : 0), 0.48, 0.84);
+            duel.decisionCount += 1;
+            if (inTongueRange && playerNearGround && Math.random() < attackChance) {
                 startResistanceDuelTongue(duel, currentTime);
-            } else if (duel.y < 3 && distance < state.boardWidth * 0.38 && Math.random() < 0.38) {
+            } else if (
+                duel.y < 3
+                && distance < state.boardWidth * 0.38
+                && (Math.abs(duel.playerVelocityX) > 120 || Math.random() < 0.34)
+            ) {
                 startResistanceDuelJump(duel, currentTime);
                 duel.nextDecisionAt = currentTime + 760;
                 setStatus('Rubro mudou a altura do combate.');
             } else {
-                duel.nextDecisionAt = currentTime + DUEL_THINK_MIN_MS
-                    + Math.random() * (DUEL_THINK_MAX_MS - DUEL_THINK_MIN_MS);
+                duel.tactic = playerCoolingDown ? 'pressure' : duel.decisionCount % 2 === 0 ? 'retreat' : 'guard';
+                duel.tacticUntil = currentTime + 620 + Math.random() * 520;
+                const thinkScale = 1 - pressure * 0.18;
+                duel.nextDecisionAt = currentTime + (DUEL_THINK_MIN_MS
+                    + Math.random() * (DUEL_THINK_MAX_MS - DUEL_THINK_MIN_MS)) * thinkScale;
             }
         }
     }
