@@ -62,6 +62,11 @@ const skinPreviewFrog = document.querySelector('#skin-preview-frog');
 const skinPreviewTongue = document.querySelector('#skin-preview-tongue');
 const skinResetButton = document.querySelector('#skin-reset');
 const skinSavedStatus = document.querySelector('#skin-saved');
+const saveSlotsContainer = document.querySelector('#save-slots');
+const characterCreatorForm = document.querySelector('#character-creator-form');
+const characterNameInput = document.querySelector('#character-name');
+const characterNameError = document.querySelector('#character-name-error');
+const characterPreviewName = document.querySelector('#character-preview-name');
 const profileNameForm = document.querySelector('#profile-name-form');
 const playerNameInput = document.querySelector('#player-name');
 const playerNameError = document.querySelector('#player-name-error');
@@ -117,6 +122,17 @@ const CONTROL_STYLES = ['round', 'pixel', 'leaf'];
 const CONTROL_PALETTES = ['forest', 'ocean', 'sunset'];
 const gameSettings = readGameSettings();
 const STORY_PROGRESS_STORAGE_KEY = 'sapo-story-progress';
+const CHARACTER_SLOTS_STORAGE_KEY = 'sapo-character-slots-v1';
+const ACTIVE_CHARACTER_SLOT_KEY = 'sapo-active-character-slot';
+const EMPTY_STORY_PROGRESS = Object.freeze({
+    phaseOneComplete: false,
+    resistanceEncounterSeen: false,
+    resistanceChallengeAccepted: false,
+    resistanceDuelWon: false,
+});
+let characterSlots = readCharacterSlots();
+let activeCharacterSlotIndex = readActiveCharacterSlotIndex();
+let editingCharacterSlotIndex = -1;
 let storyProgress = readStoryProgress();
 let settingsSavedTimer = 0;
 
@@ -392,43 +408,113 @@ function applyWorldScale(width, height) {
     board.style.setProperty('--tongue-size', `${clamp(width * 0.3075, 220, 420).toFixed(2)}px`);
 }
 
-function readBestScore() {
+function normalizeStoryProgress(progress = {}) {
+    return {
+        phaseOneComplete: Boolean(progress.phaseOneComplete),
+        resistanceEncounterSeen: Boolean(progress.resistanceEncounterSeen),
+        resistanceChallengeAccepted: Boolean(progress.resistanceChallengeAccepted),
+        resistanceDuelWon: Boolean(progress.resistanceDuelWon),
+    };
+}
+
+function normalizeCharacterSlot(slot) {
+    if (!slot || typeof slot !== 'object') return null;
+    const name = String(slot.name || '').trim().replace(/\s+/g, ' ').slice(0, 16);
+    if (name.length < 2) return null;
+    const validColor = (value, fallback) => /^#[0-9a-f]{6}$/i.test(value || '') ? value : fallback;
+    return {
+        name,
+        frog: validColor(slot.frog, '#69b83f'),
+        tongue: validColor(slot.tongue, '#e75f86'),
+        best: Math.max(0, Number.parseInt(slot.best || '0', 10) || 0),
+        progress: normalizeStoryProgress(slot.progress),
+        createdAt: Number(slot.createdAt) || Date.now(),
+        lastPlayedAt: Number(slot.lastPlayedAt) || Number(slot.createdAt) || Date.now(),
+    };
+}
+
+function readCharacterSlots() {
     try {
-        return Number.parseInt(localStorage.getItem('sapo-best-score') || '0', 10);
+        const stored = JSON.parse(localStorage.getItem(CHARACTER_SLOTS_STORAGE_KEY) || '[]');
+        return Array.from({ length: 3 }, (_, index) => normalizeCharacterSlot(stored[index]));
+    } catch {
+        return [null, null, null];
+    }
+}
+
+function readActiveCharacterSlotIndex() {
+    try {
+        const index = Number.parseInt(localStorage.getItem(ACTIVE_CHARACTER_SLOT_KEY) || '-1', 10);
+        return index >= 0 && index < 3 ? index : -1;
+    } catch {
+        return -1;
+    }
+}
+
+function activeCharacterSlot() {
+    return activeCharacterSlotIndex >= 0 ? characterSlots[activeCharacterSlotIndex] : null;
+}
+
+function persistCharacterSlots() {
+    try {
+        localStorage.setItem(CHARACTER_SLOTS_STORAGE_KEY, JSON.stringify(characterSlots));
+        if (activeCharacterSlotIndex >= 0) localStorage.setItem(ACTIVE_CHARACTER_SLOT_KEY, String(activeCharacterSlotIndex));
+    } catch {
+        // A sessão continua mesmo quando o navegador bloqueia o armazenamento local.
+    }
+}
+
+function readLegacyBestScore() {
+    try {
+        return Math.max(0, Number.parseInt(localStorage.getItem('sapo-best-score') || '0', 10) || 0);
     } catch {
         return 0;
     }
 }
 
+function readBestScore() {
+    return activeCharacterSlot()?.best ?? readLegacyBestScore();
+}
+
 function saveBestScore(score) {
+    const normalizedScore = Math.max(0, Math.floor(score));
+    const slot = activeCharacterSlot();
+    if (slot) {
+        slot.best = normalizedScore;
+        slot.lastPlayedAt = Date.now();
+        persistCharacterSlots();
+    }
     try {
-        localStorage.setItem('sapo-best-score', String(score));
+        localStorage.setItem('sapo-best-score', String(normalizedScore));
     } catch {
         // O jogo continua normalmente quando o navegador bloqueia o armazenamento local.
     }
 }
 
-function readStoryProgress() {
+function readLegacyStoryProgress() {
     try {
         const stored = JSON.parse(localStorage.getItem(STORY_PROGRESS_STORAGE_KEY) || '{}');
-        const legacyCompletion = readBestScore() >= 350;
+        const legacyCompletion = readLegacyBestScore() >= 350;
         return {
+            ...normalizeStoryProgress(stored),
             phaseOneComplete: Boolean(stored.phaseOneComplete) || legacyCompletion,
-            resistanceEncounterSeen: Boolean(stored.resistanceEncounterSeen),
-            resistanceChallengeAccepted: Boolean(stored.resistanceChallengeAccepted),
-            resistanceDuelWon: Boolean(stored.resistanceDuelWon),
         };
     } catch {
-        return {
-            phaseOneComplete: readBestScore() >= 350,
-            resistanceEncounterSeen: false,
-            resistanceChallengeAccepted: false,
-            resistanceDuelWon: false,
-        };
+        return { ...EMPTY_STORY_PROGRESS, phaseOneComplete: readLegacyBestScore() >= 350 };
     }
 }
 
+function readStoryProgress() {
+    return activeCharacterSlot()?.progress ? normalizeStoryProgress(activeCharacterSlot().progress) : readLegacyStoryProgress();
+}
+
 function saveStoryProgress() {
+    const slot = activeCharacterSlot();
+    if (slot) {
+        slot.progress = normalizeStoryProgress(storyProgress);
+        slot.lastPlayedAt = Date.now();
+        persistCharacterSlots();
+    }
     try {
         localStorage.setItem(STORY_PROGRESS_STORAGE_KEY, JSON.stringify(storyProgress));
     } catch {
@@ -1761,6 +1847,8 @@ if (skinWorker) {
 }
 
 function readSkin() {
+    const slot = activeCharacterSlot();
+    if (slot) return { frog: slot.frog, tongue: slot.tongue };
     try {
         const saved = JSON.parse(localStorage.getItem('sapo-skin-colors') || '{}');
         return {
@@ -1906,10 +1994,7 @@ async function applySkinColors(showSaved = false) {
         }
         lastAppliedSkin = { frog: frogColor, tongue: tongueColor };
         markSelectedPresets(frogColor, tongueColor);
-        try {
-            localStorage.setItem('sapo-skin-colors', JSON.stringify({ frog: frogColor, tongue: tongueColor }));
-        } catch {}
-        skinSavedStatus.textContent = showSaved ? 'Cores salvas neste aparelho' : 'Aparência carregada';
+        skinSavedStatus.textContent = showSaved ? 'Prévia atualizada' : 'Aparência carregada';
         window.clearTimeout(skinSaveTimer);
         skinSaveTimer = window.setTimeout(() => skinSavedStatus.classList.remove('is-visible'), 1300);
     } catch {
@@ -1922,6 +2007,163 @@ function initializeSkins() {
     frogColorInput.value = skin.frog;
     tongueColorInput.value = skin.tongue;
     applySkinColors(false);
+}
+
+function hasLegacyJourney() {
+    try {
+        return Boolean(
+            localStorage.getItem('sapo-player-name')
+            || localStorage.getItem('sapo-skin-colors')
+            || localStorage.getItem('sapo-best-score')
+            || localStorage.getItem(STORY_PROGRESS_STORAGE_KEY)
+        );
+    } catch {
+        return false;
+    }
+}
+
+function initializeCharacterSlots() {
+    if (characterSlots.every((slot) => !slot) && hasLegacyJourney()) {
+        const legacySkin = readSkin();
+        const legacyName = (readPlayerName() || 'Viajante').slice(0, 16);
+        characterSlots[0] = {
+            name: legacyName,
+            frog: legacySkin.frog,
+            tongue: legacySkin.tongue,
+            best: readLegacyBestScore(),
+            progress: readLegacyStoryProgress(),
+            createdAt: Date.now(),
+            lastPlayedAt: Date.now(),
+        };
+        activeCharacterSlotIndex = 0;
+        persistCharacterSlots();
+    }
+
+    if (!activeCharacterSlot()) activeCharacterSlotIndex = -1;
+    storyProgress = readStoryProgress();
+    state.best = readBestScore();
+}
+
+function journeyStatus(slot) {
+    if (slot.progress.resistanceDuelWon) return 'Duelo vencido';
+    if (slot.progress.phaseOneComplete) return 'Rota da Manhã concluída';
+    return slot.best > 0 ? 'Jornada em andamento' : 'Ainda no começo';
+}
+
+function renderCharacterSlots() {
+    if (!saveSlotsContainer) return;
+    saveSlotsContainer.replaceChildren();
+    characterSlots.forEach((slot, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `save-slot ${slot ? 'is-occupied' : 'is-empty'}${index === activeCharacterSlotIndex ? ' is-active' : ''}`;
+        button.dataset.slotIndex = String(index);
+
+        const number = document.createElement('span');
+        number.className = 'save-slot__number';
+        number.textContent = `Diário ${index + 1}`;
+        button.append(number);
+
+        if (slot) {
+            button.setAttribute('aria-label', `Continuar com ${slot.name}. ${journeyStatus(slot)}. Recorde ${slot.best} pontos.`);
+            const portrait = document.createElement('span');
+            portrait.className = 'save-slot__portrait';
+            portrait.innerHTML = '<img src="assets/img/sapo-capa.png" alt="" draggable="false">';
+            portrait.style.setProperty('--slot-frog', slot.frog);
+            const portraitImage = portrait.querySelector('img');
+            recolorImage('assets/img/sapo-capa.png', slot.frog, 'frog').then((portraitUrl) => {
+                if (!portraitImage.isConnected) {
+                    URL.revokeObjectURL(portraitUrl);
+                    return;
+                }
+                replaceSkinObjectUrl(`slot-portrait-${index}`, portraitUrl);
+                portraitImage.src = portraitUrl;
+            }).catch(() => {});
+            const details = document.createElement('span');
+            details.className = 'save-slot__details';
+            const name = document.createElement('strong');
+            name.textContent = slot.name;
+            const status = document.createElement('small');
+            status.textContent = journeyStatus(slot);
+            const meta = document.createElement('span');
+            meta.className = 'save-slot__meta';
+            meta.innerHTML = `<i style="--swatch:${slot.frog}" aria-hidden="true"></i><i style="--swatch:${slot.tongue}" aria-hidden="true"></i><b>${formatScore(slot.best)} pts</b>`;
+            details.append(name, status, meta);
+            button.append(portrait, details);
+        } else {
+            button.setAttribute('aria-label', `Criar personagem no diário ${index + 1}`);
+            const plus = document.createElement('span');
+            plus.className = 'save-slot__plus';
+            plus.setAttribute('aria-hidden', 'true');
+            plus.textContent = '+';
+            const details = document.createElement('span');
+            details.className = 'save-slot__details';
+            details.innerHTML = '<strong>Novo personagem</strong><small>Abrir este diário</small>';
+            button.append(plus, details);
+        }
+        saveSlotsContainer.append(button);
+    });
+}
+
+function beginCharacterCreation(slotIndex) {
+    editingCharacterSlotIndex = slotIndex;
+    characterNameInput.value = '';
+    characterNameInput.removeAttribute('aria-invalid');
+    characterNameError.textContent = '';
+    characterPreviewName.textContent = 'Novo viajante';
+    frogColorInput.value = DEFAULT_SKIN.frog;
+    tongueColorInput.value = DEFAULT_SKIN.tongue;
+    applySkinColors(false);
+    showMenuScreen('character');
+    window.requestAnimationFrame(() => characterNameInput.focus({ preventScroll: true }));
+}
+
+async function activateCharacterSlot(slotIndex) {
+    const slot = characterSlots[slotIndex];
+    if (!slot) return;
+    activeCharacterSlotIndex = slotIndex;
+    slot.lastPlayedAt = Date.now();
+    persistCharacterSlots();
+    storyProgress = normalizeStoryProgress(slot.progress);
+    state.best = slot.best;
+    frogColorInput.value = slot.frog;
+    tongueColorInput.value = slot.tongue;
+    await applySkinColors(false);
+    syncResistanceNpc();
+    updateScore();
+    showMenuScreen('maps');
+}
+
+function createCharacter(event) {
+    event.preventDefault();
+    const name = characterNameInput.value.trim().replace(/\s+/g, ' ').slice(0, 16);
+    if (name.length < 2) {
+        characterNameInput.setAttribute('aria-invalid', 'true');
+        characterNameError.textContent = 'Digite pelo menos 2 caracteres.';
+        characterNameInput.focus();
+        return;
+    }
+    if (editingCharacterSlotIndex < 0 || editingCharacterSlotIndex >= characterSlots.length || characterSlots[editingCharacterSlotIndex]) {
+        characterNameError.textContent = 'Este diário não está disponível. Volte e escolha outro.';
+        return;
+    }
+
+    const now = Date.now();
+    characterSlots[editingCharacterSlotIndex] = {
+        name,
+        frog: frogColorInput.value,
+        tongue: tongueColorInput.value,
+        best: 0,
+        progress: { ...EMPTY_STORY_PROGRESS },
+        createdAt: now,
+        lastPlayedAt: now,
+    };
+    try {
+        localStorage.setItem('sapo-skin-colors', JSON.stringify({ frog: frogColorInput.value, tongue: tongueColorInput.value }));
+    } catch {}
+    characterNameInput.removeAttribute('aria-invalid');
+    characterNameError.textContent = '';
+    activateCharacterSlot(editingCharacterSlotIndex);
 }
 
 const PLAYER_NAME_STORAGE_KEY = 'sapo-player-name';
@@ -1963,10 +2205,11 @@ function savePlayerName(event) {
 
 const MENU_PARENTS = {
     play: 'main',
-    maps: 'play',
+    saves: 'play',
+    character: 'saves',
+    maps: 'saves',
     profile: 'main',
     museum: 'maps',
-    skins: 'main',
     settings: 'main',
 };
 
@@ -2009,6 +2252,10 @@ function showMenuScreen(screenName, focusFirst = true) {
     overlay.scrollTop = 0;
     mainMenuShell.scrollTop = 0;
 
+    if (screenName === 'saves') {
+        renderCharacterSlots();
+    }
+
     if (screenName === 'maps') {
         syncResistanceNpc();
         showStoryCategory('map');
@@ -2029,6 +2276,10 @@ function showMenuScreen(screenName, focusFirst = true) {
 }
 
 function goBackMenu() {
+    if (activeMenuScreen === 'character') {
+        editingCharacterSlotIndex = -1;
+        initializeSkins();
+    }
     showMenuScreen(MENU_PARENTS[activeMenuScreen] || 'main');
 }
 
@@ -3486,6 +3737,25 @@ worldMapDirectionButtons.forEach((button) => {
     });
 });
 
+saveSlotsContainer?.addEventListener('click', (event) => {
+    const slotButton = event.target.closest('[data-slot-index]');
+    if (!slotButton) return;
+    const slotIndex = Number.parseInt(slotButton.dataset.slotIndex, 10);
+    if (characterSlots[slotIndex]) activateCharacterSlot(slotIndex);
+    else beginCharacterCreation(slotIndex);
+});
+
+characterNameInput?.addEventListener('input', () => {
+    const name = characterNameInput.value.trim().replace(/\s+/g, ' ').slice(0, 16);
+    characterPreviewName.textContent = name || 'Novo viajante';
+    if (name.length >= 2) {
+        characterNameInput.removeAttribute('aria-invalid');
+        characterNameError.textContent = '';
+    }
+});
+
+characterCreatorForm?.addEventListener('submit', createCharacter);
+
 document.querySelectorAll('[data-color-presets] button').forEach((button) => {
     button.addEventListener('click', () => {
         const group = button.closest('[data-color-presets]').dataset.colorPresets;
@@ -3610,6 +3880,7 @@ window.addEventListener('resize', syncOrientationGuard);
 syncOrientationGuard();
 applyGameSettings();
 updateFullscreenLabel();
+initializeCharacterSlots();
 initializeSkins();
 initializeProfile();
 initializeGame();
