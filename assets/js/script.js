@@ -45,6 +45,7 @@ const storyMapStatus = document.querySelector('#story-map-status');
 const worldMap = document.querySelector('#world-map');
 const worldMapWorld = document.querySelector('#world-map-world');
 const worldMapFrog = document.querySelector('#world-map-frog');
+const worldMapDeferredImages = [...document.querySelectorAll('[data-map-src]')];
 const worldMapPrompt = document.querySelector('#world-map-prompt');
 const worldMapPromptKicker = document.querySelector('#world-map-prompt-kicker');
 const worldMapStageName = document.querySelector('#world-map-stage-name');
@@ -138,6 +139,14 @@ const lowPowerDevice = (navigator.deviceMemory && navigator.deviceMemory <= 4)
     || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
     || window.matchMedia('(pointer: coarse)').matches;
 document.body.classList.toggle('performance-lite', Boolean(lowPowerDevice));
+const RUNTIME_SCENES = ['menu', 'map', 'stage', 'loading', 'result'];
+
+function setRuntimeScene(scene) {
+    document.body.classList.remove(...RUNTIME_SCENES.map((name) => `runtime-${name}`));
+    document.body.classList.add(`runtime-${scene}`);
+}
+
+setRuntimeScene('menu');
 const backgroundMusic = document.querySelector('#background-music');
 const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CONTROL_LAYOUTS = ['classic', 'left-handed', 'arcade'];
@@ -2278,10 +2287,11 @@ async function activateCharacterSlot(slotIndex) {
     state.best = slot.best;
     frogColorInput.value = slot.frog;
     tongueColorInput.value = slot.tongue;
-    await applySkinColors(false);
-    syncResistanceNpc();
-    updateScore();
-    showMenuScreen('maps');
+    await runWorldMapLoading(async () => {
+        await applySkinColors(false);
+        syncResistanceNpc();
+        updateScore();
+    });
 }
 
 function createCharacter(event) {
@@ -2368,18 +2378,37 @@ let activeMenuScreen = 'main';
 let bootReady = false;
 let stageTransitionPromise = null;
 let worldMapAssetsPromise = null;
+const assetPreloadCache = new Map();
 
 function ensureWorldMapAssets() {
     if (worldMapState.ready) return Promise.resolve();
     if (worldMapAssetsPromise) return worldMapAssetsPromise;
     storyMapStatus.textContent = 'Preparando o mapa...';
-    worldMapAssetsPromise = Promise.allSettled(WORLD_MAP_ASSET_URLS.map(preloadImage)).then((results) => {
+    worldMapAssetsPromise = Promise.allSettled(WORLD_MAP_ASSET_URLS.map(preloadImage)).then(async (results) => {
+        worldMapDeferredImages.forEach((image) => {
+            if (!image.getAttribute('src')) image.src = image.dataset.mapSrc;
+        });
+        await Promise.allSettled(worldMapDeferredImages.map((image) => image.decode?.() || Promise.resolve()));
         worldMapState.ready = true;
         updateWorldMapProximity();
         const failed = results.some((result) => result.status === 'rejected');
         if (failed) worldMapHelp.textContent = 'O mapa está pronto. Um detalhe visual pode terminar de carregar durante a caminhada.';
     });
     return worldMapAssetsPromise;
+}
+
+function releaseWorldMapRender() {
+    worldMapState.ready = false;
+    worldMapAssetsPromise = null;
+    worldMapDeferredImages.forEach((image) => image.removeAttribute('src'));
+}
+
+function releaseStageRender() {
+    clearActors();
+    sceneLayers.forEach((layer) => {
+        layer.replaceChildren();
+        layer.style.removeProperty('--scene-image');
+    });
 }
 let menuFitFrame = 0;
 
@@ -2465,6 +2494,7 @@ function showMenuScreen(screenName, focusFirst = true) {
     if (screenName !== 'maps' && worldInventoryDialog?.open) worldInventoryDialog.close();
 
     activeMenuScreen = screenName;
+    setRuntimeScene(['maps', 'museum'].includes(screenName) ? 'map' : 'menu');
     menuScreens.forEach((screen) => {
         const isActive = screen === nextScreen;
         screen.hidden = !isActive;
@@ -2514,8 +2544,11 @@ function showMainMenu() {
     window.cancelAnimationFrame(state.animationFrame);
     pauseBackgroundMusic(true);
     clearAttack();
+    releaseWorldMapRender();
+    releaseStageRender();
     setPlayingControls(false);
     state.mode = 'idle';
+    setRuntimeScene('menu');
     mainMenuShell.classList.remove('is-hidden');
     resultCard.classList.add('is-hidden');
     overlay.classList.add('is-visible');
@@ -2524,6 +2557,7 @@ function showMainMenu() {
 }
 
 function showResultOverlay() {
+    setRuntimeScene('result');
     mainMenuShell.classList.add('is-hidden');
     resultCard.classList.remove('is-hidden');
     overlay.classList.remove('is-world-map');
@@ -2539,6 +2573,7 @@ function startGameNow({ testArea = false } = {}) {
         applyPhase(PHASES.length - 1, false);
     }
     state.mode = 'playing';
+    setRuntimeScene('stage');
     playBackgroundMusic(true);
     const startTime = performance.now();
     state.previousTime = startTime;
@@ -2622,6 +2657,7 @@ function startResistanceDuelNow() {
     setStatus('Rubro está pronto. Use movimento, pulo e língua para lutar.');
 
     state.mode = 'playing';
+    setRuntimeScene('stage');
     state.previousTime = currentTime;
     overlay.classList.remove('is-visible');
     setPlayingControls(true);
@@ -2639,8 +2675,71 @@ const STAGE_LOADING_TIPS = [
     'Ajustando o ritmo da aventura...',
 ];
 
+const MAP_LOADING_TIPS = [
+    'Abrindo somente o bioma escolhido...',
+    'Posicionando as fases e os caminhos...',
+    'Preparando o mapa sem carregar a corrida...',
+];
+
 function waitForDelay(duration) {
     return new Promise((resolve) => window.setTimeout(resolve, duration));
+}
+
+function showSceneLoader({ kicker, title, tip }) {
+    setRuntimeScene('loading');
+    stageLoaderKicker.textContent = kicker;
+    stageLoaderTitle.textContent = title;
+    stageLoaderTip.textContent = tip;
+    stageLoader.hidden = false;
+    stageLoader.setAttribute('aria-hidden', 'false');
+}
+
+function hideSceneLoader() {
+    stageLoader.hidden = true;
+    stageLoader.setAttribute('aria-hidden', 'true');
+}
+
+function waitForPaint() {
+    return new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
+}
+
+async function runWorldMapLoading(prepareCharacter = null) {
+    if (!bootReady || stageTransitionPromise) return stageTransitionPromise;
+    state.mode = 'loading';
+    setPlayingControls(false);
+    worldMapState.pressed.clear();
+    worldMapFrog.classList.remove('is-walking');
+    releaseStageRender();
+    showSceneLoader({
+        kicker: 'Primeiro bioma · Mata da manhã',
+        title: 'Abrindo o mapa',
+        tip: MAP_LOADING_TIPS[Math.floor(Math.random() * MAP_LOADING_TIPS.length)],
+    });
+
+    stageTransitionPromise = (async () => {
+        await Promise.all([
+            ensureWorldMapAssets(),
+            prepareCharacter?.() || Promise.resolve(),
+            waitForDelay(520),
+        ]);
+        mainMenuShell.classList.remove('is-hidden');
+        resultCard.classList.add('is-hidden');
+        overlay.classList.add('is-visible');
+        showMenuScreen('maps');
+        await waitForPaint();
+        stageLoaderTip.textContent = 'Mapa pronto. Boa exploração!';
+        await waitForDelay(100);
+        hideSceneLoader();
+        state.mode = 'idle';
+    })().catch(() => {
+        overlay.classList.add('is-visible');
+        showMenuScreen('maps');
+        hideSceneLoader();
+        state.mode = 'idle';
+    }).finally(() => {
+        stageTransitionPromise = null;
+    });
+    return stageTransitionPromise;
 }
 
 function stageAssets(kind, testArea = false) {
@@ -2665,11 +2764,11 @@ function runStageLoading({ kind = 'route', testArea = false } = {}, startAction)
     if (resistanceDialog?.open) resistanceDialog.close();
 
     const isDuel = kind === 'duel';
-    stageLoaderKicker.textContent = isDuel ? 'Luta livre · Clareira inicial' : testArea ? 'Área de testes · Chefã' : 'Corrida · Rota da Manhã';
-    stageLoaderTitle.textContent = isDuel ? 'Preparando o duelo' : 'Preparando a trilha';
-    stageLoaderTip.textContent = STAGE_LOADING_TIPS[Math.floor(Math.random() * STAGE_LOADING_TIPS.length)];
-    stageLoader.hidden = false;
-    stageLoader.setAttribute('aria-hidden', 'false');
+    showSceneLoader({
+        kicker: isDuel ? 'Luta livre · Clareira inicial' : testArea ? 'Área de testes · Chefã' : 'Corrida · Rota da Manhã',
+        title: isDuel ? 'Preparando o duelo' : 'Preparando a trilha',
+        tip: STAGE_LOADING_TIPS[Math.floor(Math.random() * STAGE_LOADING_TIPS.length)],
+    });
 
     const assets = [...new Set(stageAssets(kind, testArea))];
     let stageStarted = false;
@@ -2685,14 +2784,15 @@ function runStageLoading({ kind = 'route', testArea = false } = {}, startAction)
             waitForDelay(720),
         ]);
         stageLoaderTip.textContent = 'Tudo pronto. Boa sorte!';
-        await waitForDelay(180);
-        stageLoader.hidden = true;
-        stageLoader.setAttribute('aria-hidden', 'true');
+        releaseWorldMapRender();
         beginStage();
+        await waitForPaint();
+        await waitForDelay(80);
+        hideSceneLoader();
     })().catch(() => {
-        stageLoader.hidden = true;
-        stageLoader.setAttribute('aria-hidden', 'true');
+        releaseWorldMapRender();
         beginStage();
+        hideSceneLoader();
     }).finally(() => {
         stageTransitionPromise = null;
     });
@@ -3011,6 +3111,7 @@ function completeResistanceDuel() {
 function resumeGame() {
     if (state.mode !== 'paused') return;
     state.mode = 'playing';
+    setRuntimeScene('stage');
     playBackgroundMusic();
     state.previousTime = performance.now();
     overlay.classList.remove('is-visible');
@@ -3279,7 +3380,7 @@ function returnFromResult() {
         mainMenuShell.classList.remove('is-hidden');
         resultCard.classList.add('is-hidden');
         overlay.classList.add('is-visible');
-        showMenuScreen('maps');
+        runWorldMapLoading();
         return;
     }
     if (state.mode !== 'completed' || state.isTestArea) {
@@ -3291,7 +3392,7 @@ function returnFromResult() {
     mainMenuShell.classList.remove('is-hidden');
     resultCard.classList.add('is-hidden');
     overlay.classList.add('is-visible');
-    showMenuScreen('maps');
+    runWorldMapLoading();
 }
 
 function updateWorldMotion() {
@@ -3738,7 +3839,8 @@ function bindCrouchButton() {
 }
 
 function preloadImage(source) {
-    return new Promise((resolve, reject) => {
+    if (assetPreloadCache.has(source)) return assetPreloadCache.get(source);
+    const request = new Promise((resolve, reject) => {
         const image = new Image();
         let settled = false;
         const finish = (callback, value) => {
@@ -3748,11 +3850,18 @@ function preloadImage(source) {
             callback(value);
         };
         const timeout = window.setTimeout(() => finish(reject, new Error(`Tempo esgotado: ${source}`)), 12000);
-        image.addEventListener('load', () => finish(resolve, source), { once: true });
+        const finishDecoded = () => {
+            const decoding = typeof image.decode === 'function' ? image.decode() : Promise.resolve();
+            Promise.resolve(decoding).catch(() => {}).then(() => finish(resolve, source));
+        };
+        image.addEventListener('load', finishDecoded, { once: true });
         image.addEventListener('error', () => finish(reject, new Error(`Falha ao carregar: ${source}`)), { once: true });
         image.src = source;
-        if (image.complete && image.naturalWidth > 0) finish(resolve, source);
+        if (image.complete && image.naturalWidth > 0) finishDecoded();
     });
+    assetPreloadCache.set(source, request);
+    request.catch(() => assetPreloadCache.delete(source));
+    return request;
 }
 
 function preloadAudio(audio) {

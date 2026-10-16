@@ -3950,3 +3950,43 @@ body.performance-lite .world-resistance-npc__sprite {
 }
 body.performance-lite .sky-clouds { opacity: 0.58; }
 body.performance-lite .capture-flash i:nth-child(n + 5) { display: none; }
+
+/* Cada tela mantém somente sua própria cena ativa. O preload em JavaScript
+   decodifica o próximo pacote atrás do carregamento antes de liberá-lo. */
+body:not(.runtime-stage) .scenery-panel::before,
+body:not(.runtime-stage) .sky-cloud,
+body:not(.runtime-stage) .horizon-bird,
+body:not(.runtime-stage) .ground-panel,
+body:not(.runtime-stage) .runner,
+body:not(.runtime-stage) .boss-bee,
+body:not(.runtime-stage) .resistance-duelist__sprite,
+body:not(.runtime-stage) .obstacle--ground-beetle,
+body:not(.runtime-stage) .obstacle--leaping-beetle,
+body:not(.runtime-stage) .insect {
+    background-image: none !important;
+}
+
+body:not(.runtime-map) .world-map-ground,
+body:not(.runtime-map) .world-map-frog,
+body:not(.runtime-map) .world-resistance-npc__sprite,
+body:not(.runtime-map) .resistance-dialog__portrait,
+body:not(.runtime-map) .bestiary-sprite {
+    background-image: none !important;
+}
+
+body.runtime-stage .game-overlay,
+body.runtime-stage .world-map-world,
+body.runtime-menu .world-map-world,
+body.runtime-result .world-map-world {
+    content-visibility: hidden;
+}
+
+body:not(.runtime-stage) .sky-cloud,
+body:not(.runtime-stage) .bird-flock,
+body:not(.runtime-stage) .runner,
+body:not(.runtime-stage) .ground-track,
+body:not(.runtime-map) .world-map-frog,
+body:not(.runtime-map) .world-level,
+body:not(.runtime-map) .world-resistance-npc__sprite {
+    animation-play-state: paused !important;
+}
