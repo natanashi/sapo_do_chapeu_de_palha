@@ -18,8 +18,8 @@
     <link rel="preload" as="image" href="assets/img/sapo-corrida-bipede-v3.png">
     <link rel="preload" as="image" href="assets/img/sapo-resistencia-capuz-sprites-v1.png">
     <link rel="preload" as="image" href="assets/img/sapo-resistencia-guarda-v1.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=107">
-    <script src="assets/js/script.js?v=107" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=108">
+    <script src="assets/js/script.js?v=108" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body class="is-app-loading has-indie-intro">
@@ -222,7 +222,32 @@
                                     <span class="wood-button__mark" aria-hidden="true">⚙</span>
                                     <span><strong>Configurações do jogo</strong><small>Jogabilidade, som e controles</small></span>
                                 </button>
+                                <button class="wood-button" type="button" data-menu-target="credits" onclick="showMenuScreen('credits')">
+                                    <span class="wood-button__mark" aria-hidden="true">★</span>
+                                    <span><strong>Créditos</strong><small>Quem está construindo esta aventura</small></span>
+                                </button>
                             </nav>
+                        </section>
+
+                        <section class="menu-screen" data-menu-screen="credits" aria-labelledby="credits-title" hidden>
+                            <div class="menu-section-heading credits-heading">
+                                <span>Por trás do jogo</span>
+                                <h2 id="credits-title">Créditos</h2>
+                            </div>
+                            <div class="credits-board">
+                                <article class="credits-studio">
+                                    <small>Criação e direção</small>
+                                    <strong>Natanashi Studios</strong>
+                                    <p>Um projeto indie brasileiro construído com programação, testes, ajustes visuais e muita vontade de criar um universo próprio.</p>
+                                </article>
+                                <div class="credits-grid">
+                                    <article><span>Desenvolvimento</span><strong>HTML, CSS e JavaScript</strong></article>
+                                    <article><span>Arte e personagens</span><strong>Direção de Natanashi Studios com apoio de IA</strong></article>
+                                    <article><span>Música do jogo</span><strong>Sapinho — Aventura no Sonho</strong></article>
+                                    <article><span>Versão atual</span><strong>Beta para navegador</strong></article>
+                                </div>
+                                <p class="credits-note">Cada cenário, personagem e mecânica continua sendo revisto e ajustado durante o desenvolvimento.</p>
+                            </div>
                         </section>
 
                         <section class="menu-screen" data-menu-screen="play" aria-labelledby="play-menu-title" hidden>
@@ -635,7 +660,6 @@
                         </section>
                     </div>
 
-                    <img class="menu-frog" src="assets/img/sapo-capa.png" alt="Sapo do chapéu de palha">
                     <p class="menu-version">Versão beta para navegador</p>
                 </div>
 

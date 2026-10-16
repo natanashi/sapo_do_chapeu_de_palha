@@ -2007,7 +2007,7 @@ async function applySkinColors(showSaved = false) {
         });
         if (coverUrl) {
             replaceSkinObjectUrl('cover', coverUrl);
-            menuFrog.src = coverUrl;
+            if (menuFrog) menuFrog.src = coverUrl;
             skinPreviewFrog.src = coverUrl;
         }
         if (tongueUrl) {
@@ -2311,6 +2311,7 @@ const MENU_PARENTS = {
     character: 'saves',
     maps: 'saves',
     profile: 'main',
+    credits: 'main',
     museum: 'maps',
     settings: 'main',
 };
