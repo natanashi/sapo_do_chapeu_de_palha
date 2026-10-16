@@ -273,6 +273,8 @@ const OBSTACLES = {
 
 const ASSET_URLS = [
     'assets/img/menu-floresta-amanhecer-v1.png',
+    'assets/img/botao-menu-pixel-v1.png',
+    'assets/img/botao-inventario-pixel-v1.png',
     'assets/img/passaro-horizonte-sprites-v1.png',
     PHASES[0].background,
     ...Object.values(OBSTACLES).map((obstacle) => obstacle.src),
@@ -1531,6 +1533,20 @@ function renderResistanceDialogue() {
     resistanceDialogLeave.hidden = resistanceDialogueStep === RESISTANCE_DIALOGUE.length - 1;
 }
 
+function positionResistanceDialogue() {
+    if (!resistanceDialog?.open || !worldResistanceNpc) return;
+    const npcRect = worldResistanceNpc.getBoundingClientRect();
+    const bubbleWidth = Math.min(390, window.innerWidth - 24);
+    const bubbleHeight = resistanceDialog.offsetHeight || 190;
+    const desiredLeft = npcRect.left + npcRect.width * 0.5;
+    const left = clamp(desiredLeft, bubbleWidth * 0.5 + 10, window.innerWidth - bubbleWidth * 0.5 - 10);
+    const top = clamp(npcRect.top - 10, bubbleHeight + 12, window.innerHeight - 20);
+    const tail = clamp(desiredLeft - (left - bubbleWidth * 0.5), 30, bubbleWidth - 30);
+    resistanceDialog.style.setProperty('--dialog-left', `${left}px`);
+    resistanceDialog.style.setProperty('--dialog-top', `${top}px`);
+    resistanceDialog.style.setProperty('--dialog-tail', `${tail}px`);
+}
+
 function openResistanceDialogue() {
     if (!storyProgress.phaseOneComplete || !resistanceDialog || resistanceDialog.open) return;
     resistanceDialogueStep = storyProgress.resistanceChallengeAccepted ? RESISTANCE_DIALOGUE.length - 1 : 0;
@@ -1539,7 +1555,10 @@ function openResistanceDialogue() {
     renderResistanceDialogue();
     worldMapState.pressed.clear();
     resistanceDialog.showModal();
-    resistanceDialogNext.focus({ preventScroll: true });
+    window.requestAnimationFrame(() => {
+        positionResistanceDialogue();
+        resistanceDialogNext.focus({ preventScroll: true });
+    });
 }
 
 function advanceResistanceDialogue() {
@@ -2510,12 +2529,16 @@ function startResistanceDuelNow() {
     tongue.alt = '';
     const sprite = document.createElement('span');
     sprite.className = 'resistance-duelist__sprite';
-    element.append(tongue, sprite);
+    const callout = document.createElement('span');
+    callout.className = 'resistance-duelist__callout';
+    callout.setAttribute('aria-hidden', 'true');
+    element.append(tongue, sprite, callout);
     bossLayer.append(element);
     state.duel = {
         element,
         sprite,
         tongue,
+        callout,
         health: DUEL_MAX_HEALTH,
         homeX: state.boardWidth * 0.72,
         x: state.boardWidth * 0.72,
@@ -2536,7 +2559,12 @@ function startResistanceDuelNow() {
         attackResolved: false,
         lastTongueAttack: -1,
         completedAt: 0,
+        calloutUntil: currentTime + 1800,
+        decisionCount: 0,
+        nextBaitAt: currentTime + 2700,
     };
+    callout.textContent = 'Mostre como você luta.';
+    callout.classList.add('is-visible');
 
     bossHudLabel.textContent = 'Duelo · Rubro';
     bossHealthFill.style.width = '100%';
@@ -2640,6 +2668,13 @@ function renderResistanceDuel(duel) {
     duel.element.style.transform = `translate3d(${duel.x.toFixed(2)}px, ${(-duel.y).toFixed(2)}px, 0)`;
 }
 
+function showResistanceCallout(duel, copy, currentTime, duration = 1050) {
+    if (!duel.callout) return;
+    duel.callout.textContent = copy;
+    duel.callout.classList.add('is-visible');
+    duel.calloutUntil = currentTime + duration;
+}
+
 function tongueHitsResistanceDuel(duel, currentTime) {
     if (
         currentTime > state.attackUntil
@@ -2697,6 +2732,7 @@ function startResistanceDuelTongue(duel, currentTime) {
     duel.stageStartedAt = currentTime;
     duel.attackResolved = false;
     duel.element.className = 'resistance-duelist is-winding-up';
+    showResistanceCallout(duel, 'Agora.', currentTime, 720);
     setStatus('Rubro preparou a língua. Pule ou recue!');
 }
 
@@ -2731,6 +2767,7 @@ function observePlayerAttack(duel, currentTime) {
     duel.tactic = 'counter';
     duel.tacticUntil = currentTime + 1350;
     startResistanceDuelJump(duel, currentTime, 'dodging');
+    showResistanceCallout(duel, 'Vi esse golpe.', currentTime, 900);
     setStatus('Rubro leu o golpe e saltou. Espere a aterrissagem.');
 }
 
@@ -2751,6 +2788,7 @@ function damageResistanceDuel(duel, currentTime) {
         duel.stage = 'defeated';
         duel.completedAt = currentTime;
         duel.element.className = 'resistance-duelist is-defeated';
+        showResistanceCallout(duel, 'Certo. Você venceu.', currentTime, 1200);
         setStatus('Rubro encerrou o duelo. Você venceu.');
         return;
     }
@@ -2760,6 +2798,7 @@ function damageResistanceDuel(duel, currentTime) {
     duel.tactic = 'retreat';
     duel.tacticUntil = currentTime + 1450;
     duel.nextDecisionAt = currentTime + 900;
+    showResistanceCallout(duel, duel.health <= 2 ? 'Ainda não acabou.' : 'Bom golpe.', currentTime, 950);
     setStatus(`Golpe em Rubro · faltam ${duel.health}`);
 }
 
@@ -2770,6 +2809,7 @@ function updateResistanceDuel(currentTime, delta) {
     duel.homeX = state.boardWidth * 0.72;
     duel.playerVelocityX = (state.runnerX - duel.lastPlayerX) / Math.max(delta, 0.001);
     duel.lastPlayerX = state.runnerX;
+    if (duel.calloutUntil && currentTime >= duel.calloutUntil) duel.callout.classList.remove('is-visible');
     observePlayerAttack(duel, currentTime);
 
     if (duel.y > 0 || duel.velocityY > 0) {
@@ -2838,6 +2878,7 @@ function updateResistanceDuel(currentTime, delta) {
             ? state.runnerFacing > 0
             : state.runnerFacing < 0);
         const playerCoolingDown = currentTime < state.attackReadyAt;
+        const playerDescending = state.runnerY > state.boardHeight * 0.08 && state.velocityY < -80;
         const playerApproaching = signedDistance >= 0
             ? duel.playerVelocityX > 85
             : duel.playerVelocityX < -85;
@@ -2877,10 +2918,23 @@ function updateResistanceDuel(currentTime, delta) {
             : 'resistance-duelist is-moving';
 
         if (currentTime >= duel.nextDecisionAt) {
+            duel.decisionCount += 1;
             const playerNearGround = state.runnerY < state.boardHeight * 0.12;
             const inTongueRange = distance < Math.min(330, state.boardWidth * 0.3);
             const safelyAligned = distance > runnerLayer.offsetWidth * 1.05;
-            if (inTongueRange && safelyAligned && playerNearGround && !playerAttackAimedAtRubro) {
+            const attackOpening = playerCoolingDown || playerApproaching || playerDescending || duel.decisionCount % 3 === 0;
+            const canBaitAttack = currentTime >= duel.nextBaitAt
+                && !playerCoolingDown
+                && !playerAttackAimedAtRubro
+                && distance < preferredMaximum + 35
+                && distance > preferredMinimum;
+            if (canBaitAttack) {
+                duel.tactic = 'retreat';
+                duel.tacticUntil = currentTime + 720;
+                duel.nextBaitAt = currentTime + 3600;
+                duel.nextDecisionAt = currentTime + 640;
+                showResistanceCallout(duel, 'Tenta me alcançar.', currentTime, 850);
+            } else if (inTongueRange && safelyAligned && (playerNearGround || playerDescending) && !playerAttackAimedAtRubro && attackOpening) {
                 startResistanceDuelTongue(duel, currentTime);
             } else {
                 const alignmentDelay = playerAttackAimedAtRubro || !playerNearGround ? 260 : 420;
@@ -4067,6 +4121,7 @@ window.addEventListener('orientationchange', fitMenuToViewport);
 window.addEventListener('resize', () => {
     syncOrientationGuard();
     fitMenuToViewport();
+    positionResistanceDialogue();
 });
 syncOrientationGuard();
 applyGameSettings();

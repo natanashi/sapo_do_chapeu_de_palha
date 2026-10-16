@@ -8,6 +8,8 @@
     <meta name="description" content="Ajude o Sapo do Chapéu de Palha a atravessar quatro regiões da manhã, saltar obstáculos e capturar besouros e abelhas antes que eles se aproximem.">
     <link rel="icon" type="image/png" href="assets/img/sapo-capa.png">
     <link rel="preload" as="image" href="assets/img/menu-floresta-amanhecer-v1.png">
+    <link rel="preload" as="image" href="assets/img/botao-menu-pixel-v1.png">
+    <link rel="preload" as="image" href="assets/img/botao-inventario-pixel-v1.png">
     <link rel="preload" as="image" href="assets/img/cenario-arvores-planaltos-transparente-v3.png">
     <link rel="preload" as="image" href="assets/img/nuvem-pixel-flutuante-v1.png">
     <link rel="preload" as="image" href="assets/img/passaro-horizonte-sprites-v1.png">
@@ -18,8 +20,8 @@
     <link rel="preload" as="image" href="assets/img/sapo-corrida-bipede-v3.png">
     <link rel="preload" as="image" href="assets/img/sapo-resistencia-capuz-sprites-v1.png">
     <link rel="preload" as="image" href="assets/img/sapo-resistencia-guarda-v1.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=108">
-    <script src="assets/js/script.js?v=108" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=109">
+    <script src="assets/js/script.js?v=109" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body class="is-app-loading has-indie-intro">
@@ -347,11 +349,12 @@
 
                         <section class="menu-screen" data-menu-screen="maps" aria-labelledby="map-menu-title" hidden>
                             <button class="world-map-menu-button" id="world-map-menu-button" type="button" aria-label="Voltar ao menu principal">
-                                <span aria-hidden="true">←</span><strong>Menu</strong>
+                                <img src="assets/img/botao-menu-pixel-v1.png" alt="" draggable="false">
+                                <span class="sr-only">Menu</span>
                             </button>
                             <button class="world-inventory-button" id="world-inventory-button" type="button" aria-haspopup="dialog" aria-controls="world-inventory-dialog">
-                                <span class="world-inventory-button__bag" aria-hidden="true"></span>
-                                <strong>Inventário</strong>
+                                <img src="assets/img/botao-inventario-pixel-v1.png" alt="" draggable="false">
+                                <span class="sr-only">Inventário</span>
                             </button>
                             <div class="world-map-heading">
                                 <div>
@@ -446,7 +449,6 @@
                                 </div>
                             </div>
                             <dialog class="resistance-dialog" id="resistance-dialog" aria-labelledby="resistance-dialog-title" aria-describedby="resistance-dialog-copy">
-                                <div class="resistance-dialog__portrait" aria-hidden="true"></div>
                                 <div class="resistance-dialog__copy">
                                     <span id="resistance-dialog-kicker">Um estranho na trilha</span>
                                     <h3 id="resistance-dialog-title">Sapo encapuzado</h3>
