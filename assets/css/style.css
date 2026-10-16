@@ -3929,3 +3929,24 @@ body.reduce-game-motion .resistance-duelist.faces-right .resistance-duelist__ton
     .resistance-dialog { width: min(330px, calc(100vw - 16px)); padding: 10px; }
     .resistance-dialog__copy p { font-size: 0.66rem; }
 }
+
+/* Perfil automático para celulares/tablets modestos: preserva sprites e movimento,
+   mas evita filtros que forçam uma nova composição da imagem a cada quadro. */
+body.performance-lite .game-overlay,
+body.performance-lite dialog::backdrop,
+body.performance-lite .world-inventory-dialog::backdrop,
+body.performance-lite .save-delete-dialog::backdrop {
+    backdrop-filter: none !important;
+}
+body.performance-lite .runner,
+body.performance-lite .runner-attack,
+body.performance-lite .insect,
+body.performance-lite .obstacle,
+body.performance-lite .boss-bee,
+body.performance-lite .resistance-duelist__sprite,
+body.performance-lite .world-map-frog,
+body.performance-lite .world-resistance-npc__sprite {
+    filter: none !important;
+}
+body.performance-lite .sky-clouds { opacity: 0.58; }
+body.performance-lite .capture-flash i:nth-child(n + 5) { display: none; }

@@ -131,6 +131,13 @@ const orientationGuard = document.querySelector('#orientation-guard');
 
 const jumpAudio = new Audio('assets/aud/pulo.mp3');
 const loseAudio = new Audio('assets/aud/risada_duende.mp3');
+jumpAudio.preload = 'none';
+loseAudio.preload = 'none';
+
+const lowPowerDevice = (navigator.deviceMemory && navigator.deviceMemory <= 4)
+    || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
+    || window.matchMedia('(pointer: coarse)').matches;
+document.body.classList.toggle('performance-lite', Boolean(lowPowerDevice));
 const backgroundMusic = document.querySelector('#background-music');
 const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CONTROL_LAYOUTS = ['classic', 'left-handed', 'arcade'];
@@ -271,30 +278,25 @@ const OBSTACLES = {
     },
 };
 
-const ASSET_URLS = [
+const BOOT_ASSET_URLS = [
     'assets/img/menu-floresta-amanhecer-v1.png',
+    'assets/img/sapo-capa.png',
     'assets/img/botao-menu-pixel-v1.png',
     'assets/img/botao-inventario-pixel-v1.png',
-    'assets/img/passaro-horizonte-sprites-v1.png',
-    PHASES[0].background,
-    ...Object.values(OBSTACLES).map((obstacle) => obstacle.src),
-    'assets/img/textura-solo.jpg',
-    'assets/img/sapo-corrida-bipede-v3.png',
-    'assets/img/sapo-corrida-agachado-sprites-v1.png',
-    'assets/img/sapo-agachado-boca-aberta-sprites-v1.png',
-    'assets/img/sapo-ciclo-natural-v2.png',
-    'assets/img/sapo-boca-aberta-sprites.png',
-    'assets/img/sapo-lingua-limpa-v3.png',
-    'assets/img/sapo-capa.png',
+];
+
+const WORLD_MAP_ASSET_URLS = [
     'assets/img/mapa-mundo-grama-v2.png',
     'assets/img/mapa-arvore-simples-v2.png',
     'assets/img/mapa-rocha-simples-v2.png',
     'assets/img/mapa-museu-brejo-v1.png',
-    'assets/img/inseto-voando-sprites.png',
-    'assets/img/besouro-ondulante-voando-sprites.png',
-    'assets/img/abelha-investida-sprites.png',
-    'assets/img/super-abelha-monstro-sprites-v2.png',
-    'assets/img/plataforma-musgo.png',
+    'assets/img/sapo-resistencia-guarda-v1.png',
+];
+
+const AMBIENT_ASSET_URLS = [
+    'assets/img/passaro-horizonte-sprites-v1.png',
+    PHASES[0].background,
+    'assets/img/textura-solo.jpg',
 ];
 
 const state = {
@@ -1990,6 +1992,28 @@ function replaceSkinObjectUrl(key, nextUrl) {
     skinObjectUrls.set(key, nextUrl);
 }
 
+function clearSkinObjectUrl(key) {
+    const previousUrl = skinObjectUrls.get(key);
+    if (previousUrl) URL.revokeObjectURL(previousUrl);
+    skinObjectUrls.delete(key);
+}
+
+function restoreDefaultFrogSkin() {
+    FROG_SPRITES.forEach(([property]) => {
+        clearSkinObjectUrl(property);
+        document.documentElement.style.removeProperty(property);
+    });
+    clearSkinObjectUrl('cover');
+    if (menuFrog) menuFrog.src = 'assets/img/sapo-capa.png';
+    skinPreviewFrog.src = 'assets/img/sapo-capa.png';
+}
+
+function restoreDefaultTongueSkin() {
+    clearSkinObjectUrl('tongue');
+    runnerAttack.src = 'assets/img/sapo-lingua-limpa-v3.png';
+    skinPreviewTongue.src = 'assets/img/sapo-lingua-limpa-v3.png';
+}
+
 function markSelectedPresets(frogColor, tongueColor) {
     document.querySelectorAll('[data-color-presets="frog"] button').forEach((button) => button.classList.toggle('is-selected', button.dataset.color.toLowerCase() === frogColor.toLowerCase()));
     document.querySelectorAll('[data-color-presets="tongue"] button').forEach((button) => button.classList.toggle('is-selected', button.dataset.color.toLowerCase() === tongueColor.toLowerCase()));
@@ -2009,11 +2033,16 @@ async function applySkinColors(showSaved = false) {
     skinSavedStatus.classList.add('is-visible');
     document.documentElement.style.setProperty('--skin-tongue', tongueColor);
 
+    const frogUsesDefaultArt = frogColor.toLowerCase() === DEFAULT_SKIN.frog.toLowerCase();
+    const tongueUsesDefaultArt = tongueColor.toLowerCase() === DEFAULT_SKIN.tongue.toLowerCase();
+    if (frogChanged && frogUsesDefaultArt) restoreDefaultFrogSkin();
+    if (tongueChanged && tongueUsesDefaultArt) restoreDefaultTongueSkin();
+
     try {
         const [frogSprites, coverUrl, tongueUrl] = await Promise.all([
-            frogChanged ? Promise.all(FROG_SPRITES.map(async ([property, source]) => [property, await recolorImage(source, frogColor, 'frog')])) : Promise.resolve([]),
-            frogChanged ? recolorImage('assets/img/sapo-capa.png', frogColor, 'frog') : Promise.resolve(null),
-            tongueChanged ? recolorImage('assets/img/sapo-lingua-limpa-v3.png', tongueColor, 'tongue') : Promise.resolve(null),
+            frogChanged && !frogUsesDefaultArt ? Promise.all(FROG_SPRITES.map(async ([property, source]) => [property, await recolorImage(source, frogColor, 'frog')])) : Promise.resolve([]),
+            frogChanged && !frogUsesDefaultArt ? recolorImage('assets/img/sapo-capa.png', frogColor, 'frog') : Promise.resolve(null),
+            tongueChanged && !tongueUsesDefaultArt ? recolorImage('assets/img/sapo-lingua-limpa-v3.png', tongueColor, 'tongue') : Promise.resolve(null),
         ]);
         if (version !== skinRenderVersion) {
             [...frogSprites.map(([, url]) => url), coverUrl, tongueUrl].filter(Boolean).forEach((url) => URL.revokeObjectURL(url));
@@ -2338,6 +2367,20 @@ const MENU_PARENTS = {
 let activeMenuScreen = 'main';
 let bootReady = false;
 let stageTransitionPromise = null;
+let worldMapAssetsPromise = null;
+
+function ensureWorldMapAssets() {
+    if (worldMapState.ready) return Promise.resolve();
+    if (worldMapAssetsPromise) return worldMapAssetsPromise;
+    storyMapStatus.textContent = 'Preparando o mapa...';
+    worldMapAssetsPromise = Promise.allSettled(WORLD_MAP_ASSET_URLS.map(preloadImage)).then((results) => {
+        worldMapState.ready = true;
+        updateWorldMapProximity();
+        const failed = results.some((result) => result.status === 'rejected');
+        if (failed) worldMapHelp.textContent = 'O mapa está pronto. Um detalhe visual pode terminar de carregar durante a caminhada.';
+    });
+    return worldMapAssetsPromise;
+}
 let menuFitFrame = 0;
 
 async function syncWorldInventory() {
@@ -2438,6 +2481,7 @@ function showMenuScreen(screenName, focusFirst = true) {
     }
 
     if (screenName === 'maps') {
+        ensureWorldMapAssets();
         syncWorldInventory();
         syncResistanceNpc();
         showStoryCategory('map');
@@ -2601,7 +2645,7 @@ function waitForDelay(duration) {
 
 function stageAssets(kind, testArea = false) {
     const common = [
-        PHASES[0].background,
+        ...AMBIENT_ASSET_URLS,
         'assets/img/sapo-corrida-bipede-v3.png',
         'assets/img/sapo-ciclo-natural-v2.png',
         'assets/img/sapo-boca-aberta-sprites.png',
@@ -3756,15 +3800,10 @@ async function initializeGame() {
     const loadingStartedAt = performance.now();
     applyPhase(0, false);
     updateScore();
-    const uniqueAssets = [...new Set(ASSET_URLS)];
+    const uniqueAssets = [...new Set(BOOT_ASSET_URLS)];
     const classifyImage = (source) => /cenario|mapa|textura|plataforma|pedras|roda/.test(source) ? 'world' : 'sprites';
     const jobs = uniqueAssets.map((source) => ({ group: classifyImage(source), promise: preloadImage(source) }));
-    jobs.push(
-        { group: 'sound', promise: preloadAudio(backgroundMusic) },
-        { group: 'sound', promise: preloadAudio(jumpAudio) },
-        { group: 'sound', promise: preloadAudio(loseAudio) },
-        { group: 'world', promise: document.fonts?.load('700 32px "Pixelify Sans"') || Promise.resolve() },
-    );
+    jobs.push({ group: 'world', promise: document.fonts?.load('700 32px "Pixelify Sans"') || Promise.resolve() });
     const groupProgress = new Map(['sprites', 'world', 'sound'].map((group) => [group, { done: 0, total: jobs.filter((job) => job.group === group).length }]));
     let completed = 0;
     updateBootLoading(completed, jobs.length, groupProgress);
@@ -3782,12 +3821,9 @@ async function initializeGame() {
 
     state.mode = 'idle';
     playButton.disabled = false;
-    worldMapState.ready = true;
-    updateWorldMapProximity();
+    worldMapState.ready = false;
     playLabel.textContent = 'Jogar novamente';
-    if (failedAssets > 0) {
-        worldMapHelp.textContent = 'O mapa está pronto. Alguns detalhes visuais ainda podem carregar durante a caminhada.';
-    }
+    if (failedAssets > 0) worldMapHelp.textContent = 'O menu está pronto. Um detalhe visual pode terminar de carregar em segundo plano.';
 
     bootReady = true;
     indieIntroContinue.disabled = false;
@@ -3798,15 +3834,6 @@ async function initializeGame() {
     window.setTimeout(() => bootLoader.setAttribute('hidden', ''), 260);
     window.requestAnimationFrame(() => indieIntroContinue.focus({ preventScroll: true }));
 
-    const preloadLaterScenes = () => {
-        [...new Set(PHASES.slice(1).map((phase) => phase.background))]
-            .forEach((source) => preloadImage(source).catch(() => {}));
-    };
-    if ('requestIdleCallback' in window) {
-        window.requestIdleCallback(preloadLaterScenes, { timeout: 2500 });
-    } else {
-        window.setTimeout(preloadLaterScenes, 500);
-    }
 }
 
 function syncBoardSize(width, height) {

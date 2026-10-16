@@ -159,6 +159,9 @@ Horizontal movement uses an actual bounded x-coordinate with keyboard A/D or Lef
 - Do keep camera tracking, pointer destinations and collision coordinates in the same 2×2 world space.
 - Do preserve hats, eyes, muzzle, outlines, shadows and alpha when recoloring the frog or tongue.
 - Do reduce decorative parallax when the player requests reduced motion.
+- Do load each group of large assets only when its screen is opened; keep the first menu load limited to its own artwork and controls.
+- Do optimize pixel-art files at their real display scale with nearest-neighbor resampling; preserve every sprite-sheet frame, transparent edge and animation cadence.
+- Do use the lightweight rendering profile only to remove expensive blur, shadow and excess particles on constrained devices; never remove gameplay movement, enemies or collision detail.
 - Don't add decorative particles behind the runner; they resemble sprite corruption.
 - Don't place important controls only inside the moving game area on mobile.
 - Don't introduce runtime font or framework dependencies; approved open-source fonts must be stored locally with their license.
