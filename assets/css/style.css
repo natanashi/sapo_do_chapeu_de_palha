@@ -6,6 +6,230 @@
     font-display: swap;
 }
 
+/* Mapa da história em tela completa */
+.game-overlay.is-world-map {
+    padding: 0;
+    place-items: stretch;
+    background: #416b36;
+    backdrop-filter: none;
+}
+
+.main-menu-shell.is-world-map {
+    position: absolute;
+    inset: 0;
+    top: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: #416b36;
+    box-shadow: none;
+    transform: none;
+}
+
+.main-menu-shell.is-world-map::before,
+.main-menu-shell.is-world-map::after,
+.main-menu-shell.is-world-map > .menu-frog,
+.main-menu-shell.is-world-map > .menu-version { display: none; }
+
+.main-menu-shell.is-world-map .menu-book {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.main-menu-shell.is-world-map .menu-book::after,
+.main-menu-shell.is-world-map .menu-back,
+.main-menu-shell.is-world-map .world-map-heading,
+.main-menu-shell.is-world-map .story-category-tabs,
+.main-menu-shell.is-world-map .world-map-future,
+.main-menu-shell.is-world-map .world-map-pad { display: none !important; }
+
+.main-menu-shell.is-world-map [data-menu-screen="maps"],
+.main-menu-shell.is-world-map #story-map-category {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.main-menu-shell.is-world-map .world-map {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    aspect-ratio: auto;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.main-menu-shell.is-world-map .world-map::after {
+    box-shadow: inset 0 0 48px rgba(15, 39, 22, 0.3);
+}
+
+.world-map-menu-button,
+.world-inventory-button {
+    position: absolute;
+    z-index: 95;
+    display: grid;
+    border: 3px solid #302116;
+    color: #fff4c9;
+    background: linear-gradient(#447c45, #285638);
+    box-shadow: inset 0 0 0 2px #7eb55a, 0 5px 0 #1a321f, 4px 8px 14px rgba(16, 32, 20, 0.3);
+    font-family: var(--font-ui);
+    font-weight: 900;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.world-map-menu-button {
+    top: max(14px, env(safe-area-inset-top));
+    left: max(14px, env(safe-area-inset-left));
+    min-height: 46px;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 13px;
+    border-radius: 7px;
+    font-size: 0.62rem;
+}
+
+.world-map-menu-button span { font-size: 1.3rem; line-height: 0; }
+
+.world-inventory-button {
+    top: 50%;
+    right: max(12px, env(safe-area-inset-right));
+    width: 82px;
+    min-height: 90px;
+    place-items: center;
+    gap: 3px;
+    padding: 8px 6px;
+    border-radius: 13px 4px 4px 13px;
+    font-size: 0.48rem;
+    transform: translateY(-50%);
+}
+
+.world-map-menu-button:hover,
+.world-inventory-button:hover { filter: brightness(1.1); }
+.world-map-menu-button:active { transform: translateY(3px); box-shadow: inset 0 0 0 2px #7eb55a, 0 2px 0 #1a321f; }
+.world-inventory-button:active { transform: translateY(calc(-50% + 3px)); box-shadow: inset 0 0 0 2px #7eb55a, 0 2px 0 #1a321f; }
+.world-map-menu-button:focus-visible,
+.world-inventory-button:focus-visible { outline: 4px solid #fff; outline-offset: 3px; }
+
+.world-inventory-button__bag {
+    position: relative;
+    display: block;
+    width: 42px;
+    height: 38px;
+    border: 3px solid #352217;
+    border-radius: 7px 7px 12px 12px;
+    background: #cf8842;
+    box-shadow: inset 0 -7px 0 #9c5d31;
+}
+
+.world-inventory-button__bag::before {
+    content: "";
+    position: absolute;
+    top: -12px;
+    left: 8px;
+    width: 19px;
+    height: 13px;
+    border: 3px solid #352217;
+    border-bottom: 0;
+    border-radius: 9px 9px 0 0;
+}
+
+.world-inventory-button__bag::after {
+    content: "";
+    position: absolute;
+    top: 14px;
+    left: 15px;
+    width: 7px;
+    height: 7px;
+    background: #f4d264;
+    box-shadow: 0 0 0 2px #352217;
+    transform: rotate(45deg);
+}
+
+.world-inventory-dialog {
+    width: min(680px, calc(100vw - 32px));
+    max-height: min(620px, calc(100svh - 28px));
+    overflow: auto;
+    padding: 18px;
+    border: 5px solid #322217;
+    border-radius: 5px;
+    color: #30251b;
+    background:
+        repeating-linear-gradient(0deg, rgba(101, 63, 29, 0.07) 0 2px, transparent 2px 8px),
+        #f8dda0;
+    box-shadow: inset 0 0 0 4px #bd7736, 10px 12px 0 rgba(13, 28, 18, 0.55);
+}
+
+.world-inventory-dialog[open] { display: grid; gap: 15px; animation: menu-page-in 140ms steps(2, end) both; }
+.world-inventory-dialog::backdrop { background: rgba(7, 24, 15, 0.76); backdrop-filter: blur(4px); }
+.world-inventory-dialog header { display: grid; grid-template-columns: 92px 1fr auto; align-items: center; gap: 14px; padding-bottom: 12px; border-bottom: 3px dashed rgba(92, 53, 25, 0.4); }
+.world-inventory-dialog__portrait { display: grid; width: 88px; height: 88px; overflow: hidden; border: 3px solid #3c2818; place-items: center; background: #7eae4c; box-shadow: inset 0 0 0 3px #cfe078; }
+.world-inventory-dialog__portrait img { width: 96px; image-rendering: pixelated; filter: drop-shadow(3px 4px 0 rgba(20, 43, 24, 0.3)); }
+.world-inventory-dialog header small { color: #9a4f25; font-size: 0.57rem; font-weight: 900; letter-spacing: 0.11em; text-transform: uppercase; }
+.world-inventory-dialog h2 { margin: 2px 0 4px; color: #173f2a; font-family: var(--font-display); font-size: clamp(1.45rem, 4vw, 2.4rem); line-height: 1; }
+.world-inventory-dialog header strong { color: #6d3425; font-family: var(--font-body); font-size: 0.86rem; }
+.world-inventory-dialog__close { align-self: start; width: 42px; height: 42px; border: 3px solid #41281b; color: #fff2c8; background: #943d34; box-shadow: 0 4px 0 #58231f; font-size: 1.5rem; font-weight: 900; cursor: pointer; }
+.world-inventory-dialog__close:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+.world-inventory-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+.world-inventory-stats article { display: grid; min-height: 88px; align-content: center; padding: 10px; border: 3px solid #5a3b24; background: rgba(255, 246, 202, 0.64); box-shadow: inset 0 -5px 0 rgba(161, 102, 46, 0.16); }
+.world-inventory-stats span { color: #8c4f28; font-size: 0.52rem; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; }
+.world-inventory-stats strong { margin-top: 5px; color: #204b31; font-family: var(--font-display); font-size: 0.82rem; line-height: 1.1; }
+.world-inventory-stats small { color: #705037; font-size: 0.53rem; font-weight: 800; }
+.world-inventory-bag { display: grid; grid-template-columns: minmax(150px, 0.7fr) minmax(260px, 1.3fr); gap: 13px; align-items: center; padding: 13px; border: 3px solid #5a3b24; background: rgba(123, 159, 71, 0.15); }
+.world-inventory-bag h3 { margin: 0 0 4px; color: #173f2a; font-family: var(--font-display); font-size: 1rem; }
+.world-inventory-bag p { margin: 0; color: #684a34; font-size: 0.63rem; font-weight: 750; line-height: 1.35; }
+.world-inventory-slots { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.world-inventory-slots span { aspect-ratio: 1; border: 3px solid #644125; background: rgba(255, 244, 197, 0.58); box-shadow: inset 0 0 0 2px rgba(150, 96, 41, 0.18); }
+.world-inventory-dialog footer { display: flex; align-items: center; justify-content: flex-end; gap: 8px; color: #74513a; font-size: 0.57rem; font-weight: 900; text-transform: uppercase; }
+.world-inventory-dialog footer i { width: 22px; height: 22px; border: 3px solid #3c2818; background: var(--inventory-swatch, #69b83f); box-shadow: inset 0 0 0 2px rgba(255,255,255,0.28); }
+
+@media (max-width: 720px) {
+    .game-overlay.is-world-map { padding: 0; overflow: hidden; }
+    .main-menu-shell.is-world-map,
+    .main-menu-shell.is-world-map .menu-book { min-height: 0; padding: 0; }
+    .world-map-menu-button { top: max(8px, env(safe-area-inset-top)); left: max(8px, env(safe-area-inset-left)); min-height: 40px; padding: 5px 9px; }
+    .world-inventory-button { right: max(7px, env(safe-area-inset-right)); width: 68px; min-height: 76px; }
+    .world-inventory-button__bag { width: 34px; height: 31px; }
+    .world-inventory-dialog { width: min(600px, calc(100vw - 18px)); max-height: calc(100svh - 16px); padding: 12px; }
+    .world-inventory-dialog header { grid-template-columns: 66px 1fr auto; gap: 9px; }
+    .world-inventory-dialog__portrait { width: 64px; height: 64px; }
+    .world-inventory-dialog__portrait img { width: 72px; }
+    .world-inventory-stats article { min-height: 67px; padding: 7px; }
+    .world-inventory-bag { grid-template-columns: 0.75fr 1.25fr; padding: 9px; }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+    .game-overlay.is-world-map { padding: 0; }
+    .main-menu-shell.is-world-map,
+    .main-menu-shell.is-world-map .menu-book { width: 100%; height: 100%; min-height: 0; padding: 0; }
+    .main-menu-shell.is-world-map .world-map { width: 100%; height: 100%; margin: 0; }
+    .world-inventory-dialog[open] { grid-template-columns: 1fr 1fr; gap: 9px; }
+    .world-inventory-dialog header { grid-column: 1 / -1; }
+    .world-inventory-stats { grid-template-columns: 1fr; }
+    .world-inventory-stats article { min-height: 48px; }
+    .world-inventory-bag { grid-template-columns: 1fr; }
+    .world-inventory-dialog footer { grid-column: 1 / -1; }
+}
+
 :root {
     color-scheme: only light;
     --primary: #173f2a;
@@ -1490,9 +1714,7 @@ kbd {
     padding: clamp(24px, 4vw, 48px);
     border: 3px solid #e8b85b;
     border-radius: 5px;
-    background:
-        radial-gradient(circle at 72% 22%, rgba(255, 224, 139, 0.24), transparent 24%),
-        linear-gradient(155deg, #436d4b 0%, #244b36 54%, #132f23 100%);
+    background: #183b2a;
     box-shadow:
         0 0 0 6px #203f28,
         0 0 0 9px #0b2417,
@@ -1509,20 +1731,17 @@ kbd {
     position: absolute;
     z-index: -1;
     inset: 0;
-    background: linear-gradient(90deg, rgba(6, 29, 18, 0.9) 0%, rgba(7, 33, 20, 0.72) 45%, rgba(7, 25, 16, 0.42) 100%);
+    background: linear-gradient(90deg, rgba(5, 25, 17, 0.86) 0%, rgba(7, 31, 21, 0.63) 43%, rgba(7, 25, 16, 0.25) 100%);
 }
 
 .main-menu-shell::after {
     content: "";
     position: absolute;
     z-index: -1;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    height: 56%;
-    background: url("../img/cenario-arvores-planaltos-transparente-v3.png") center bottom / cover no-repeat;
+    inset: 0;
+    background: url("../img/menu-floresta-amanhecer-v1.png") center / cover no-repeat;
     image-rendering: pixelated;
-    opacity: 0.74;
+    opacity: 0.92;
     pointer-events: none;
 }
 
@@ -3431,4 +3650,51 @@ body.reduce-game-motion .resistance-duelist.faces-right .resistance-duelist__ton
     .character-creator,
     .skin-workbench { grid-template-columns: 0.9fr 1.1fr; }
     .skin-preview { min-height: 300px; }
+}
+
+/* Estas regras ficam no fim para prevalecer sobre os ajustes responsivos antigos. */
+.game-overlay.is-world-map { padding: 0; place-items: stretch; overflow: hidden; }
+.game-overlay.is-world-map .main-menu-shell.is-world-map {
+    inset: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    transform: none;
+}
+.game-overlay.is-world-map .main-menu-shell.is-world-map .menu-book {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    padding: 0;
+    border: 0;
+}
+.game-overlay.is-world-map .main-menu-shell.is-world-map .world-map {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    aspect-ratio: auto;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+    .world-inventory-dialog { overflow: hidden; padding: 8px; }
+    .world-inventory-dialog[open] { gap: 6px; }
+    .world-inventory-dialog header { grid-template-columns: 56px 1fr auto; gap: 7px; padding-bottom: 6px; }
+    .world-inventory-dialog__portrait { width: 54px; height: 54px; }
+    .world-inventory-dialog__portrait img { width: 62px; }
+    .world-inventory-dialog h2 { font-size: 1.35rem; }
+    .world-inventory-dialog__close { width: 36px; height: 36px; }
+    .world-inventory-stats { gap: 5px; }
+    .world-inventory-stats article { min-height: 43px; padding: 5px 7px; }
+    .world-inventory-bag { gap: 6px; padding: 7px; }
+    .world-inventory-dialog footer i { width: 18px; height: 18px; }
 }

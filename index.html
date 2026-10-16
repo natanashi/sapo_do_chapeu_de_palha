@@ -7,6 +7,7 @@
     <meta name="color-scheme" content="only light">
     <meta name="description" content="Ajude o Sapo do Chapéu de Palha a atravessar quatro regiões da manhã, saltar obstáculos e capturar besouros e abelhas antes que eles se aproximem.">
     <link rel="icon" type="image/png" href="assets/img/sapo-capa.png">
+    <link rel="preload" as="image" href="assets/img/menu-floresta-amanhecer-v1.png">
     <link rel="preload" as="image" href="assets/img/cenario-arvores-planaltos-transparente-v3.png">
     <link rel="preload" as="image" href="assets/img/nuvem-pixel-flutuante-v1.png">
     <link rel="preload" as="image" href="assets/img/passaro-horizonte-sprites-v1.png">
@@ -17,8 +18,8 @@
     <link rel="preload" as="image" href="assets/img/sapo-corrida-bipede-v3.png">
     <link rel="preload" as="image" href="assets/img/sapo-resistencia-capuz-sprites-v1.png">
     <link rel="preload" as="image" href="assets/img/sapo-resistencia-guarda-v1.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=106">
-    <script src="assets/js/script.js?v=106" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=107">
+    <script src="assets/js/script.js?v=107" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body class="is-app-loading has-indie-intro">
@@ -320,6 +321,13 @@
                         </section>
 
                         <section class="menu-screen" data-menu-screen="maps" aria-labelledby="map-menu-title" hidden>
+                            <button class="world-map-menu-button" id="world-map-menu-button" type="button" aria-label="Voltar ao menu principal">
+                                <span aria-hidden="true">←</span><strong>Menu</strong>
+                            </button>
+                            <button class="world-inventory-button" id="world-inventory-button" type="button" aria-haspopup="dialog" aria-controls="world-inventory-dialog">
+                                <span class="world-inventory-button__bag" aria-hidden="true"></span>
+                                <strong>Inventário</strong>
+                            </button>
                             <div class="world-map-heading">
                                 <div>
                                     <span>Modo história</span>
@@ -438,6 +446,38 @@
                                     <small>Área temporária de desenvolvimento. A fase normal continua disponível no mapa.</small>
                                 </div>
                             </section>
+                            <dialog class="world-inventory-dialog" id="world-inventory-dialog" aria-labelledby="world-inventory-title">
+                                <header>
+                                    <div class="world-inventory-dialog__portrait" aria-hidden="true">
+                                        <img id="world-inventory-portrait" src="assets/img/sapo-capa.png" alt="">
+                                    </div>
+                                    <div>
+                                        <small>Diário do viajante</small>
+                                        <h2 id="world-inventory-title">Inventário e status</h2>
+                                        <strong id="world-inventory-name">Sapinho</strong>
+                                    </div>
+                                    <button class="world-inventory-dialog__close" id="world-inventory-close" type="button" aria-label="Fechar inventário">×</button>
+                                </header>
+                                <div class="world-inventory-stats">
+                                    <article><span>Recorde</span><strong id="world-inventory-best">000</strong><small>pontos</small></article>
+                                    <article><span>Rota da Manhã</span><strong id="world-inventory-route">Em andamento</strong></article>
+                                    <article><span>Duelo</span><strong id="world-inventory-duel">Ainda não iniciado</strong></article>
+                                </div>
+                                <section class="world-inventory-bag" aria-labelledby="world-inventory-bag-title">
+                                    <div>
+                                        <h3 id="world-inventory-bag-title">Mochila</h3>
+                                        <p>Espaço reservado para itens encontrados nas próximas fases.</p>
+                                    </div>
+                                    <div class="world-inventory-slots" aria-label="Espaços vazios da mochila">
+                                        <span></span><span></span><span></span><span></span><span></span><span></span>
+                                    </div>
+                                </section>
+                                <footer>
+                                    <span>Cores do personagem</span>
+                                    <i id="world-inventory-frog-color" aria-label="Cor do sapinho"></i>
+                                    <i id="world-inventory-tongue-color" aria-label="Cor da língua"></i>
+                                </footer>
+                            </dialog>
                         </section>
 
                         <section class="menu-screen" data-menu-screen="profile" aria-labelledby="profile-title" hidden>

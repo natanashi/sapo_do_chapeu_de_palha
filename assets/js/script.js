@@ -28,6 +28,17 @@ const overlay = document.querySelector('#game-overlay');
 const mainMenuShell = document.querySelector('#main-menu-shell');
 const resultCard = document.querySelector('#result-card');
 const menuBackButton = document.querySelector('#menu-back');
+const worldMapMenuButton = document.querySelector('#world-map-menu-button');
+const worldInventoryButton = document.querySelector('#world-inventory-button');
+const worldInventoryDialog = document.querySelector('#world-inventory-dialog');
+const worldInventoryClose = document.querySelector('#world-inventory-close');
+const worldInventoryPortrait = document.querySelector('#world-inventory-portrait');
+const worldInventoryName = document.querySelector('#world-inventory-name');
+const worldInventoryBest = document.querySelector('#world-inventory-best');
+const worldInventoryRoute = document.querySelector('#world-inventory-route');
+const worldInventoryDuel = document.querySelector('#world-inventory-duel');
+const worldInventoryFrogColor = document.querySelector('#world-inventory-frog-color');
+const worldInventoryTongueColor = document.querySelector('#world-inventory-tongue-color');
 const menuScreens = [...document.querySelectorAll('[data-menu-screen]')];
 const storyMapButton = document.querySelector('#story-map-button');
 const storyMapStatus = document.querySelector('#story-map-status');
@@ -261,6 +272,7 @@ const OBSTACLES = {
 };
 
 const ASSET_URLS = [
+    'assets/img/menu-floresta-amanhecer-v1.png',
     'assets/img/passaro-horizonte-sprites-v1.png',
     PHASES[0].background,
     ...Object.values(OBSTACLES).map((obstacle) => obstacle.src),
@@ -660,7 +672,10 @@ function closeIndieIntro() {
     gameShell.removeAttribute('inert');
     orientationGuard.removeAttribute('inert');
     const mainMenuButton = document.querySelector('[data-menu-screen="main"] button:not(:disabled)');
-    window.requestAnimationFrame(() => mainMenuButton?.focus({ preventScroll: true }));
+    window.requestAnimationFrame(() => {
+        fitMenuToViewport();
+        mainMenuButton?.focus({ preventScroll: true });
+    });
 }
 
 function playSound(audio) {
@@ -1788,7 +1803,7 @@ function setWorldMapDirection(direction, pressed) {
 
 function handleWorldMapKey(event, pressed) {
     if (activeMenuScreen !== 'maps' || !overlay.classList.contains('is-visible')) return false;
-    if (resistanceDialog?.open) return false;
+    if (resistanceDialog?.open || worldInventoryDialog?.open) return false;
     const directions = {
         ArrowLeft: 'left', KeyA: 'left',
         ArrowRight: 'right', KeyD: 'right',
@@ -2305,12 +2320,52 @@ let bootReady = false;
 let stageTransitionPromise = null;
 let menuFitFrame = 0;
 
+async function syncWorldInventory() {
+    if (!worldInventoryDialog) return;
+    const slot = activeCharacterSlot();
+    const frogColor = slot?.frog || frogColorInput.value || DEFAULT_SKIN.frog;
+    const tongueColor = slot?.tongue || tongueColorInput.value || DEFAULT_SKIN.tongue;
+
+    worldInventoryName.textContent = slot?.name || 'Sapinho';
+    worldInventoryBest.textContent = formatScore(slot?.best ?? state.best);
+    worldInventoryRoute.textContent = storyProgress.phaseOneComplete ? 'Concluída' : 'Em andamento';
+    worldInventoryDuel.textContent = storyProgress.resistanceDuelWon
+        ? 'Vitória registrada'
+        : storyProgress.resistanceChallengeAccepted
+            ? 'Desafio aceito'
+            : 'Ainda não iniciado';
+    worldInventoryFrogColor.style.setProperty('--inventory-swatch', frogColor);
+    worldInventoryTongueColor.style.setProperty('--inventory-swatch', tongueColor);
+
+    try {
+        const portraitUrl = await recolorImage('assets/img/sapo-capa.png', frogColor, 'frog');
+        if (!worldInventoryPortrait.isConnected) {
+            URL.revokeObjectURL(portraitUrl);
+            return;
+        }
+        replaceSkinObjectUrl('world-inventory-portrait', portraitUrl);
+        worldInventoryPortrait.src = portraitUrl;
+    } catch {
+        worldInventoryPortrait.src = 'assets/img/sapo-capa.png';
+    }
+}
+
+async function openWorldInventory() {
+    if (!worldInventoryDialog || worldInventoryDialog.open) return;
+    await syncWorldInventory();
+    worldMapState.pressed.clear();
+    worldMapFrog.classList.remove('is-walking');
+    worldInventoryDialog.showModal();
+    window.requestAnimationFrame(() => worldInventoryClose.focus({ preventScroll: true }));
+}
+
 function fitMenuToViewport() {
     window.cancelAnimationFrame(menuFitFrame);
     menuFitFrame = window.requestAnimationFrame(() => {
         if (!overlay.classList.contains('is-visible') || mainMenuShell.classList.contains('is-hidden')) return;
         mainMenuShell.style.setProperty('--menu-fit-scale', '1');
         mainMenuShell.style.setProperty('--menu-fit-top', '0px');
+        if (mainMenuShell.classList.contains('is-world-map')) return;
         const overlayStyle = window.getComputedStyle(overlay);
         const availableWidth = overlay.clientWidth - Number.parseFloat(overlayStyle.paddingLeft) - Number.parseFloat(overlayStyle.paddingRight);
         const availableHeight = overlay.clientHeight - Number.parseFloat(overlayStyle.paddingTop) - Number.parseFloat(overlayStyle.paddingBottom);
@@ -2318,7 +2373,6 @@ function fitMenuToViewport() {
         const naturalHeight = Math.max(mainMenuShell.offsetHeight, mainMenuShell.scrollHeight);
         const scale = clamp(Math.min(availableWidth / naturalWidth, availableHeight / naturalHeight), 0.34, 1);
         mainMenuShell.style.setProperty('--menu-fit-scale', scale.toFixed(4));
-        mainMenuShell.style.setProperty('--menu-fit-top', `${Math.max(0, (availableHeight - naturalHeight * scale) / 2).toFixed(2)}px`);
     });
 }
 
@@ -2345,6 +2399,7 @@ function showMenuScreen(screenName, focusFirst = true) {
     if (!nextScreen) return;
 
     if (screenName !== 'maps' && resistanceDialog?.open) resistanceDialog.close();
+    if (screenName !== 'maps' && worldInventoryDialog?.open) worldInventoryDialog.close();
 
     activeMenuScreen = screenName;
     menuScreens.forEach((screen) => {
@@ -2352,8 +2407,9 @@ function showMenuScreen(screenName, focusFirst = true) {
         screen.hidden = !isActive;
         screen.classList.toggle('is-active', isActive);
     });
-    menuBackButton.classList.toggle('is-hidden', screenName === 'main');
+    menuBackButton.classList.toggle('is-hidden', screenName === 'main' || screenName === 'maps');
     mainMenuShell.classList.toggle('is-world-map', screenName === 'maps');
+    overlay.classList.toggle('is-world-map', screenName === 'maps');
     overlay.scrollTop = 0;
     mainMenuShell.scrollTop = 0;
 
@@ -2362,6 +2418,7 @@ function showMenuScreen(screenName, focusFirst = true) {
     }
 
     if (screenName === 'maps') {
+        syncWorldInventory();
         syncResistanceNpc();
         showStoryCategory('map');
         if (storyProgress.phaseOneComplete && !storyProgress.resistanceEncounterSeen) {
@@ -2386,7 +2443,7 @@ function goBackMenu() {
         editingCharacterSlotIndex = -1;
         initializeSkins();
     }
-    showMenuScreen(MENU_PARENTS[activeMenuScreen] || 'main');
+    showMenuScreen(activeMenuScreen === 'maps' ? 'main' : MENU_PARENTS[activeMenuScreen] || 'main');
 }
 
 function showMainMenu() {
@@ -2405,6 +2462,7 @@ function showMainMenu() {
 function showResultOverlay() {
     mainMenuShell.classList.add('is-hidden');
     resultCard.classList.remove('is-hidden');
+    overlay.classList.remove('is-world-map');
     overlay.classList.add('is-visible');
 }
 
@@ -3502,9 +3560,9 @@ function handleKeyboard(event) {
         } else if (state.mode === 'paused') {
             event.preventDefault();
             resumeGame();
-        } else if (event.code === 'Escape' && state.mode === 'idle' && activeMenuScreen !== 'main') {
+        } else if (event.code === 'Escape' && state.mode === 'idle' && activeMenuScreen !== 'main' && !worldInventoryDialog?.open) {
             event.preventDefault();
-            showMenuScreen(MENU_PARENTS[activeMenuScreen] || 'main');
+            showMenuScreen(activeMenuScreen === 'maps' ? 'main' : MENU_PARENTS[activeMenuScreen] || 'main');
         }
         return;
     }
@@ -3743,6 +3801,12 @@ playButton.addEventListener('click', () => {
 
 storyMapTab?.addEventListener('click', () => showStoryCategory('map'));
 testAreaTab?.addEventListener('click', () => showStoryCategory('test'));
+worldMapMenuButton?.addEventListener('click', () => showMenuScreen('main'));
+worldInventoryButton?.addEventListener('click', openWorldInventory);
+worldInventoryClose?.addEventListener('click', () => worldInventoryDialog.close());
+worldInventoryDialog?.addEventListener('close', () => {
+    if (activeMenuScreen === 'maps') worldInventoryButton?.focus({ preventScroll: true });
+});
 [storyMapTab, testAreaTab].forEach((tab, index, tabs) => {
     tab?.addEventListener('keydown', (event) => {
         if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
