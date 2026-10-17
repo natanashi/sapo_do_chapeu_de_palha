@@ -341,6 +341,13 @@ const state = {
     animationFrame: 0,
     boardWidth: 0,
     boardHeight: 0,
+    runnerWidth: 0,
+    renderedRunnerX: Number.NaN,
+    renderedRunnerY: Number.NaN,
+    renderedMoveDirection: Number.NaN,
+    renderedRunCycle: Number.NaN,
+    renderedSceneX: Number.NaN,
+    renderedGroundX: Number.NaN,
     moveLeft: false,
     moveRight: false,
     isCrouching: false,
@@ -378,6 +385,24 @@ const DUEL_TONGUE_DURATION_MS = 700;
 const DUEL_TONGUE_HIT_START_MS = 170;
 const DUEL_TONGUE_HIT_END_MS = 390;
 const DUEL_RECOVER_MS = 620;
+
+const hudRenderCache = {
+    score: '',
+    best: '',
+    phase: '',
+    pace: '',
+    region: '',
+    progress: Number.NaN,
+    time: '',
+    routePhase: Number.NaN,
+};
+let renderedTongueCooldownKey = '';
+
+function invalidateHudRenderCache() {
+    Object.keys(hudRenderCache).forEach((key) => {
+        hudRenderCache[key] = typeof hudRenderCache[key] === 'number' ? Number.NaN : '';
+    });
+}
 const DUEL_DODGE_COOLDOWN_MS = 1900;
 const DUEL_MOVE_SPEED = 132;
 const DUEL_GRAVITY = 2200;
@@ -567,23 +592,35 @@ function formatTime(value) {
 }
 
 function updateScore() {
-    scoreDisplay.textContent = formatScore(state.score);
-    bestScoreDisplay.textContent = formatScore(state.best);
-    phaseNumberDisplay.textContent = `${state.phaseIndex + 1}/${PHASES.length}`;
-    paceMultiplierDisplay.textContent = `${currentPaceMultiplier().toFixed(2)}x`;
-    regionNameDisplay.textContent = PHASES[state.phaseIndex].name;
-
-    const progress = (state.elapsedTime / JOURNEY_DURATION) * 100;
-    journeyProgress.style.width = `${clamp(progress, 0, 100)}%`;
-    routeTimeDisplay.textContent = state.isTestArea
+    const nextScore = formatScore(state.score);
+    const nextBest = formatScore(state.best);
+    const nextPhase = `${state.phaseIndex + 1}/${PHASES.length}`;
+    const nextPace = `${currentPaceMultiplier().toFixed(2)}x`;
+    const nextRegion = PHASES[state.phaseIndex].name;
+    const nextProgress = Math.round(clamp((state.elapsedTime / JOURNEY_DURATION) * 100, 0, 100) * 5) / 5;
+    const nextTime = state.isTestArea
         ? `TESTE · ${formatTime(Math.max(0, state.elapsedTime - BOSS_START_TIME))}`
         : `${formatTime(state.elapsedTime)} / ${formatTime(JOURNEY_DURATION)}`;
-    routeMapStops.forEach((stop, index) => {
-        stop.classList.toggle('is-passed', index < state.phaseIndex);
-        stop.classList.toggle('is-active', index === state.phaseIndex);
-        if (index === state.phaseIndex) stop.setAttribute('aria-current', 'step');
-        else stop.removeAttribute('aria-current');
-    });
+
+    if (hudRenderCache.score !== nextScore) scoreDisplay.textContent = hudRenderCache.score = nextScore;
+    if (hudRenderCache.best !== nextBest) bestScoreDisplay.textContent = hudRenderCache.best = nextBest;
+    if (hudRenderCache.phase !== nextPhase) phaseNumberDisplay.textContent = hudRenderCache.phase = nextPhase;
+    if (hudRenderCache.pace !== nextPace) paceMultiplierDisplay.textContent = hudRenderCache.pace = nextPace;
+    if (hudRenderCache.region !== nextRegion) regionNameDisplay.textContent = hudRenderCache.region = nextRegion;
+    if (hudRenderCache.progress !== nextProgress) {
+        hudRenderCache.progress = nextProgress;
+        journeyProgress.style.width = `${nextProgress}%`;
+    }
+    if (hudRenderCache.time !== nextTime) routeTimeDisplay.textContent = hudRenderCache.time = nextTime;
+    if (hudRenderCache.routePhase !== state.phaseIndex) {
+        hudRenderCache.routePhase = state.phaseIndex;
+        routeMapStops.forEach((stop, index) => {
+            stop.classList.toggle('is-passed', index < state.phaseIndex);
+            stop.classList.toggle('is-active', index === state.phaseIndex);
+            if (index === state.phaseIndex) stop.setAttribute('aria-current', 'step');
+            else stop.removeAttribute('aria-current');
+        });
+    }
 }
 
 function setStatus(message) {
@@ -712,27 +749,131 @@ function boardMetrics() {
     return board.getBoundingClientRect();
 }
 
+const actorMetricCache = new Map();
+
+function measureActor(element, cacheKey = '') {
+    if (cacheKey && actorMetricCache.has(cacheKey)) return { ...actorMetricCache.get(cacheKey) };
+    const style = window.getComputedStyle(element);
+    const metrics = {
+        width: Math.max(1, element.offsetWidth),
+        height: Math.max(1, element.offsetHeight),
+        bottom: Number.parseFloat(style.bottom) || 0,
+    };
+    if (cacheKey) actorMetricCache.set(cacheKey, metrics);
+    return { ...metrics };
+}
+
+function primeStageActorMetrics() {
+    actorMetricCache.clear();
+    Object.entries(OBSTACLES).forEach(([type, config]) => {
+        const element = document.createElement(config.spriteSheet ? 'div' : 'img');
+        if (element instanceof HTMLImageElement) element.src = config.src;
+        element.className = `obstacle ${config.className}`;
+        element.style.visibility = 'hidden';
+        obstacleLayer.append(element);
+        measureActor(element, `obstacle:${type}`);
+        element.remove();
+    });
+    [
+        ['golden', ''],
+        ['wave', ' insect--wave'],
+        ['bee', ' insect--bee'],
+    ].forEach(([species, className]) => {
+        const element = document.createElement('div');
+        element.className = `insect insect--high${className}`;
+        element.style.visibility = 'hidden';
+        collectibleLayer.append(element);
+        measureActor(element, `insect:${species}`);
+        element.remove();
+    });
+    const platform = document.createElement('img');
+    platform.src = 'assets/img/plataforma-musgo.png';
+    platform.className = 'platform';
+    platform.style.visibility = 'hidden';
+    platformLayer.append(platform);
+    measureActor(platform, 'platform');
+    platform.remove();
+}
+
+function runnerBounds() {
+    const size = Math.max(1, state.runnerWidth || runnerLayer.offsetWidth);
+    const bottom = state.boardHeight * 0.135;
+    return {
+        left: state.runnerX,
+        right: state.runnerX + size,
+        top: state.boardHeight - bottom - size - state.runnerY,
+        bottom: state.boardHeight - bottom - state.runnerY,
+        width: size,
+        height: size,
+    };
+}
+
+function obstacleBounds(obstacle) {
+    return {
+        left: obstacle.x,
+        right: obstacle.x + obstacle.width,
+        top: state.boardHeight - obstacle.bottom - obstacle.height - obstacle.y,
+        bottom: state.boardHeight - obstacle.bottom - obstacle.y,
+        width: obstacle.width,
+        height: obstacle.height,
+    };
+}
+
+function insectBounds(insect) {
+    const left = insect.renderedX ?? insect.x;
+    const top = insect.renderedY ?? insect.y;
+    return {
+        left,
+        right: left + insect.width,
+        top,
+        bottom: top + insect.height,
+        width: insect.width,
+        height: insect.height,
+    };
+}
+
 function initialRunnerX(width = state.boardWidth || boardMetrics().width) {
     return clamp(width * 0.08, 24, 126);
 }
 
 function runnerHorizontalBounds() {
     const width = Math.max(1, state.boardWidth || boardMetrics().width);
-    const runnerWidth = Math.max(1, runnerLayer.offsetWidth);
+    const runnerWidth = Math.max(1, state.runnerWidth || runnerLayer.offsetWidth);
+    const edgeMargin = clamp(width * 0.012, 6, 20);
     return {
-        minimum: clamp(width * 0.025, 10, 42),
-        maximum: Math.max(width * 0.34, width * 0.62 - runnerWidth),
+        minimum: edgeMargin,
+        maximum: Math.max(edgeMargin, width - runnerWidth - edgeMargin),
     };
 }
 
+function threatSpawnX(baseMargin = 42) {
+    const width = Math.max(1, state.boardWidth || boardMetrics().width);
+    const runnerWidth = Math.max(1, state.runnerWidth || runnerLayer.offsetWidth);
+    const reactionDistance = clamp(width * 0.42, 330, 560);
+    const furthestRunnerX = runnerHorizontalBounds().maximum;
+    return Math.max(
+        width + baseMargin,
+        furthestRunnerX + runnerWidth + reactionDistance,
+    );
+}
+
 function renderRunnerPosition() {
-    runnerLayer.style.setProperty('--runner-x', `${state.runnerX.toFixed(2)}px`);
-    runnerLayer.style.setProperty('--jump-y', state.runnerY.toFixed(2));
+    const renderedX = Math.round(state.runnerX);
+    const renderedY = Math.round(state.runnerY);
+    if (renderedX !== state.renderedRunnerX) {
+        state.renderedRunnerX = renderedX;
+        runnerLayer.style.setProperty('--runner-x', `${renderedX}px`);
+    }
+    if (renderedY !== state.renderedRunnerY) {
+        state.renderedRunnerY = renderedY;
+        runnerLayer.style.setProperty('--jump-y', String(renderedY));
+    }
 }
 
 function clearHorizontalInput() {
     state.moveLeft = false;
     state.moveRight = false;
+    state.renderedMoveDirection = Number.NaN;
     moveLeftButton.classList.remove('is-held');
     moveRightButton.classList.remove('is-held');
     crouchButton.classList.remove('is-held');
@@ -760,8 +901,11 @@ function updateRunnerHorizontalMovement(delta) {
         state.runnerX = clamp(state.runnerX + direction * speed * delta, bounds.minimum, bounds.maximum);
         if (state.isDuel && performance.now() >= state.attackUntil) state.runnerFacing = direction;
     }
-    runnerLayer.classList.toggle('is-retreating', direction < 0);
-    runnerLayer.classList.toggle('is-advancing', direction > 0);
+    if (direction !== state.renderedMoveDirection) {
+        state.renderedMoveDirection = direction;
+        runnerLayer.classList.toggle('is-retreating', direction < 0);
+        runnerLayer.classList.toggle('is-advancing', direction > 0);
+    }
     runnerLayer.classList.toggle('faces-left', state.isDuel && state.runnerFacing < 0);
     renderRunnerPosition();
 }
@@ -892,15 +1036,16 @@ function startBoss(currentTime) {
 function spawnBossBee(currentTime) {
     const boss = state.boss;
     if (!boss || boss.stage !== 'attacking') return;
-    const boardBox = boardMetrics();
+    const boardBox = { width: state.boardWidth, height: state.boardHeight };
     const element = document.createElement('div');
     element.className = 'insect insect--high insect--bee';
     collectibleLayer.append(element);
-    const insectBox = element.getBoundingClientRect();
+    const insectBox = measureActor(element, 'insect:bee');
     const startY = boardBox.height * 0.34 + Math.sin(currentTime / 310) * boardBox.height * 0.08;
+    const startX = Math.max(boardBox.width * 0.76, threatSpawnX(boardBox.width * 0.04));
     const insect = {
         element,
-        x: boardBox.width * 0.76,
+        x: startX,
         y: startY,
         speedScale: 0.9,
         bobPhase: Math.random() * 0.6,
@@ -914,6 +1059,9 @@ function spawnBossBee(currentTime) {
         maximumY: boardBox.height * 0.58 - insectBox.height * 0.1,
         horizontalDrift: Math.min(20, boardBox.width * 0.016),
         renderedY: startY,
+        renderedX: startX,
+        width: insectBox.width,
+        height: insectBox.height,
         aimY: null,
         diveFromY: null,
         diveTargetY: null,
@@ -1154,7 +1302,7 @@ function spawnObstacle() {
         type,
         config,
         element,
-        x: state.boardWidth + Math.max(42, state.boardWidth * 0.045),
+        x: threatSpawnX(Math.max(42, state.boardWidth * 0.045)),
         y: 0,
         velocityY: 0,
         movementStage: 'running',
@@ -1162,6 +1310,7 @@ function spawnObstacle() {
         rotation: 0,
         scored: false,
     };
+    Object.assign(obstacle, measureActor(element, `obstacle:${type}`));
     state.obstacles.push(obstacle);
     renderObstacle(obstacle, performance.now());
 }
@@ -1177,8 +1326,8 @@ function incomingObstacleBlocksInsects() {
 }
 
 function spawnInsectWave() {
-    const boardBox = boardMetrics();
-    const runnerBox = runner.getBoundingClientRect();
+    const boardBox = { width: state.boardWidth, height: state.boardHeight };
+    const runnerBox = runnerBounds();
     const sample = document.createElement('div');
     const pressure = clamp(state.elapsedTime / JOURNEY_DURATION, 0, 1);
     const beeChance = 0.15 + state.phaseIndex * 0.045;
@@ -1187,15 +1336,16 @@ function spawnInsectWave() {
     const isWaveSpecies = !isBee && Math.random() < waveSpeciesChance;
     const usesZigZag = isWaveSpecies && Math.random() < 0.46;
     const speciesClass = isBee ? ' insect--bee' : isWaveSpecies ? ' insect--wave' : '';
+    const speciesKey = isBee ? 'bee' : isWaveSpecies ? 'wave' : 'golden';
     sample.className = `insect${speciesClass}`;
     collectibleLayer.append(sample);
-    const insectBox = sample.getBoundingClientRect();
+    const insectBox = measureActor(sample, `insect:${speciesKey}`);
     sample.remove();
 
     const tripleWaveChance = 0.34 + pressure * 0.28;
     const count = isBee || isWaveSpecies ? 1 : (Math.random() < tripleWaveChance ? 3 : 2);
     const useGroundLane = !isBee && !isWaveSpecies && Math.random() < 0.12 && groundInsectLaneIsSafe();
-    const mouthY = runnerBox.top - boardBox.top + runnerBox.height * 0.46;
+    const mouthY = runnerBox.top + runnerBox.height * 0.46;
     const flightCeiling = boardBox.height * 0.36;
     const flightFloor = boardBox.height * 0.86 - insectBox.height * 0.88;
     const waveCenterY = (flightCeiling + flightFloor) * 0.5;
@@ -1210,6 +1360,7 @@ function spawnInsectWave() {
                 ? waveCenterY
                 : boardBox.height * (0.49 + Math.random() * 0.09);
     const spacing = Math.max(58, insectBox.width * 0.82);
+    const waveStartX = threatSpawnX(Math.max(48, boardBox.width * 0.05));
     const waveSpeed = isBee ? 0.8 : isWaveSpecies ? 0.98 + Math.random() * 0.08 : 0.86 + Math.random() * 0.12;
     const yOffsets = count === 1 ? [0] : count === 2 ? [-7, 7] : [0, -14, 10];
     const spawnTime = performance.now();
@@ -1221,7 +1372,7 @@ function spawnInsectWave() {
 
         const insect = {
             element,
-            x: boardBox.width + Math.max(48, boardBox.width * 0.05) + spacing * index,
+            x: waveStartX + spacing * index,
             y: baseY + yOffsets[index],
             speedScale: waveSpeed,
             bobPhase: index * 0.72 + Math.random() * 0.35,
@@ -1235,6 +1386,9 @@ function spawnInsectWave() {
             maximumY: isBee ? beeFloor : isWaveSpecies ? flightFloor : null,
             horizontalDrift: isBee ? Math.min(20, boardBox.width * 0.016) : usesZigZag ? Math.min(18, boardBox.width * 0.012) : 0,
             renderedY: baseY + yOffsets[index],
+            renderedX: waveStartX + spacing * index,
+            width: insectBox.width,
+            height: insectBox.height,
             aimY: null,
             diveFromY: null,
             diveTargetY: null,
@@ -1262,6 +1416,7 @@ function spawnPlatform() {
         x: state.boardWidth + Math.max(58, state.boardWidth * 0.06),
         scored: false,
     };
+    Object.assign(platform, measureActor(element, 'platform'));
     state.platforms.push(platform);
     renderPlatform(platform);
     state.obstacleCooldown = Math.max(state.obstacleCooldown, 2.2);
@@ -1315,6 +1470,7 @@ function renderInsect(insect, currentTime) {
     }
 
     insect.renderedY = renderedY;
+    insect.renderedX = insect.x + horizontalDrift;
     const x = `${(insect.x + horizontalDrift).toFixed(2)}px`;
     const y = `${renderedY.toFixed(2)}px`;
     insect.element.style.setProperty('--insect-x', x);
@@ -1336,6 +1492,10 @@ function clearAttack() {
 function updateTongueCooldown(currentTime = performance.now()) {
     const remaining = Math.max(0, state.attackReadyAt - currentTime);
     const isCoolingDown = state.mode === 'playing' && remaining > 0;
+    const remainingBucket = isCoolingDown ? Math.ceil(remaining / 50) : 0;
+    const renderKey = `${state.mode}:${remainingBucket}`;
+    if (renderKey === renderedTongueCooldownKey) return;
+    renderedTongueCooldownKey = renderKey;
 
     tongueButton.classList.toggle('is-cooling-down', isCoolingDown);
     tongueButton.disabled = state.mode !== 'playing' || isCoolingDown;
@@ -1413,6 +1573,14 @@ function resetRun() {
     state.landingUntil = 0;
     state.swallowUntil = 0;
     state.runnerMotion = 'run';
+    state.renderedRunnerX = Number.NaN;
+    state.renderedRunnerY = Number.NaN;
+    state.renderedMoveDirection = Number.NaN;
+    state.renderedRunCycle = Number.NaN;
+    state.renderedSceneX = Number.NaN;
+    state.renderedGroundX = Number.NaN;
+    renderedTongueCooldownKey = '';
+    invalidateHudRenderCache();
     state.boss = null;
     state.bossStarted = false;
     state.bossDefeated = false;
@@ -2149,8 +2317,10 @@ async function applySkinColors(showSaved = false) {
             frogChanged && !frogUsesDefaultArt ? recolorImage('assets/img/sapo-capa.png', frogColor, 'frog') : Promise.resolve(null),
             tongueChanged && !tongueUsesDefaultArt ? recolorImage('assets/img/sapo-lingua-limpa-v3.png', tongueColor, 'tongue') : Promise.resolve(null),
         ]);
+        const generatedUrls = [...frogSprites.map(([, url]) => url), coverUrl, tongueUrl].filter(Boolean);
+        await Promise.allSettled(generatedUrls.map(preloadImage));
         if (version !== skinRenderVersion) {
-            [...frogSprites.map(([, url]) => url), coverUrl, tongueUrl].filter(Boolean).forEach((url) => URL.revokeObjectURL(url));
+            generatedUrls.forEach((url) => URL.revokeObjectURL(url));
             return;
         }
 
@@ -2674,6 +2844,7 @@ function startGameNow({ testArea = false } = {}) {
     }
     state.mode = 'playing';
     setRuntimeScene('stage');
+    primeStageActorMetrics();
     playBackgroundMusic(true);
     const startTime = performance.now();
     state.previousTime = startTime;
@@ -2849,7 +3020,10 @@ function stageAssets(kind, testArea = false) {
         'assets/img/sapo-ciclo-natural-v2.png',
         'assets/img/sapo-boca-aberta-sprites.png',
         'assets/img/sapo-lingua-limpa-v3.png',
-    ];
+        'assets/img/plataforma-musgo.png',
+        ...FROG_SPRITES.map(([property]) => skinObjectUrls.get(property)).filter(Boolean),
+        skinObjectUrls.get('tongue'),
+    ].filter(Boolean);
     if (kind === 'duel') return [...common, 'assets/img/sapo-resistencia-capuz-sprites-v1.png'];
     if (testArea) return [...common, 'assets/img/super-abelha-monstro-sprites-v2.png', 'assets/img/abelha-investida-sprites.png'];
     return [...common, ...Object.values(OBSTACLES).map((obstacle) => obstacle.src), 'assets/img/inseto-voando-sprites.png', 'assets/img/besouro-ondulante-voando-sprites.png', 'assets/img/abelha-investida-sprites.png'];
@@ -3273,8 +3447,8 @@ function attack() {
 }
 
 function collisionDetected(obstacle) {
-    const runnerBox = runner.getBoundingClientRect();
-    const obstacleBox = obstacle.element.getBoundingClientRect();
+    const runnerBox = runnerBounds();
+    const obstacleBox = obstacleBounds(obstacle);
     const runnerInsetX = runnerBox.width * 0.28;
     const runnerInsetTop = runnerBox.height * (isRunnerCrouched() ? 0.46 : 0.18);
     const obstacleInsetX = obstacleBox.width * obstacle.config.insetX;
@@ -3312,8 +3486,8 @@ function tongueHitsInsect(insect, currentTime) {
 function insectHitsRunner(insect) {
     if (insect.caught) return false;
 
-    const runnerBox = runner.getBoundingClientRect();
-    const insectBox = insect.element.getBoundingClientRect();
+    const runnerBox = runnerBounds();
+    const insectBox = insectBounds(insect);
     const runnerInsetX = runnerBox.width * 0.3;
     const runnerInsetTop = runnerBox.height * (isRunnerCrouched() ? 0.48 : 0.2);
     const runnerInsetBottom = runnerBox.height * 0.2;
@@ -3498,14 +3672,20 @@ function returnFromResult() {
 function updateWorldMotion() {
     const width = Math.max(1, state.boardWidth || boardMetrics().width);
     const cycle = width * 2;
-    const sceneX = -(state.sceneTravel % cycle);
-    const groundX = -(state.groundTravel % cycle);
-    sceneLayers.forEach((layer) => layer.style.setProperty('--scene-x', `${sceneX.toFixed(2)}px`));
-    groundTrack.style.setProperty('--ground-x', `${groundX.toFixed(2)}px`);
+    const sceneX = Math.round(-(state.sceneTravel % cycle));
+    const groundX = Math.round(-(state.groundTravel % cycle));
+    if (sceneX !== state.renderedSceneX) {
+        state.renderedSceneX = sceneX;
+        sceneLayers.forEach((layer) => layer.style.setProperty('--scene-x', `${sceneX}px`));
+    }
+    if (groundX !== state.renderedGroundX) {
+        state.renderedGroundX = groundX;
+        groundTrack.style.setProperty('--ground-x', `${groundX}px`);
+    }
 }
 
 function updateObstacles(delta, currentTime) {
-    const runnerBox = runner.getBoundingClientRect();
+    const runnerBox = runnerBounds();
 
     state.obstacles.forEach((obstacle) => {
         if (
@@ -3536,8 +3716,7 @@ function updateObstacles(delta, currentTime) {
         if (obstacle.config.rotates) obstacle.rotation -= speed * delta * 0.52;
         renderObstacle(obstacle, currentTime);
 
-        const obstacleBox = obstacle.element.getBoundingClientRect();
-        if (!obstacle.scored && obstacleBox.right < runnerBox.left) {
+        if (!obstacle.scored && obstacle.x + obstacle.width < runnerBox.left) {
             obstacle.scored = true;
             state.dodgeCombo += 1;
             const comboBonus = Math.min(10, Math.floor(state.dodgeCombo / 3) * 2);
@@ -3557,24 +3736,22 @@ function updateObstacles(delta, currentTime) {
     });
 }
 
-function runnerOverPlatform(platform, runnerBox = runner.getBoundingClientRect()) {
-    const platformBox = platform.element.getBoundingClientRect();
+function runnerOverPlatform(platform, runnerBox = runnerBounds()) {
     return (
-        runnerBox.right - runnerBox.width * 0.22 > platformBox.left + platformBox.width * 0.06
-        && runnerBox.left + runnerBox.width * 0.22 < platformBox.right - platformBox.width * 0.06
+        runnerBox.right - runnerBox.width * 0.22 > platform.x + platform.width * 0.06
+        && runnerBox.left + runnerBox.width * 0.22 < platform.x + platform.width * 0.94
     );
 }
 
 function updatePlatforms(delta) {
-    const runnerBox = runner.getBoundingClientRect();
+    const runnerBox = runnerBounds();
     const speed = currentWorldSpeed() * 0.96;
 
     state.platforms.forEach((platform) => {
         platform.x -= speed * delta;
         renderPlatform(platform);
 
-        const platformBox = platform.element.getBoundingClientRect();
-        if (!platform.scored && platformBox.right < runnerBox.left) {
+        if (!platform.scored && platform.x + platform.width < runnerBox.left) {
             platform.scored = true;
             state.score += 10;
             setStatus('Plataforma superada · +10');
@@ -3593,12 +3770,12 @@ function updatePlatforms(delta) {
 
 function updateRunnerPhysics(delta, currentTime) {
     const previousY = state.runnerY;
-    const runnerBox = runner.getBoundingClientRect();
+    const runnerBox = runnerBounds();
     const groundedBottom = runnerBox.bottom + previousY;
 
     if (state.standingPlatform && state.platforms.includes(state.standingPlatform)) {
         if (runnerOverPlatform(state.standingPlatform, runnerBox)) {
-            const platformTop = state.standingPlatform.element.getBoundingClientRect().top;
+            const platformTop = state.boardHeight - state.standingPlatform.bottom - state.standingPlatform.height;
             state.runnerY = Math.max(0, groundedBottom - platformTop);
             state.velocityY = 0;
         } else {
@@ -3615,7 +3792,7 @@ function updateRunnerPhysics(delta, currentTime) {
                 .filter((platform) => runnerOverPlatform(platform, runnerBox))
                 .map((platform) => ({
                     platform,
-                    elevation: groundedBottom - platform.element.getBoundingClientRect().top,
+                    elevation: groundedBottom - (state.boardHeight - platform.bottom - platform.height),
                 }))
                 .filter(({ elevation }) => elevation > 12 && previousY >= elevation - 5 && state.runnerY <= elevation + 5)
                 .sort((a, b) => b.elevation - a.elevation)[0];
@@ -3651,7 +3828,7 @@ function updateRunnerPhysics(delta, currentTime) {
         setRunnerMotion('run');
     }
 
-    runnerLayer.style.setProperty('--jump-y', state.runnerY.toFixed(2));
+    renderRunnerPosition();
 }
 
 function updateInsects(delta, currentTime) {
@@ -3661,22 +3838,22 @@ function updateInsects(delta, currentTime) {
             return;
         }
         if (insect.species === 'bee') {
-            const boardBox = boardMetrics();
+            const boardBox = { width: state.boardWidth, height: state.boardHeight };
             if (insect.flightStage === 'zigzag' && insect.x <= boardBox.width * 0.72) {
                 insect.flightStage = 'aiming';
                 insect.flightStageStartedAt = currentTime;
                 insect.aimY = insect.renderedY;
                 insect.element.classList.add('is-aiming');
             } else if (insect.flightStage === 'aiming' && currentTime - insect.flightStageStartedAt >= BEE_AIM_DURATION_MS) {
-                const runnerBox = runner.getBoundingClientRect();
-                const insectBox = insect.element.getBoundingClientRect();
+                const runnerBox = runnerBounds();
+                const insectBox = insectBounds(insect);
                 const horizontalDirection = Number(state.moveRight) - Number(state.moveLeft);
                 const horizontalSpeed = clamp(state.boardWidth * 0.34, HORIZONTAL_SPEED_MIN, HORIZONTAL_SPEED_MAX);
                 const predictedRunnerX = horizontalDirection * horizontalSpeed * BEE_PREDICTION_SECONDS;
                 const predictedRunnerLift = state.velocityY * BEE_PREDICTION_SECONDS
                     - 0.5 * GRAVITY * BEE_PREDICTION_SECONDS * BEE_PREDICTION_SECONDS;
-                const runnerCenterX = runnerBox.left - boardBox.left + runnerBox.width * 0.5 + predictedRunnerX;
-                const runnerCenterY = runnerBox.top - boardBox.top + runnerBox.height * (isRunnerCrouched() ? 0.7 : 0.52);
+                const runnerCenterX = runnerBox.left + runnerBox.width * 0.5 + predictedRunnerX;
+                const runnerCenterY = runnerBox.top + runnerBox.height * (isRunnerCrouched() ? 0.7 : 0.52);
                 insect.flightStage = 'diving';
                 insect.flightStageStartedAt = currentTime;
                 insect.diveFromY = insect.renderedY;
@@ -3773,7 +3950,10 @@ function gameLoop(currentTime) {
 
     if (state.isDuel) {
         const runCycle = Number(state.moveLeft || state.moveRight) ? 580 : 760;
-        runnerLayer.style.setProperty('--run-cycle', `${runCycle}ms`);
+        if (runCycle !== state.renderedRunCycle) {
+            state.renderedRunCycle = runCycle;
+            runnerLayer.style.setProperty('--run-cycle', `${runCycle}ms`);
+        }
         if (currentTime >= state.swallowUntil) runnerLayer.classList.remove('is-swallowing');
         updateTongueCooldown(currentTime);
         if (state.attackUntil > 0 && currentTime >= state.attackUntil) clearAttack();
@@ -3785,8 +3965,11 @@ function gameLoop(currentTime) {
     }
 
     const worldSpeed = currentWorldSpeed();
-    const runCycle = clamp(680 / currentPaceMultiplier(), 410, 680);
-    runnerLayer.style.setProperty('--run-cycle', `${runCycle.toFixed(0)}ms`);
+    const runCycle = Math.round(clamp(680 / currentPaceMultiplier(), 410, 680));
+    if (runCycle !== state.renderedRunCycle) {
+        state.renderedRunCycle = runCycle;
+        runnerLayer.style.setProperty('--run-cycle', `${runCycle}ms`);
+    }
     if (currentTime >= state.swallowUntil) runnerLayer.classList.remove('is-swallowing');
     if (state.attackUntil > 0 && currentTime >= state.attackUntil) clearAttack();
     updateTongueCooldown(currentTime);
@@ -4058,7 +4241,6 @@ function syncBoardSize(width, height) {
         state.platforms.forEach((platform) => { platform.x *= widthRatio; });
         state.runnerX *= widthRatio;
         state.runnerY *= heightRatio;
-        runnerLayer.style.setProperty('--jump-y', state.runnerY.toFixed(2));
         state.insects.forEach((insect) => {
             insect.x *= widthRatio;
             insect.y *= heightRatio;
@@ -4077,6 +4259,19 @@ function syncBoardSize(width, height) {
     state.boardWidth = width;
     state.boardHeight = height;
     applyWorldScale(width, height);
+    actorMetricCache.clear();
+    state.runnerWidth = Math.max(1, runnerLayer.offsetWidth);
+    state.obstacles.forEach((obstacle) => Object.assign(obstacle, measureActor(obstacle.element, `obstacle:${obstacle.type}`)));
+    state.platforms.forEach((platform) => Object.assign(platform, measureActor(platform.element, 'platform')));
+    state.insects.forEach((insect) => {
+        const metrics = measureActor(insect.element, `insect:${insect.species === 'golden' ? 'golden' : insect.species}`);
+        insect.width = metrics.width;
+        insect.height = metrics.height;
+    });
+    state.renderedRunnerX = Number.NaN;
+    state.renderedRunnerY = Number.NaN;
+    state.renderedSceneX = Number.NaN;
+    state.renderedGroundX = Number.NaN;
     if (previousWidth === 0 || state.runnerX === 0) state.runnerX = initialRunnerX(width);
     const bounds = runnerHorizontalBounds();
     state.runnerX = clamp(state.runnerX, bounds.minimum, bounds.maximum);

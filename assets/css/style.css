@@ -983,6 +983,8 @@ button { cursor: pointer; }
     filter: drop-shadow(0 7px 3px rgba(17, 35, 18, 0.22));
     image-rendering: pixelated;
     animation: frog-run-biped var(--run-cycle, 680ms) linear infinite;
+    backface-visibility: hidden;
+    contain: paint;
 }
 
 .runner-layer.is-retreating .runner:not(.is-attacking) { animation-direction: reverse; }
@@ -1028,14 +1030,16 @@ button { cursor: pointer; }
 
 .runner-layer .runner.is-attacking {
     background-image: var(--frog-attack-sprite);
-    background-size: 252% 126%;
+    /* A folha de ataque tem células maiores e mais respiro transparente que a
+       corrida. Esta compensação mantém a silhueta e os pés no mesmo tamanho. */
+    background-size: 280% 140%;
     animation: none;
-    background-position: 8.6% 38%;
+    background-position: 8% 38%;
 }
 
 .runner-layer.is-crouching:not(.is-airborne) .runner.is-attacking {
     background-image: var(--frog-crouch-attack-sprite);
-    background-size: 202% 102%;
+    background-size: 266% 133%;
     background-position: 0 50%;
     animation: frog-crouch-attack 260ms steps(1, end) infinite;
 }
