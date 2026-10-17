@@ -174,3 +174,7 @@ Horizontal movement uses an actual bounded x-coordinate with keyboard A/D or Lef
 ## Physics invariants
 
 Moving moss platforms use the visible grassy ledge as their collision surface rather than the transparent image boundary. Their geometry is reserved by an explicit image ratio, so loading order and full-screen resizing cannot collapse the platform height or let the frog sink through it.
+
+## Administrative testing
+
+Profile contains a clearly labeled local development login, separate from the unfinished player-account service. The public static build may expose its test credential, so this access never represents real authentication or protects private data. A successful session lasts only for the current browser tab and reveals one floating, original pixel-art command block on the overworld. Its app-owned dialog edits the active character's record, six phase-completion flags and Rubro challenge state without changing the availability of unfinished stage content. Completed seals receive a visible check state; future stages remain explicitly under construction.

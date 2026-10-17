@@ -53,6 +53,16 @@ const worldMapCategory = document.querySelector('#world-map-category');
 const worldMapHelp = document.querySelector('#world-map-help');
 const worldMuseum = document.querySelector('#world-museum');
 const worldResistanceNpc = document.querySelector('#world-resistance-npc');
+const adminCommandButton = document.querySelector('#admin-command-button');
+const adminCommandDialog = document.querySelector('#admin-command-dialog');
+const adminCommandForm = document.querySelector('#admin-command-form');
+const adminCommandClose = document.querySelector('#admin-command-close');
+const adminCommandCancel = document.querySelector('#admin-command-cancel');
+const adminCommandStatus = document.querySelector('#admin-command-status');
+const adminBestScoreInput = document.querySelector('#admin-best-score');
+const adminChallengeUnlockedInput = document.querySelector('#admin-challenge-unlocked');
+const adminDuelWonInput = document.querySelector('#admin-duel-won');
+const adminPhaseInputs = [...document.querySelectorAll('[data-admin-phase]')];
 const resistanceDialog = document.querySelector('#resistance-dialog');
 const resistanceDialogKicker = document.querySelector('#resistance-dialog-kicker');
 const resistanceDialogTitle = document.querySelector('#resistance-dialog-title');
@@ -88,6 +98,13 @@ const profileNameForm = document.querySelector('#profile-name-form');
 const playerNameInput = document.querySelector('#player-name');
 const playerNameError = document.querySelector('#player-name-error');
 const profileSavedStatus = document.querySelector('#profile-saved');
+const adminLoginForm = document.querySelector('#admin-login-form');
+const adminUsernameInput = document.querySelector('#admin-username');
+const adminPasswordInput = document.querySelector('#admin-password');
+const adminPasswordToggle = document.querySelector('#admin-password-toggle');
+const adminLoginStatus = document.querySelector('#admin-login-status');
+const adminSessionPanel = document.querySelector('#admin-session-panel');
+const adminLogoutButton = document.querySelector('#admin-logout-button');
 const menuFrog = document.querySelector('.menu-frog');
 const musicEnabledInput = document.querySelector('#setting-music-enabled');
 const musicVolumeInput = document.querySelector('#setting-music-volume');
@@ -157,8 +174,13 @@ const STORY_PROGRESS_STORAGE_KEY = 'sapo-story-progress';
 const CHARACTER_SLOTS_STORAGE_KEY = 'sapo-character-slots-v1';
 const ACTIVE_CHARACTER_SLOT_KEY = 'sapo-active-character-slot';
 const CHARACTER_SLOTS_MIGRATED_KEY = 'sapo-character-slots-migrated-v1';
+const ADMIN_SESSION_KEY = 'sapo-admin-session-v1';
+const ADMIN_USERNAME = 'admin123';
+const ADMIN_PASSWORD = 'admin123';
+const WORLD_LEVEL_COUNT = 6;
 const EMPTY_STORY_PROGRESS = Object.freeze({
     phaseOneComplete: false,
+    completedPhases: Object.freeze([false, false, false, false, false, false]),
     resistanceEncounterSeen: false,
     resistanceChallengeAccepted: false,
     resistanceDuelWon: false,
@@ -168,6 +190,7 @@ let activeCharacterSlotIndex = readActiveCharacterSlotIndex();
 let editingCharacterSlotIndex = -1;
 let pendingDeleteSlotIndex = -1;
 let storyProgress = readStoryProgress();
+let adminSessionActive = readAdminSession();
 let settingsSavedTimer = 0;
 
 const DIFFICULTIES = {
@@ -468,8 +491,15 @@ function applyWorldScale(width, height) {
 }
 
 function normalizeStoryProgress(progress = {}) {
+    const storedPhases = Array.isArray(progress.completedPhases) ? progress.completedPhases : [];
+    const completedPhases = Array.from({ length: WORLD_LEVEL_COUNT }, (_, index) => (
+        index === 0
+            ? Boolean(storedPhases[index]) || Boolean(progress.phaseOneComplete)
+            : Boolean(storedPhases[index])
+    ));
     return {
-        phaseOneComplete: Boolean(progress.phaseOneComplete),
+        phaseOneComplete: completedPhases[0],
+        completedPhases,
         resistanceEncounterSeen: Boolean(progress.resistanceEncounterSeen),
         resistanceChallengeAccepted: Boolean(progress.resistanceChallengeAccepted),
         resistanceDuelWon: Boolean(progress.resistanceDuelWon),
@@ -555,12 +585,12 @@ function readLegacyStoryProgress() {
     try {
         const stored = JSON.parse(localStorage.getItem(STORY_PROGRESS_STORAGE_KEY) || '{}');
         const legacyCompletion = readLegacyBestScore() >= 350;
-        return {
-            ...normalizeStoryProgress(stored),
+        return normalizeStoryProgress({
+            ...stored,
             phaseOneComplete: Boolean(stored.phaseOneComplete) || legacyCompletion,
-        };
+        });
     } catch {
-        return { ...EMPTY_STORY_PROGRESS, phaseOneComplete: readLegacyBestScore() >= 350 };
+        return normalizeStoryProgress({ phaseOneComplete: readLegacyBestScore() >= 350 });
     }
 }
 
@@ -1703,16 +1733,21 @@ let worldMapResizeFrame = 0;
 
 function syncResistanceNpc() {
     if (!worldResistanceNpc) return;
-    WORLD_LEVELS[1].unlocked = storyProgress.phaseOneComplete;
-    const phaseTwoButton = worldLevelButtons[1];
-    phaseTwoButton?.classList.toggle('is-unlocked', storyProgress.phaseOneComplete);
-    phaseTwoButton?.classList.toggle('is-locked', !storyProgress.phaseOneComplete);
-    phaseTwoButton?.setAttribute(
-        'aria-label',
-        storyProgress.phaseOneComplete
-            ? 'Fase 2, Bosque dos Cogumelos, categoria Luta livre, desbloqueada e em construção'
-            : 'Fase 2, Bosque dos Cogumelos, categoria Luta livre, bloqueada',
-    );
+    WORLD_LEVELS.forEach((level, index) => {
+        const completed = Boolean(storyProgress.completedPhases[index]);
+        const unlocked = index === 0 || completed || Boolean(storyProgress.completedPhases[index - 1]);
+        level.unlocked = unlocked;
+        const button = worldLevelButtons[index];
+        button?.classList.toggle('is-unlocked', unlocked);
+        button?.classList.toggle('is-locked', !unlocked);
+        button?.classList.toggle('is-completed', completed);
+        const number = button?.querySelector('span b');
+        if (number) number.textContent = completed ? '✓' : String(index + 1);
+        button?.setAttribute(
+            'aria-label',
+            `Fase ${index + 1}, ${level.name}, categoria ${level.category}, ${completed ? 'concluída' : unlocked ? index === 0 ? 'disponível' : 'desbloqueada e em construção' : 'bloqueada'}`,
+        );
+    });
     worldResistanceNpc.hidden = !storyProgress.phaseOneComplete;
     worldResistanceNpc.setAttribute('aria-hidden', String(!storyProgress.phaseOneComplete));
     worldResistanceNpc.classList.toggle('is-challenge-ready', storyProgress.resistanceChallengeAccepted);
@@ -2098,7 +2133,7 @@ function setWorldMapDirection(direction, pressed) {
 
 function handleWorldMapKey(event, pressed) {
     if (activeMenuScreen !== 'maps' || !overlay.classList.contains('is-visible')) return false;
-    if (resistanceDialog?.open || worldInventoryDialog?.open) return false;
+    if (resistanceDialog?.open || worldInventoryDialog?.open || adminCommandDialog?.open) return false;
     const directions = {
         ArrowLeft: 'left', KeyA: 'left',
         ArrowRight: 'right', KeyD: 'right',
@@ -2402,8 +2437,9 @@ function initializeCharacterSlots() {
 }
 
 function journeyStatus(slot) {
+    const completedCount = slot.progress.completedPhases.filter(Boolean).length;
     if (slot.progress.resistanceDuelWon) return 'Duelo vencido';
-    if (slot.progress.phaseOneComplete) return 'Rota da Manhã concluída';
+    if (completedCount > 0) return `${completedCount}/6 fases concluídas`;
     return slot.best > 0 ? 'Jornada em andamento' : 'Ainda no começo';
 }
 
@@ -2513,7 +2549,7 @@ async function deletePendingCharacter() {
     if (activeCharacterSlotIndex === deletedIndex) {
         activeCharacterSlotIndex = characterSlots.findIndex(Boolean);
         const fallbackSlot = activeCharacterSlot();
-        storyProgress = fallbackSlot ? normalizeStoryProgress(fallbackSlot.progress) : { ...EMPTY_STORY_PROGRESS };
+        storyProgress = fallbackSlot ? normalizeStoryProgress(fallbackSlot.progress) : normalizeStoryProgress();
         state.best = fallbackSlot?.best ?? 0;
         const fallbackSkin = fallbackSlot ? { frog: fallbackSlot.frog, tongue: fallbackSlot.tongue } : DEFAULT_SKIN;
         frogColorInput.value = fallbackSkin.frog;
@@ -2582,7 +2618,7 @@ function createCharacter(event) {
         frog: frogColorInput.value,
         tongue: tongueColorInput.value,
         best: 0,
-        progress: { ...EMPTY_STORY_PROGRESS },
+        progress: normalizeStoryProgress(),
         createdAt: now,
         lastPlayedAt: now,
     };
@@ -2629,6 +2665,146 @@ function savePlayerName(event) {
     } catch {
         profileSavedStatus.textContent = 'O navegador não permitiu salvar o nome neste aparelho.';
     }
+}
+
+function readAdminSession() {
+    try {
+        return sessionStorage.getItem(ADMIN_SESSION_KEY) === 'active';
+    } catch {
+        return false;
+    }
+}
+
+function persistAdminSession(active) {
+    try {
+        if (active) sessionStorage.setItem(ADMIN_SESSION_KEY, 'active');
+        else sessionStorage.removeItem(ADMIN_SESSION_KEY);
+    } catch {
+        // O modo de testes continua ativo somente até a página ser fechada.
+    }
+}
+
+function syncAdminAccessUi() {
+    if (!adminLoginForm || !adminSessionPanel || !adminCommandButton) return;
+    adminLoginForm.hidden = adminSessionActive;
+    adminSessionPanel.hidden = !adminSessionActive;
+    adminCommandButton.hidden = !adminSessionActive;
+    document.body.classList.toggle('has-admin-session', adminSessionActive);
+    if (!adminSessionActive && adminCommandDialog?.open) adminCommandDialog.close('logout');
+}
+
+function handleAdminLogin(event) {
+    event.preventDefault();
+    const username = adminUsernameInput.value.trim();
+    const password = adminPasswordInput.value;
+    const isValid = username === ADMIN_USERNAME && password === ADMIN_PASSWORD;
+
+    if (!isValid) {
+        adminUsernameInput.setAttribute('aria-invalid', 'true');
+        adminPasswordInput.setAttribute('aria-invalid', 'true');
+        adminLoginStatus.textContent = 'Usuário ou senha incorretos.';
+        adminPasswordInput.select();
+        return;
+    }
+
+    adminUsernameInput.removeAttribute('aria-invalid');
+    adminPasswordInput.removeAttribute('aria-invalid');
+    adminSessionActive = true;
+    persistAdminSession(true);
+    adminPasswordInput.value = '';
+    adminPasswordInput.type = 'password';
+    adminPasswordToggle.textContent = 'Mostrar';
+    adminPasswordToggle.setAttribute('aria-label', 'Mostrar senha');
+    adminPasswordToggle.setAttribute('aria-pressed', 'false');
+    adminLoginStatus.textContent = '';
+    syncAdminAccessUi();
+    adminLogoutButton.focus({ preventScroll: true });
+}
+
+function logoutAdmin() {
+    adminSessionActive = false;
+    persistAdminSession(false);
+    adminUsernameInput.value = '';
+    adminPasswordInput.value = '';
+    adminPasswordInput.type = 'password';
+    adminPasswordToggle.textContent = 'Mostrar';
+    adminPasswordToggle.setAttribute('aria-label', 'Mostrar senha');
+    adminPasswordToggle.setAttribute('aria-pressed', 'false');
+    adminLoginStatus.textContent = 'Sessão administrativa encerrada.';
+    syncAdminAccessUi();
+    adminUsernameInput.focus({ preventScroll: true });
+}
+
+function toggleAdminPasswordVisibility() {
+    const showing = adminPasswordInput.type === 'text';
+    adminPasswordInput.type = showing ? 'password' : 'text';
+    adminPasswordToggle.textContent = showing ? 'Mostrar' : 'Ocultar';
+    adminPasswordToggle.setAttribute('aria-label', showing ? 'Mostrar senha' : 'Ocultar senha');
+    adminPasswordToggle.setAttribute('aria-pressed', String(!showing));
+    adminPasswordInput.focus({ preventScroll: true });
+}
+
+function syncAdminCommandForm() {
+    adminPhaseInputs.forEach((input, index) => {
+        input.checked = Boolean(storyProgress.completedPhases[index]);
+    });
+    adminBestScoreInput.value = String(state.best);
+    adminChallengeUnlockedInput.checked = storyProgress.resistanceChallengeAccepted;
+    adminDuelWonInput.checked = storyProgress.resistanceDuelWon;
+    adminCommandStatus.textContent = '';
+}
+
+function openAdminCommandDialog() {
+    if (!adminSessionActive || !adminCommandDialog || adminCommandDialog.open) return;
+    worldMapState.pressed.clear();
+    worldMapState.targetX = null;
+    worldMapState.targetY = null;
+    worldMapFrog.classList.remove('is-walking');
+    syncAdminCommandForm();
+    adminCommandDialog.showModal();
+    window.requestAnimationFrame(() => adminCommandClose.focus({ preventScroll: true }));
+}
+
+function closeAdminCommandDialog() {
+    if (!adminCommandDialog?.open) return;
+    adminCommandDialog.close('cancelled');
+}
+
+function applyAdminCommands(event) {
+    event.preventDefault();
+    if (!adminSessionActive) return;
+    const requestedBest = Number.parseInt(adminBestScoreInput.value, 10);
+    if (!Number.isFinite(requestedBest) || requestedBest < 0 || requestedBest > 999999) {
+        adminBestScoreInput.setAttribute('aria-invalid', 'true');
+        adminCommandStatus.textContent = 'Digite um recorde entre 0 e 999999.';
+        adminBestScoreInput.focus();
+        return;
+    }
+
+    const completedPhases = adminPhaseInputs.map((input) => input.checked);
+    const duelWon = adminDuelWonInput.checked;
+    const challengeUnlocked = adminChallengeUnlockedInput.checked || duelWon;
+    adminChallengeUnlockedInput.checked = challengeUnlocked;
+    storyProgress.completedPhases = completedPhases;
+    storyProgress.phaseOneComplete = completedPhases[0];
+    storyProgress.resistanceChallengeAccepted = challengeUnlocked;
+    storyProgress.resistanceDuelWon = duelWon;
+    if (challengeUnlocked) storyProgress.resistanceEncounterSeen = true;
+    state.best = Math.floor(requestedBest);
+    saveBestScore(state.best);
+    saveStoryProgress();
+    adminBestScoreInput.removeAttribute('aria-invalid');
+    syncResistanceNpc();
+    syncWorldInventory();
+    renderCharacterSlots();
+    updateScore();
+    worldMapState.proximitySignature = '';
+    updateWorldMapProximity();
+    adminCommandStatus.textContent = 'Comandos aplicados ao personagem ativo.';
+}
+
+function initializeAdminAccess() {
+    syncAdminAccessUi();
 }
 
 const MENU_PARENTS = {
@@ -2692,7 +2868,7 @@ async function syncWorldInventory() {
 
     worldInventoryName.textContent = slot?.name || 'Sapinho';
     worldInventoryBest.textContent = formatScore(slot?.best ?? state.best);
-    worldInventoryRoute.textContent = storyProgress.phaseOneComplete ? 'Concluída' : 'Em andamento';
+    worldInventoryRoute.textContent = `${storyProgress.completedPhases.filter(Boolean).length}/6 concluídas`;
     worldInventoryDuel.textContent = storyProgress.resistanceDuelWon
         ? 'Vitória registrada'
         : storyProgress.resistanceChallengeAccepted
@@ -2764,6 +2940,7 @@ function showMenuScreen(screenName, focusFirst = true) {
 
     if (screenName !== 'maps' && resistanceDialog?.open) resistanceDialog.close();
     if (screenName !== 'maps' && worldInventoryDialog?.open) worldInventoryDialog.close();
+    if (screenName !== 'maps' && adminCommandDialog?.open) adminCommandDialog.close('navigation');
 
     activeMenuScreen = screenName;
     setRuntimeScene(['maps', 'museum'].includes(screenName) ? 'map' : 'menu');
@@ -3634,6 +3811,7 @@ function completeJourney() {
     updateScore();
     if (!state.isTestArea) {
         storyProgress.phaseOneComplete = true;
+        storyProgress.completedPhases[0] = true;
         saveStoryProgress();
         syncResistanceNpc();
     }
@@ -4060,7 +4238,14 @@ function handleKeyboard(event) {
         } else if (state.mode === 'paused') {
             event.preventDefault();
             resumeGame();
-        } else if (event.code === 'Escape' && state.mode === 'idle' && activeMenuScreen !== 'main' && !worldInventoryDialog?.open) {
+        } else if (
+            event.code === 'Escape'
+            && state.mode === 'idle'
+            && activeMenuScreen !== 'main'
+            && !worldInventoryDialog?.open
+            && !adminCommandDialog?.open
+            && !resistanceDialog?.open
+        ) {
             event.preventDefault();
             showMenuScreen(activeMenuScreen === 'maps' ? 'main' : MENU_PARENTS[activeMenuScreen] || 'main');
         }
@@ -4361,6 +4546,35 @@ playerNameInput?.addEventListener('input', () => {
     profileSavedStatus.textContent = '';
 });
 
+adminLoginForm?.addEventListener('submit', handleAdminLogin);
+[adminUsernameInput, adminPasswordInput].forEach((input) => input?.addEventListener('input', () => {
+    input.removeAttribute('aria-invalid');
+    adminLoginStatus.textContent = '';
+}));
+adminPasswordToggle?.addEventListener('click', toggleAdminPasswordVisibility);
+adminLogoutButton?.addEventListener('click', logoutAdmin);
+adminCommandButton?.addEventListener('click', openAdminCommandDialog);
+adminCommandClose?.addEventListener('click', closeAdminCommandDialog);
+adminCommandCancel?.addEventListener('click', closeAdminCommandDialog);
+adminCommandForm?.addEventListener('submit', applyAdminCommands);
+adminCommandDialog?.addEventListener('cancel', (event) => {
+    event.preventDefault();
+    closeAdminCommandDialog();
+});
+adminBestScoreInput?.addEventListener('input', () => {
+    adminBestScoreInput.removeAttribute('aria-invalid');
+    adminCommandStatus.textContent = '';
+});
+adminDuelWonInput?.addEventListener('change', () => {
+    if (adminDuelWonInput.checked) adminChallengeUnlockedInput.checked = true;
+});
+adminCommandDialog?.addEventListener('close', () => {
+    worldMapState.pressed.clear();
+    if (activeMenuScreen === 'maps' && adminSessionActive) {
+        window.requestAnimationFrame(() => adminCommandButton.focus({ preventScroll: true }));
+    }
+});
+
 difficultyInputs.forEach((input) => {
     input.addEventListener('change', () => {
         if (!input.checked || !DIFFICULTIES[input.value]) return;
@@ -4580,4 +4794,5 @@ updateFullscreenLabel();
 initializeCharacterSlots();
 initializeSkins();
 initializeProfile();
+initializeAdminAccess();
 initializeGame();

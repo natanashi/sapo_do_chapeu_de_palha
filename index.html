@@ -8,8 +8,8 @@
     <meta name="description" content="Ajude o Sapo do Chapéu de Palha a atravessar quatro regiões da manhã, saltar obstáculos e capturar besouros e abelhas antes que eles se aproximem.">
     <link rel="icon" type="image/png" href="assets/img/sapo-capa.png">
     <link rel="preload" as="image" href="assets/img/menu-floresta-amanhecer-v1.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=114">
-    <script src="assets/js/script.js?v=114" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=115">
+    <script src="assets/js/script.js?v=115" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body class="is-app-loading has-indie-intro">
@@ -405,6 +405,10 @@
                                     </button>
                                     <div class="world-map-frog" id="world-map-frog" aria-hidden="true"></div>
                                 </div>
+                                <button class="admin-command-button" id="admin-command-button" type="button" aria-haspopup="dialog" aria-controls="admin-command-dialog" hidden>
+                                    <span class="admin-command-button__block" aria-hidden="true"><i></i></span>
+                                    <strong>Comando admin</strong>
+                                </button>
                                 <div class="world-map-future" aria-label="Uma fase disponível e cinco em construção"><span aria-hidden="true">⚒</span> 5 fases em construção · em breve</div>
                                 <div class="world-map-prompt" id="world-map-prompt" aria-live="polite" aria-hidden="true">
                                     <small id="world-map-prompt-kicker">Fase encontrada</small>
@@ -447,6 +451,35 @@
                                     </div>
                                 </div>
                             </dialog>
+                            <dialog class="admin-command-dialog" id="admin-command-dialog" aria-labelledby="admin-command-title" aria-describedby="admin-command-description">
+                                <form id="admin-command-form" novalidate>
+                                    <header>
+                                        <span class="admin-command-dialog__icon" aria-hidden="true"><i></i></span>
+                                        <div><small>Ferramenta de testes</small><h3 id="admin-command-title">Bloco de comando</h3></div>
+                                        <button class="admin-command-dialog__close" id="admin-command-close" type="button" aria-label="Fechar bloco de comando">×</button>
+                                    </header>
+                                    <p id="admin-command-description">Altere somente o personagem ativo. As fases em construção continuam sem conteúdo jogável.</p>
+                                    <fieldset class="admin-phase-grid">
+                                        <legend>Fases marcadas como concluídas</legend>
+                                        <label><input type="checkbox" data-admin-phase="0"><span><b>01</b> Rota da Manhã</span></label>
+                                        <label><input type="checkbox" data-admin-phase="1"><span><b>02</b> Bosque dos Cogumelos</span></label>
+                                        <label><input type="checkbox" data-admin-phase="2"><span><b>03</b> Pedreira Musgosa</span></label>
+                                        <label><input type="checkbox" data-admin-phase="3"><span><b>04</b> Clareira dos Ventos</span></label>
+                                        <label><input type="checkbox" data-admin-phase="4"><span><b>05</b> Vale das Folhas</span></label>
+                                        <label><input type="checkbox" data-admin-phase="5"><span><b>06</b> Coração da Mata</span></label>
+                                    </fieldset>
+                                    <div class="admin-stat-grid">
+                                        <label for="admin-best-score"><span>Recorde do personagem</span><input id="admin-best-score" type="number" min="0" max="999999" step="1" inputmode="numeric"></label>
+                                        <label class="admin-stat-toggle"><input id="admin-challenge-unlocked" type="checkbox"><span>Desafio de Rubro liberado</span></label>
+                                        <label class="admin-stat-toggle"><input id="admin-duel-won" type="checkbox"><span>Duelo de Rubro vencido</span></label>
+                                    </div>
+                                    <p class="admin-command-status" id="admin-command-status" role="status" aria-live="polite"></p>
+                                    <footer>
+                                        <button class="admin-command-cancel" id="admin-command-cancel" type="button">Cancelar</button>
+                                        <button class="admin-command-apply" type="submit">Aplicar comandos</button>
+                                    </footer>
+                                </form>
+                            </dialog>
                             <section class="test-area-panel" id="test-area-category" role="tabpanel" aria-labelledby="test-area-tab" hidden>
                                 <div class="test-area-boss" aria-hidden="true"></div>
                                 <div class="test-area-copy">
@@ -475,7 +508,7 @@
                                 </header>
                                 <div class="world-inventory-stats">
                                     <article><span>Recorde</span><strong id="world-inventory-best">000</strong><small>pontos</small></article>
-                                    <article><span>Rota da Manhã</span><strong id="world-inventory-route">Em andamento</strong></article>
+                                    <article><span>Progresso</span><strong id="world-inventory-route">0/6 concluídas</strong></article>
                                     <article><span>Duelo</span><strong id="world-inventory-duel">Ainda não iniciado</strong></article>
                                 </div>
                                 <section class="world-inventory-bag" aria-labelledby="world-inventory-bag-title">
@@ -516,11 +549,24 @@
                                     </div>
                                 </form>
                                 <section class="profile-account" aria-labelledby="account-title">
-                                    <div><span aria-hidden="true">⌁</span><div><small>Conta Natanashi</small><h3 id="account-title">Leve seu progresso com você</h3></div></div>
-                                    <p>Cadastro, login e sincronização entre aparelhos estão sendo preparados.</p>
-                                    <div class="profile-account-actions">
-                                        <button type="button" disabled>Criar conta <small>Em breve</small></button>
-                                        <button type="button" disabled>Entrar <small>Em breve</small></button>
+                                    <div><span aria-hidden="true">⌁</span><div><small>Conta Natanashi</small><h3 id="account-title">Entrar na conta</h3></div></div>
+                                    <p>O acesso comum e a sincronização ainda estão em construção. A conta administrativa local já pode ser usada para testar o mapa.</p>
+                                    <form class="admin-login-form" id="admin-login-form" novalidate>
+                                        <label for="admin-username">Usuário</label>
+                                        <input id="admin-username" name="username" type="text" maxlength="24" autocomplete="username" aria-describedby="admin-login-help admin-login-status">
+                                        <label for="admin-password">Senha</label>
+                                        <div class="admin-password-row">
+                                            <input id="admin-password" name="password" type="password" maxlength="32" autocomplete="current-password" aria-describedby="admin-login-help admin-login-status">
+                                            <button id="admin-password-toggle" type="button" aria-label="Mostrar senha" aria-pressed="false">Mostrar</button>
+                                        </div>
+                                        <small id="admin-login-help">Acesso de desenvolvimento salvo apenas nesta sessão do navegador.</small>
+                                        <p class="admin-login-status" id="admin-login-status" role="status" aria-live="polite"></p>
+                                        <button class="admin-login-submit" type="submit">Entrar na conta</button>
+                                    </form>
+                                    <div class="admin-session-panel" id="admin-session-panel" hidden>
+                                        <span>ADMIN</span>
+                                        <div><strong>Modo de testes ativo</strong><small>O bloco de comando está disponível no mapa.</small></div>
+                                        <button id="admin-logout-button" type="button">Sair</button>
                                     </div>
                                 </section>
                             </div>
