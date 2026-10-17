@@ -432,6 +432,11 @@ const DUEL_DODGE_COOLDOWN_MS = 1900;
 const DUEL_MOVE_SPEED = 132;
 const DUEL_GRAVITY = 2200;
 const DUEL_JUMP_FORCE = 730;
+const DUEL_DASH_WINDUP_MS = 240;
+const DUEL_DASH_DURATION_MS = 420;
+const DUEL_DASH_RECOVER_MS = 330;
+const DUEL_DASH_COOLDOWN_MS = 2800;
+const DUEL_DASH_SPEED = 610;
 const BEE_AIM_DURATION_MS = 520;
 const BEE_PREDICTION_SECONDS = 0.18;
 const HORIZONTAL_SPEED_MIN = 210;
@@ -3054,7 +3059,7 @@ function startResistanceDuelNow() {
     element.setAttribute('aria-hidden', 'true');
     const tongue = document.createElement('img');
     tongue.className = 'resistance-duelist__tongue';
-    tongue.src = runnerAttack.currentSrc || runnerAttack.src;
+    tongue.src = 'assets/img/sapo-lingua-v2.png';
     tongue.alt = '';
     const sprite = document.createElement('span');
     sprite.className = 'resistance-duelist__sprite';
@@ -3091,6 +3096,9 @@ function startResistanceDuelNow() {
         calloutUntil: currentTime + 1800,
         decisionCount: 0,
         nextBaitAt: currentTime + 2700,
+        nextDashAt: currentTime + 2100,
+        dashDirection: 0,
+        dashTargetX: state.boardWidth * 0.72,
     };
     callout.textContent = 'Mostre como você luta.';
     callout.classList.add('is-visible');
@@ -3203,7 +3211,7 @@ function stageAssets(kind, testArea = false) {
         ...FROG_SPRITES.map(([property]) => skinObjectUrls.get(property)).filter(Boolean),
         skinObjectUrls.get('tongue'),
     ].filter(Boolean);
-    if (kind === 'duel') return [...common, 'assets/img/sapo-resistencia-capuz-sprites-v1.png'];
+    if (kind === 'duel') return [...common, 'assets/img/sapo-resistencia-capuz-sprites-v1.png', 'assets/img/sapo-lingua-v2.png'];
     if (testArea) return [...common, 'assets/img/super-abelha-monstro-sprites-v2.png', 'assets/img/abelha-investida-sprites.png'];
     return [...common, ...Object.values(OBSTACLES).map((obstacle) => obstacle.src), 'assets/img/inseto-voando-sprites.png', 'assets/img/besouro-ondulante-voando-sprites.png', 'assets/img/abelha-investida-sprites.png'];
 }
@@ -3315,6 +3323,45 @@ function clearResistanceDuelAttack(duel) {
     duel.tongue.classList.remove('is-visible');
 }
 
+function resistanceDuelArenaBounds(duel) {
+    const fighterWidth = duel.element.offsetWidth || state.runnerWidth || 158;
+    const edgePadding = clamp(state.boardWidth * 0.035, 24, 54);
+    return {
+        minimum: edgePadding,
+        maximum: Math.max(edgePadding, state.boardWidth - fighterWidth - edgePadding),
+    };
+}
+
+function startResistanceDuelDash(duel, currentTime, mode = 'retreat') {
+    if (duel.y > 3 || currentTime < duel.nextDashAt) return false;
+
+    const { minimum, maximum } = resistanceDuelArenaBounds(duel);
+    const playerCenter = state.runnerX + runnerLayer.offsetWidth * 0.5;
+    const duelCenter = duel.x + duel.element.offsetWidth * 0.5;
+    const towardPlayer = Math.sign(playerCenter - duelCenter) || -1;
+    const travel = clamp(state.boardWidth * 0.18, 150, 250);
+    const safeGap = clamp(state.boardWidth * 0.16, 155, 220);
+    const requestedTarget = mode === 'close'
+        ? playerCenter - towardPlayer * safeGap - duel.element.offsetWidth * 0.5
+        : duel.x - towardPlayer * travel;
+    const targetX = clamp(requestedTarget, minimum, maximum);
+    const dashDistance = Math.abs(targetX - duel.x);
+    if (dashDistance < 62) return false;
+
+    clearResistanceDuelAttack(duel);
+    duel.dashTargetX = targetX;
+    duel.dashDirection = Math.sign(targetX - duel.x);
+    duel.facing = duel.dashDirection;
+    duel.stage = 'dash-windup';
+    duel.stageStartedAt = currentTime;
+    duel.nextDashAt = currentTime + DUEL_DASH_COOLDOWN_MS;
+    duel.dodgeInvulnerableUntil = currentTime + DUEL_DASH_WINDUP_MS + DUEL_DASH_DURATION_MS;
+    duel.element.className = 'resistance-duelist is-dash-windup';
+    showResistanceCallout(duel, mode === 'close' ? 'Agora eu avanço.' : 'Troca de posição.', currentTime, 780);
+    setStatus(mode === 'close' ? 'Rubro preparou um dash para encurtar a distância.' : 'Rubro firmou os pés para um dash de recuo.');
+    return true;
+}
+
 function startResistanceDuelJump(duel, currentTime, reason = 'jumping') {
     if (duel.y > 3) return;
     duel.velocityY = DUEL_JUMP_FORCE;
@@ -3358,6 +3405,16 @@ function observePlayerAttack(duel, currentTime) {
         && !['hurt', 'defeated', 'attacking'].includes(duel.stage);
 
     if (!canDodge) return;
+    if (currentTime >= duel.nextDashAt && duel.dodgePattern === 1) {
+        duel.nextDodgeAt = currentTime + DUEL_DODGE_COOLDOWN_MS;
+        duel.tactic = 'counter';
+        duel.tacticUntil = currentTime + 1350;
+        if (startResistanceDuelDash(duel, currentTime, 'retreat')) {
+            showResistanceCallout(duel, 'Li o movimento.', currentTime, 850);
+            return;
+        }
+    }
+
     clearResistanceDuelAttack(duel);
     duel.nextDodgeAt = currentTime + DUEL_DODGE_COOLDOWN_MS;
     duel.dodgeInvulnerableUntil = currentTime + 420;
@@ -3439,6 +3496,32 @@ function updateResistanceDuel(currentTime, delta) {
             duel.nextDecisionAt = currentTime + 500;
             duel.element.className = 'resistance-duelist is-moving';
         }
+    } else if (duel.stage === 'dash-windup') {
+        if (currentTime - duel.stageStartedAt >= DUEL_DASH_WINDUP_MS) {
+            duel.stage = 'dashing';
+            duel.stageStartedAt = currentTime;
+            duel.element.className = 'resistance-duelist is-dashing';
+        }
+    } else if (duel.stage === 'dashing') {
+        const remaining = duel.dashTargetX - duel.x;
+        const dashStep = DUEL_DASH_SPEED * delta;
+        const dashExpired = currentTime - duel.stageStartedAt >= DUEL_DASH_DURATION_MS;
+        if (Math.abs(remaining) <= dashStep || dashExpired) {
+            if (Math.abs(remaining) <= dashStep) duel.x = duel.dashTargetX;
+            duel.stage = 'dash-recovering';
+            duel.stageStartedAt = currentTime;
+            duel.element.className = 'resistance-duelist is-dash-recovering';
+        } else {
+            duel.x += Math.sign(remaining) * dashStep;
+        }
+    } else if (duel.stage === 'dash-recovering') {
+        if (currentTime - duel.stageStartedAt >= DUEL_DASH_RECOVER_MS) {
+            duel.stage = 'moving';
+            duel.stageStartedAt = currentTime;
+            duel.nextDecisionAt = currentTime + 520;
+            duel.element.className = 'resistance-duelist is-moving';
+            setStatus('O dash de Rubro terminou. Ele voltou à guarda.');
+        }
     } else if (duel.stage === 'windup' && currentTime - duel.stageStartedAt >= DUEL_TONGUE_WINDUP_MS) {
         duel.stage = 'attacking';
         duel.stageStartedAt = currentTime;
@@ -3507,7 +3590,8 @@ function updateResistanceDuel(currentTime, delta) {
 
         const adaptiveSpeed = DUEL_MOVE_SPEED * (1 + pressure * 0.2) * (duel.tactic === 'pressure' ? 1.08 : 1);
         duel.x += direction * adaptiveSpeed * delta;
-        duel.x = clamp(duel.x, state.runnerX + runnerLayer.offsetWidth * 1.15, state.boardWidth * 0.84);
+        const arenaBounds = resistanceDuelArenaBounds(duel);
+        duel.x = clamp(duel.x, arenaBounds.minimum, arenaBounds.maximum);
         if (direction !== 0) duel.facing = direction;
         else duel.facing = signedDistance >= 0 ? -1 : 1;
         duel.element.className = direction === 0
@@ -3525,7 +3609,17 @@ function updateResistanceDuel(currentTime, delta) {
                 && !playerAttackAimedAtRubro
                 && distance < preferredMaximum + 35
                 && distance > preferredMinimum;
-            if (canBaitAttack) {
+            const canDashRetreat = currentTime >= duel.nextDashAt
+                && (playerAttackAimedAtRubro || playerCrowdingRubro)
+                && distance < preferredMaximum + 55;
+            const canDashClose = currentTime >= duel.nextDashAt
+                && distance > clamp(state.boardWidth * 0.36, 350, 490)
+                && playerCoolingDown;
+            if (canDashRetreat && startResistanceDuelDash(duel, currentTime, 'retreat')) {
+                duel.nextDecisionAt = currentTime + DUEL_DASH_WINDUP_MS + DUEL_DASH_DURATION_MS + DUEL_DASH_RECOVER_MS;
+            } else if (canDashClose && startResistanceDuelDash(duel, currentTime, 'close')) {
+                duel.nextDecisionAt = currentTime + DUEL_DASH_WINDUP_MS + DUEL_DASH_DURATION_MS + DUEL_DASH_RECOVER_MS;
+            } else if (canBaitAttack) {
                 duel.tactic = 'retreat';
                 duel.tacticUntil = currentTime + 720;
                 duel.nextBaitAt = currentTime + 3600;
