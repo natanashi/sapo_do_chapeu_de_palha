@@ -1480,6 +1480,18 @@ const worldMapState = {
     targetY: null,
     cameraX: 0,
     cameraY: 0,
+    viewportWidth: 0,
+    viewportHeight: 0,
+    worldWidth: 0,
+    worldHeight: 0,
+    facing: 1,
+    depth: 0,
+    renderedFrogX: Number.NaN,
+    renderedFrogY: Number.NaN,
+    renderedFacing: Number.NaN,
+    renderedCameraX: Number.NaN,
+    renderedCameraY: Number.NaN,
+    proximitySignature: '',
     pressed: new Set(),
     frame: 0,
     previousTime: 0,
@@ -1517,6 +1529,7 @@ const RESISTANCE_DIALOGUE = [
     },
 ];
 let resistanceDialogueStep = 0;
+let worldMapResizeFrame = 0;
 
 function syncResistanceNpc() {
     if (!worldResistanceNpc) return;
@@ -1533,6 +1546,7 @@ function syncResistanceNpc() {
     worldResistanceNpc.hidden = !storyProgress.phaseOneComplete;
     worldResistanceNpc.setAttribute('aria-hidden', String(!storyProgress.phaseOneComplete));
     worldResistanceNpc.classList.toggle('is-challenge-ready', storyProgress.resistanceChallengeAccepted);
+    worldMapState.proximitySignature = '';
 }
 
 function renderResistanceDialogue() {
@@ -1601,34 +1615,63 @@ function handleResistanceNpcInteraction() {
     worldMapState.targetX = needsMuseumDetour ? 62 : WORLD_RESISTANCE_NPC.x;
     worldMapState.targetY = needsMuseumDetour ? 70 : WORLD_RESISTANCE_NPC.y;
     storyMapStatus.textContent = 'Caminhando até o sapo encapuzado...';
+    wakeWorldMapNavigation();
+}
+
+function refreshWorldMapMetrics() {
+    const viewportWidth = Math.max(1, worldMap.clientWidth);
+    const viewportHeight = Math.max(1, worldMap.clientHeight);
+    worldMapState.viewportWidth = viewportWidth;
+    worldMapState.viewportHeight = viewportHeight;
+    worldMapState.worldWidth = viewportWidth * WORLD_MAP_SCALE;
+    worldMapState.worldHeight = viewportHeight * WORLD_MAP_SCALE;
+    return worldMapMetrics();
 }
 
 function worldMapMetrics() {
-    const viewportWidth = Math.max(1, worldMap.clientWidth);
-    const viewportHeight = Math.max(1, worldMap.clientHeight);
+    if (!worldMapState.viewportWidth || !worldMapState.viewportHeight) return refreshWorldMapMetrics();
     return {
-        viewportWidth,
-        viewportHeight,
-        worldWidth: viewportWidth * WORLD_MAP_SCALE,
-        worldHeight: viewportHeight * WORLD_MAP_SCALE,
+        viewportWidth: worldMapState.viewportWidth,
+        viewportHeight: worldMapState.viewportHeight,
+        worldWidth: worldMapState.worldWidth,
+        worldHeight: worldMapState.worldHeight,
     };
 }
 
-function renderWorldMapCamera() {
+function renderWorldMapCamera(frogX, frogY) {
     const { viewportWidth, viewportHeight, worldWidth, worldHeight } = worldMapMetrics();
-    const frogX = worldWidth * worldMapState.x / 100;
-    const frogY = worldHeight * worldMapState.y / 100;
-    worldMapState.cameraX = clamp(viewportWidth * 0.5 - frogX, viewportWidth - worldWidth, 0);
-    worldMapState.cameraY = clamp(viewportHeight * 0.5 - frogY, viewportHeight - worldHeight, 0);
-    worldMapWorld.style.setProperty('--map-camera-x', `${worldMapState.cameraX.toFixed(2)}px`);
-    worldMapWorld.style.setProperty('--map-camera-y', `${worldMapState.cameraY.toFixed(2)}px`);
+    worldMapState.cameraX = Math.round(clamp(viewportWidth * 0.5 - frogX, viewportWidth - worldWidth, 0));
+    worldMapState.cameraY = Math.round(clamp(viewportHeight * 0.5 - frogY, viewportHeight - worldHeight, 0));
+    if (
+        worldMapState.cameraX !== worldMapState.renderedCameraX
+        || worldMapState.cameraY !== worldMapState.renderedCameraY
+    ) {
+        worldMapState.renderedCameraX = worldMapState.cameraX;
+        worldMapState.renderedCameraY = worldMapState.cameraY;
+        worldMapWorld.style.transform = `translate3d(${worldMapState.cameraX}px, ${worldMapState.cameraY}px, 0)`;
+    }
 }
 
 function renderWorldMapFrog() {
-    worldMapFrog.style.setProperty('--map-x', `${worldMapState.x}%`);
-    worldMapFrog.style.setProperty('--map-y', `${worldMapState.y}%`);
-    worldMapFrog.style.setProperty('--frog-depth', `${100 + Math.round(worldMapState.y)}`);
-    renderWorldMapCamera();
+    const { worldWidth, worldHeight } = worldMapMetrics();
+    const frogX = Math.round(worldWidth * worldMapState.x / 100);
+    const frogY = Math.round(worldHeight * worldMapState.y / 100);
+    const depth = 100 + Math.round(worldMapState.y);
+    if (
+        frogX !== worldMapState.renderedFrogX
+        || frogY !== worldMapState.renderedFrogY
+        || worldMapState.facing !== worldMapState.renderedFacing
+    ) {
+        worldMapState.renderedFrogX = frogX;
+        worldMapState.renderedFrogY = frogY;
+        worldMapState.renderedFacing = worldMapState.facing;
+        worldMapFrog.style.transform = `translate3d(${frogX}px, ${frogY}px, 0) translate(-50%, -86%) scaleX(${worldMapState.facing})`;
+    }
+    if (depth !== worldMapState.depth) {
+        worldMapState.depth = depth;
+        worldMapFrog.style.zIndex = String(depth);
+    }
+    renderWorldMapCamera(frogX, frogY);
 }
 
 function renderWorldMapPrompt(level) {
@@ -1710,7 +1753,20 @@ function updateWorldMapProximity() {
     const target = isNearMuseum ? WORLD_MUSEUM : level;
     const hasNearbyTarget = isNearMuseum || isNear;
 
-    renderWorldMapPrompt(target);
+    if (hasNearbyTarget) renderWorldMapPrompt(target);
+    const proximitySignature = [
+        nearestIndex,
+        isNear,
+        isNearMuseum,
+        worldMapState.nearResistanceNpc,
+        worldMapState.ready,
+        level.unlocked,
+        level.playable,
+        selectedDifficulty,
+    ].join(':');
+    if (proximitySignature === worldMapState.proximitySignature) return;
+    worldMapState.proximitySignature = proximitySignature;
+
     worldMapPrompt.classList.toggle('is-visible', hasNearbyTarget);
     worldMapPrompt.setAttribute('aria-hidden', String(!hasNearbyTarget));
     worldMuseum?.classList.toggle('is-near', isNearMuseum);
@@ -1742,9 +1798,9 @@ function activateWorldMapTarget() {
 }
 
 function worldMapLoop(currentTime) {
+    worldMapState.frame = 0;
     if (activeMenuScreen !== 'maps' || storyMapCategory.hidden || !overlay.classList.contains('is-visible')) {
         worldMapFrog.classList.remove('is-walking');
-        worldMapState.frame = 0;
         return;
     }
 
@@ -1810,24 +1866,63 @@ function worldMapLoop(currentTime) {
     }
 
     const isMoving = Boolean(directionX || directionY) && moved;
-    if (directionX) worldMapFrog.style.setProperty('--map-facing', directionX < 0 ? -1 : 1);
+    if (directionX) {
+        const nextFacing = directionX < 0 ? -1 : 1;
+        if (nextFacing !== worldMapState.facing) {
+            worldMapState.facing = nextFacing;
+            worldMapFrog.style.setProperty('--map-facing', String(nextFacing));
+        }
+    }
     worldMapFrog.classList.toggle('is-walking', isMoving);
-    renderWorldMapFrog();
-    updateWorldMapProximity();
+    const shouldContinue = worldMapState.pressed.size > 0
+        || (worldMapState.targetX !== null && worldMapState.targetY !== null);
+    if (moved) {
+        renderWorldMapFrog();
+        updateWorldMapProximity();
+    } else if (!shouldContinue) {
+        updateWorldMapProximity();
+    }
+    if (shouldContinue) worldMapState.frame = window.requestAnimationFrame(worldMapLoop);
+}
+
+function wakeWorldMapNavigation() {
+    if (worldMapState.frame || activeMenuScreen !== 'maps' || storyMapCategory.hidden) return;
+    worldMapState.previousTime = performance.now();
     worldMapState.frame = window.requestAnimationFrame(worldMapLoop);
+}
+
+function resizeWorldMapNavigation() {
+    worldMapState.viewportWidth = 0;
+    worldMapState.viewportHeight = 0;
+    worldMapState.renderedFrogX = Number.NaN;
+    worldMapState.renderedFrogY = Number.NaN;
+    worldMapState.renderedCameraX = Number.NaN;
+    worldMapState.renderedCameraY = Number.NaN;
+    if (activeMenuScreen !== 'maps') return;
+    window.cancelAnimationFrame(worldMapResizeFrame);
+    worldMapResizeFrame = window.requestAnimationFrame(() => {
+        refreshWorldMapMetrics();
+        renderWorldMapFrog();
+        updateWorldMapProximity();
+    });
 }
 
 function startWorldMapNavigation() {
     if (worldMapState.frame) window.cancelAnimationFrame(worldMapState.frame);
-    worldMapState.previousTime = performance.now();
+    worldMapState.frame = 0;
+    refreshWorldMapMetrics();
     renderWorldMapFrog();
+    worldMapState.proximitySignature = '';
     updateWorldMapProximity();
-    worldMapState.frame = window.requestAnimationFrame(worldMapLoop);
+    wakeWorldMapNavigation();
     worldMap.focus({ preventScroll: true });
 }
 
 function setWorldMapDirection(direction, pressed) {
-    if (pressed) worldMapState.pressed.add(direction);
+    if (pressed) {
+        worldMapState.pressed.add(direction);
+        wakeWorldMapNavigation();
+    }
     else worldMapState.pressed.delete(direction);
 }
 
@@ -1865,6 +1960,7 @@ function moveWorldMapToPointer(event) {
     worldMapState.targetX = clamp(((event.clientX - bounds.left - worldMapState.cameraX) / worldWidth) * 100, 2.5, 97.5);
     worldMapState.targetY = clamp(((event.clientY - bounds.top - worldMapState.cameraY) / worldHeight) * 100, 3.5, 96.5);
     worldMapState.resistanceApproachStage = 0;
+    wakeWorldMapNavigation();
 }
 
 const DEFAULT_SKIN = { frog: '#69b83f', tongue: '#e75f86' };
@@ -2398,6 +2494,10 @@ function ensureWorldMapAssets() {
 }
 
 function releaseWorldMapRender() {
+    if (worldMapState.frame) window.cancelAnimationFrame(worldMapState.frame);
+    worldMapState.frame = 0;
+    worldMapState.pressed.clear();
+    worldMapFrog.classList.remove('is-walking');
     worldMapState.ready = false;
     worldMapAssetsPromise = null;
     worldMapDeferredImages.forEach((image) => image.removeAttribute('src'));
@@ -4030,6 +4130,7 @@ worldMuseum?.addEventListener('click', () => {
     worldMapState.targetX = WORLD_MUSEUM.x;
     worldMapState.targetY = WORLD_MUSEUM.y + 6.8;
     storyMapStatus.textContent = 'Caminhando até o museu...';
+    wakeWorldMapNavigation();
 });
 
 resistanceDialog?.addEventListener('cancel', () => worldMapState.pressed.clear());
@@ -4072,6 +4173,7 @@ worldLevelButtons.forEach((button, index) => {
             : level.unlocked
                 ? 'Indo até a fase desbloqueada...'
                 : 'Indo até a fase em construção...';
+        wakeWorldMapNavigation();
     });
 });
 
@@ -4258,6 +4360,7 @@ window.addEventListener('resize', () => {
     syncOrientationGuard();
     fitMenuToViewport();
     positionResistanceDialogue();
+    resizeWorldMapNavigation();
 });
 syncOrientationGuard();
 applyGameSettings();
