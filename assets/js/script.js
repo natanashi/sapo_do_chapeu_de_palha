@@ -4260,6 +4260,11 @@ function handleKeyboard(event) {
     handleJumpInput(event);
 }
 
+function isTextEntryTarget(target) {
+    if (!(target instanceof Element)) return false;
+    return Boolean(target.closest('input, textarea, select, [contenteditable="true"], [contenteditable="plaintext-only"]'));
+}
+
 function handleHorizontalKey(event, isPressed) {
     const isLeft = ['ArrowLeft', 'KeyA'].includes(event.code);
     const isRight = ['ArrowRight', 'KeyD'].includes(event.code);
@@ -4754,10 +4759,12 @@ board.addEventListener('pointerdown', (event) => {
 });
 
 document.addEventListener('keydown', (event) => {
+    if (event.isComposing || isTextEntryTarget(event.target)) return;
     if (handleWorldMapKey(event, true)) return;
     if (!handleHorizontalKey(event, true) && !handleCrouchKey(event, true)) handleKeyboard(event);
 });
 document.addEventListener('keyup', (event) => {
+    if (event.isComposing || isTextEntryTarget(event.target)) return;
     if (handleWorldMapKey(event, false)) return;
     if (!handleHorizontalKey(event, false)) handleCrouchKey(event, false);
 });
