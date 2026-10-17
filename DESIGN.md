@@ -170,3 +170,7 @@ Horizontal movement uses an actual bounded x-coordinate with keyboard A/D or Lef
 - Don't add decorative particles behind the runner; they resemble sprite corruption.
 - Don't place important controls only inside the moving game area on mobile.
 - Don't introduce runtime font or framework dependencies; approved open-source fonts must be stored locally with their license.
+
+## Physics invariants
+
+Moving moss platforms use the visible grassy ledge as their collision surface rather than the transparent image boundary. Their geometry is reserved by an explicit image ratio, so loading order and full-screen resizing cannot collapse the platform height or let the frog sink through it.

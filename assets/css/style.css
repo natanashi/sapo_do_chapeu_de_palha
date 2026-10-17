@@ -1314,6 +1314,7 @@ button { cursor: pointer; }
     left: 0;
     width: var(--platform-size);
     height: auto;
+    aspect-ratio: 960 / 295;
     filter: drop-shadow(0 8px 5px rgba(18, 34, 21, 0.24));
     image-rendering: pixelated;
     will-change: transform;

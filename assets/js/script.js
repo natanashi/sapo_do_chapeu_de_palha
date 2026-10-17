@@ -366,6 +366,8 @@ const RUN_SPEED_GAIN = 170;
 const GRAVITY = 1850;
 const JUMP_FORCE = 820;
 const ATTACK_DURATION = 560;
+const PLATFORM_SURFACE_RATIO = 0.17;
+const PLATFORM_LANDING_TOLERANCE = 6;
 const ATTACK_COOLDOWN = 3000;
 const ATTACK_CAPTURE_CLOSE = 290;
 const ATTACK_RETRACT_AT = 320;
@@ -3743,6 +3745,11 @@ function runnerOverPlatform(platform, runnerBox = runnerBounds()) {
     );
 }
 
+function platformSurfaceY(platform) {
+    const elementTop = state.boardHeight - platform.bottom - platform.height;
+    return elementTop + platform.height * PLATFORM_SURFACE_RATIO;
+}
+
 function updatePlatforms(delta) {
     const runnerBox = runnerBounds();
     const speed = currentWorldSpeed() * 0.96;
@@ -3775,8 +3782,7 @@ function updateRunnerPhysics(delta, currentTime) {
 
     if (state.standingPlatform && state.platforms.includes(state.standingPlatform)) {
         if (runnerOverPlatform(state.standingPlatform, runnerBox)) {
-            const platformTop = state.boardHeight - state.standingPlatform.bottom - state.standingPlatform.height;
-            state.runnerY = Math.max(0, groundedBottom - platformTop);
+            state.runnerY = Math.max(0, groundedBottom - platformSurfaceY(state.standingPlatform));
             state.velocityY = 0;
         } else {
             state.standingPlatform = null;
@@ -3788,13 +3794,24 @@ function updateRunnerPhysics(delta, currentTime) {
         state.runnerY = Math.max(0, state.runnerY + state.velocityY * delta);
 
         if (state.velocityY <= 0) {
+            const previousFootY = groundedBottom - previousY;
+            const nextFootY = groundedBottom - state.runnerY;
             const landingPlatform = state.platforms
                 .filter((platform) => runnerOverPlatform(platform, runnerBox))
                 .map((platform) => ({
                     platform,
-                    elevation: groundedBottom - (state.boardHeight - platform.bottom - platform.height),
+                    surfaceY: platformSurfaceY(platform),
                 }))
-                .filter(({ elevation }) => elevation > 12 && previousY >= elevation - 5 && state.runnerY <= elevation + 5)
+                .map(({ platform, surfaceY }) => ({
+                    platform,
+                    surfaceY,
+                    elevation: groundedBottom - surfaceY,
+                }))
+                .filter(({ elevation, surfaceY }) => (
+                    elevation > 12
+                    && previousFootY <= surfaceY + PLATFORM_LANDING_TOLERANCE
+                    && nextFootY >= surfaceY - PLATFORM_LANDING_TOLERANCE
+                ))
                 .sort((a, b) => b.elevation - a.elevation)[0];
 
             if (landingPlatform) {
