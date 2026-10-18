@@ -2290,8 +2290,16 @@ kbd {
 
 .world-prop--plant { aspect-ratio: 448 / 472; transform: translate(-50%, -93%); }
 .world-prop--plant::after { width: 38%; height: 11%; bottom: 1%; }
+.world-prop--plant-small { aspect-ratio: 448 / 320; transform: translate(-50%, -88%); }
+.world-prop--plant-small::after { width: 54%; height: 14%; bottom: 2%; }
+.world-prop--plant-fern { aspect-ratio: 448 / 472; transform: translate(-50%, -93%); }
+.world-prop--plant-fern::after { width: 42%; }
+.world-prop--plant-tall { aspect-ratio: 320 / 560; transform: translate(-50%, -96%); }
+.world-prop--plant-tall::after { width: 48%; height: 8%; bottom: 1%; }
 .world-prop--rock { aspect-ratio: 1.25 / 1; transform: translate(-50%, -82%); }
 .world-prop--rock::after { width: 78%; height: 18%; bottom: 4%; }
+.world-prop--rock-round { aspect-ratio: 384 / 256; }
+.world-prop--rock-long { aspect-ratio: 448 / 256; }
 
 .world-landmark {
     position: absolute;

@@ -325,7 +325,12 @@ const BOOT_ASSET_URLS = [
 const WORLD_MAP_ASSET_URLS = [
     'assets/img/mapa-mundo-grama-v2.png',
     'assets/img/mapa-planta-gigante-v1.png',
+    'assets/img/mapa-planta-rasteira-v1.png',
+    'assets/img/mapa-samambaia-v1.png',
+    'assets/img/mapa-planta-alta-v1.png',
     'assets/img/mapa-rocha-simples-v2.png',
+    'assets/img/mapa-pedra-redonda-v1.png',
+    'assets/img/mapa-pedra-alongada-v1.png',
     'assets/img/mapa-museu-brejo-v1.png',
     'assets/img/sapo-resistencia-guarda-v1.png',
 ];
@@ -1669,14 +1674,14 @@ const WORLD_MUSEUM_REACH = 10.5;
 const WORLD_RESISTANCE_NPC = { name: 'Sapo encapuzado', x: 74, y: 85 };
 const WORLD_RESISTANCE_NPC_REACH = 6.8;
 const WORLD_MAP_BLOCKERS = [
-    { x: 10, y: 18, width: 4.8, height: 3.2 },
-    { x: 52, y: 14, width: 4.6, height: 3.1 },
-    { x: 90, y: 24, width: 5, height: 3.4 },
+    { x: 10, y: 18, width: 3.8, height: 2.6 },
+    { x: 52, y: 14, width: 4.4, height: 3.1 },
+    { x: 90, y: 24, width: 4, height: 3 },
     { x: 51, y: 53, width: 5.4, height: 3.6 },
-    { x: 91, y: 88, width: 5.8, height: 3.8 },
+    { x: 91, y: 88, width: 4.2, height: 3.1 },
     { x: 18, y: 65, width: 5.2, height: 3.5 },
-    { x: 31, y: 39, width: 5, height: 3.4 },
-    { x: 73, y: 38, width: 4.9, height: 3.3 },
+    { x: 31, y: 39, width: 3.9, height: 2.7 },
+    { x: 73, y: 38, width: 4.5, height: 3.1 },
     { x: 24, y: 31, width: 3.2, height: 2.4 },
     { x: 77, y: 46, width: 3.5, height: 2.5 },
     { x: 62, y: 91, width: 3.6, height: 2.6 },
