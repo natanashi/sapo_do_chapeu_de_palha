@@ -2280,14 +2280,14 @@ kbd {
 }
 
 .world-route__edge {
-    stroke: #55743a;
-    stroke-width: 72px;
-    opacity: 0.82;
+    stroke: #5d7840;
+    stroke-width: 70px;
+    opacity: 0.72;
 }
 
 .world-route__trail {
-    stroke-width: 54px;
-    filter: drop-shadow(0 3px 0 rgba(72, 70, 33, 0.22));
+    stroke-width: 52px;
+    filter: drop-shadow(0 2px 0 rgba(72, 70, 33, 0.2));
 }
 
 .world-prop {
