@@ -3569,8 +3569,12 @@ function updateResistanceDuel(currentTime, delta) {
 
     if (duel.stage === 'defeated') {
         renderResistanceDuel(duel);
-        if (currentTime - duel.completedAt >= 900) completeResistanceDuel();
-        return true;
+        if (currentTime - duel.completedAt >= 900) {
+            completeResistanceDuel();
+            return true;
+        }
+        // Keep requesting frames during the defeat beat so the result overlay can open.
+        return false;
     }
 
     if (duel.stage === 'hurt') {
