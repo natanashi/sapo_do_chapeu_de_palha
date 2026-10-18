@@ -8,8 +8,8 @@
     <meta name="description" content="Ajude o Sapo do Chapéu de Palha a atravessar quatro regiões da manhã, saltar obstáculos e capturar besouros e abelhas antes que eles se aproximem.">
     <link rel="icon" type="image/png" href="assets/img/sapo-capa.png">
     <link rel="preload" as="image" href="assets/img/menu-floresta-amanhecer-v1.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=124">
-    <script src="assets/js/script.js?v=124" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=125">
+    <script src="assets/js/script.js?v=125" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body class="is-app-loading has-indie-intro">
@@ -24,7 +24,7 @@
         </div>
         <div class="boot-loader__panel">
             <p class="boot-loader__eyebrow">Natanashi Studios apresenta</p>
-            <h1>Preparando a aventura</h1>
+            <h1>Carregando o jogo</h1>
             <p class="boot-loader__message" id="boot-loader-message">Abrindo a trilha...</p>
             <div class="boot-loader__track" role="progressbar" aria-label="Progresso do carregamento" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="boot-loader-progress">
                 <i id="boot-loader-fill"></i>
@@ -187,7 +187,7 @@
             <div class="game-overlay is-visible" id="game-overlay">
                 <div class="main-menu-shell" id="main-menu-shell">
                     <header class="menu-brand">
-                        <p>Uma aventura além do brejo</p>
+                        <p>Corra, salte e não deixe os insetos passarem</p>
                         <h1><span>Sapo do</span> Chapéu de Palha</h1>
                         <span class="menu-brand__beta">Beta</span>
                     </header>
@@ -249,17 +249,17 @@
                                 <button class="mode-card mode-card--story" type="button" data-menu-target="saves" onclick="showMenuScreen('saves')">
                                     <span class="mode-card__flag">Disponível</span>
                                     <strong>Modo história</strong>
-                                    <small>Atravesse as quatro regiões da manhã.</small>
+                                    <small>Complete a Rota da Manhã e enfrente a Super Abelha.</small>
                                 </button>
                                 <article class="mode-card is-locked" aria-label="Modo competitivo em construção">
                                     <span class="mode-card__flag">Em construção</span>
                                     <strong>Modo competitivo</strong>
-                                    <small>Desafios de pontuação chegarão depois.</small>
+                                    <small>Ainda sem partidas de pontuação.</small>
                                 </article>
                                 <article class="mode-card is-locked" aria-label="Modo online em construção">
                                     <span class="mode-card__flag">Em construção</span>
                                     <strong>Modo online</strong>
-                                    <small>Corridas com outros jogadores virão no futuro.</small>
+                                    <small>Ainda sem salas para outros jogadores.</small>
                                 </article>
                             </div>
                         </section>
@@ -446,7 +446,7 @@
                                     <span class="admin-command-button__block" aria-hidden="true"><i></i></span>
                                     <strong>Comando admin</strong>
                                 </button>
-                                <div class="world-map-future" aria-label="Uma fase disponível e cinco em construção"><span aria-hidden="true">⚒</span> 5 fases em construção · em breve</div>
+                                <div class="world-map-future" aria-label="Uma fase disponível e cinco em construção"><span aria-hidden="true">⚒</span> Fases 2 a 6 ainda não estão jogáveis</div>
                                 <div class="world-map-prompt" id="world-map-prompt" aria-live="polite" aria-hidden="true">
                                     <small id="world-map-prompt-kicker">Fase encontrada</small>
                                     <strong id="world-map-stage-name">Rota da Manhã</strong>
@@ -577,7 +577,7 @@
                                     <div>
                                         <label for="player-name">Nome do jogador</label>
                                         <div class="profile-name-row">
-                                            <input id="player-name" name="player-name" type="text" maxlength="20" autocomplete="nickname" placeholder="Viajante do brejo" aria-describedby="player-name-help player-name-error">
+                                            <input id="player-name" name="player-name" type="text" maxlength="20" autocomplete="nickname" placeholder="Nome do jogador" aria-describedby="player-name-help player-name-error">
                                             <button type="submit">Salvar nome</button>
                                         </div>
                                         <small id="player-name-help">Pode ser alterado quando quiser, mesmo sem internet.</small>
@@ -587,7 +587,7 @@
                                 </form>
                                 <section class="profile-account" aria-labelledby="account-title">
                                     <div><span aria-hidden="true">⌁</span><div><small>Conta Natanashi</small><h3 id="account-title">Entrar na conta</h3></div></div>
-                                    <p>O acesso comum e a sincronização ainda estão em construção. A conta administrativa local já pode ser usada para testar o mapa.</p>
+                                    <p>Contas comuns ainda não salvam dados na internet. O acesso administrativo existe somente para testar fases e estados do mapa neste aparelho.</p>
                                     <form class="admin-login-form" id="admin-login-form" novalidate>
                                         <label for="admin-username">Usuário</label>
                                         <input id="admin-username" name="username" type="text" maxlength="24" autocomplete="username" aria-describedby="admin-login-help admin-login-status">
@@ -613,7 +613,7 @@
                             <div class="menu-section-heading">
                                 <span>Arquivo da Rota da Manhã</span>
                                 <h2 id="museum-title">Museu da Mata</h2>
-                                <p>Registros dos bichos deste bioma e de como cada encontro acontece durante a jornada.</p>
+                                <p>Registros dos bichos desta mata: onde aparecem, como atacam e como o sapo pode reagir.</p>
                             </div>
                             <ul class="bestiary-list bestiary-list--documentary" aria-label="Documentário dos bichos da Rota da Manhã">
                                 <li><span class="bestiary-sprite bestiary-sprite--gold"></span><div><strong>Besouro-dourado</strong><small>Inseto voador · capturável</small><p>Viaja sozinho ou em pequenos bandos. Surge em linhas altas e baixas; a língua alcança o grupo durante o voo.</p></div></li>
@@ -634,10 +634,10 @@
                                 <section class="settings-panel" aria-labelledby="audio-settings-title">
                                     <div class="settings-panel__title">
                                         <span aria-hidden="true">♫</span>
-                                        <div><small>Áudio</small><h3 id="audio-settings-title">Som do brejo</h3></div>
+                                        <div><small>Áudio</small><h3 id="audio-settings-title">Música e efeitos</h3></div>
                                     </div>
                                     <label class="setting-switch" for="setting-music-enabled">
-                                        <span><strong>Música</strong><small>Trilha durante a jornada</small></span>
+                                        <span><strong>Música</strong><small>Trilha durante o mapa e as fases</small></span>
                                         <input id="setting-music-enabled" type="checkbox" checked>
                                         <i aria-hidden="true"></i>
                                     </label>

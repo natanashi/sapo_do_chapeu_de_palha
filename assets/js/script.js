@@ -3244,16 +3244,16 @@ function startResistanceDuelNow() {
 }
 
 const STAGE_LOADING_TIPS = [
-    'Conferindo o terreno antes de liberar os controles...',
-    'Alinhando personagens e colisões...',
-    'Separando os obstáculos para uma partida justa...',
-    'Ajustando o ritmo da aventura...',
+    'Carregando o terreno desta fase...',
+    'Conferindo personagens e colisões...',
+    'Distribuindo obstáculos com espaço para reagir...',
+    'Aplicando a velocidade escolhida...',
 ];
 
 const MAP_LOADING_TIPS = [
-    'Abrindo somente o bioma escolhido...',
-    'Posicionando as fases e os caminhos...',
-    'Preparando o mapa sem carregar a corrida...',
+    'Carregando somente o primeiro bioma...',
+    'Posicionando fases, plantas e caminhos...',
+    'Mantendo a corrida descarregada enquanto você explora...',
 ];
 
 function waitForDelay(duration) {
@@ -4018,7 +4018,7 @@ function endGame(hazard = 'obstacle') {
             ? 'A Super Abelha acertou o sapo com a investida especial. Depois do terceiro golpe, espere o aviso e pule por cima do ferrão.'
         : state.phaseIndex === PHASES.length - 1
             ? 'Você chegou ao castelo. Agora tente correr ainda mais longe e capture mais besouros.'
-            : 'O caminho ficou difícil desta vez. Tente outra corrida e descubra a próxima região.';
+            : 'Um obstáculo encerrou a corrida. Tente novamente e observe o espaço entre os próximos ataques.';
     playLabel.textContent = state.isTestArea ? 'Repetir teste' : 'Jogar novamente';
     resultMenuButton.textContent = 'Voltar ao menu';
     showResultOverlay();
@@ -4048,7 +4048,7 @@ function completeJourney() {
     overlayKicker.textContent = state.isTestArea ? 'Teste concluído' : 'Fase 1 concluída · Corrida';
     overlayTitle.textContent = state.isTestArea ? 'Chefã derrotada!' : 'Vitória na Rota da Manhã';
     overlayMessage.textContent = state.isTestArea
-        ? `Você testou os cinco golpes e venceu a Super Abelha Monstro. Repita o laboratório para praticar a investida especial.`
+        ? `Os cinco golpes foram registrados e a Super Abelha foi derrotada. Repita o teste se quiser praticar a investida do ferrão.`
         : `Você atravessou a rota em ${formatTime(JOURNEY_DURATION)} e derrotou a Super Abelha Monstro. A fase 2 foi liberada no mapa do bioma.`;
     showVictoryScore(
         finalScore,
@@ -4618,11 +4618,11 @@ function updateBootLoading(completed, total, groupProgress, activeGroup = 'sprit
     bootLoaderPercent.textContent = `${percent}%`;
     bootLoaderProgress.setAttribute('aria-valuenow', String(percent));
     const messages = {
-        sprites: 'Acordando os personagens...',
-        world: 'Montando o caminho e o mapa...',
-        sound: 'Afinando os sons da aventura...',
+        sprites: 'Carregando os personagens...',
+        world: 'Carregando cenários e mapa...',
+        sound: 'Carregando música e efeitos...',
     };
-    bootLoaderMessage.textContent = percent >= 100 ? 'A aventura está pronta!' : messages[activeGroup];
+    bootLoaderMessage.textContent = percent >= 100 ? 'Tudo pronto.' : messages[activeGroup];
     bootLoadingSteps.forEach((step) => {
         const progress = groupProgress.get(step.dataset.loadingStep);
         step.classList.toggle('is-ready', Boolean(progress && progress.done >= progress.total));
