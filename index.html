@@ -8,8 +8,8 @@
     <meta name="description" content="Ajude o Sapo do Chapéu de Palha a atravessar quatro regiões da manhã, saltar obstáculos e capturar besouros e abelhas antes que eles se aproximem.">
     <link rel="icon" type="image/png" href="assets/img/sapo-capa.png">
     <link rel="preload" as="image" href="assets/img/menu-floresta-amanhecer-v1.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=121">
-    <script src="assets/js/script.js?v=121" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=122">
+    <script src="assets/js/script.js?v=122" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body class="is-app-loading has-indie-intro">
@@ -360,6 +360,16 @@
                                 <div class="world-map-world" id="world-map-world">
                                     <div class="world-map-ground" aria-hidden="true"></div>
 
+                                    <svg class="world-route" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                                        <defs>
+                                            <pattern id="world-road-texture" width="8" height="8" patternUnits="userSpaceOnUse">
+                                                <image href="assets/img/mapa-textura-estrada-v1.png" width="8" height="8" preserveAspectRatio="xMidYMid slice"></image>
+                                            </pattern>
+                                        </defs>
+                                        <path class="world-route__edge" d="M 18 90 C 21 86 25 82 29 80 C 41 78 56 83 68 82 C 77 78 82 68 84 57 C 83 45 76 33 68 27 C 57 21 47 19 37 20 C 27 24 19 34 13 46"></path>
+                                        <path class="world-route__trail" stroke="url(#world-road-texture)" d="M 18 90 C 21 86 25 82 29 80 C 41 78 56 83 68 82 C 77 78 82 68 84 57 C 83 45 76 33 68 27 C 57 21 47 19 37 20 C 27 24 19 34 13 46"></path>
+                                    </svg>
+
                                     <span class="world-prop world-prop--plant world-prop--plant-small" style="--prop-x: 10%; --prop-y: 18%; --prop-width: 6.6%; --prop-depth: 18;"><img data-map-src="assets/img/mapa-planta-rasteira-v1.png" alt="" draggable="false"></span>
                                     <span class="world-prop world-prop--plant world-prop--plant-fern" style="--prop-x: 52%; --prop-y: 14%; --prop-width: 7.5%; --prop-depth: 14; --prop-flip: -1;"><img data-map-src="assets/img/mapa-samambaia-v1.png" alt="" draggable="false"></span>
                                     <span class="world-prop world-prop--plant world-prop--plant-tall" style="--prop-x: 90%; --prop-y: 24%; --prop-width: 6.5%; --prop-depth: 24;"><img data-map-src="assets/img/mapa-planta-alta-v1.png" alt="" draggable="false"></span>
@@ -368,6 +378,18 @@
                                     <span class="world-prop world-prop--plant" style="--prop-x: 18%; --prop-y: 65%; --prop-width: 10%; --prop-depth: 65; --prop-flip: -1;"><img data-map-src="assets/img/mapa-planta-gigante-v1.png" alt="" draggable="false"></span>
                                     <span class="world-prop world-prop--plant world-prop--plant-small" style="--prop-x: 31%; --prop-y: 39%; --prop-width: 6.8%; --prop-depth: 39;"><img data-map-src="assets/img/mapa-planta-rasteira-v1.png" alt="" draggable="false"></span>
                                     <span class="world-prop world-prop--plant world-prop--plant-fern" style="--prop-x: 73%; --prop-y: 38%; --prop-width: 7.8%; --prop-depth: 38; --prop-flip: -1;"><img data-map-src="assets/img/mapa-samambaia-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--plant world-prop--plant-small" style="--prop-x: 8%; --prop-y: 9%; --prop-width: 5.8%; --prop-depth: 9; --prop-flip: -1;"><img data-map-src="assets/img/mapa-planta-rasteira-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--plant world-prop--plant-small" style="--prop-x: 25%; --prop-y: 9%; --prop-width: 5.4%; --prop-depth: 9;"><img data-map-src="assets/img/mapa-planta-rasteira-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--plant world-prop--plant-fern" style="--prop-x: 61%; --prop-y: 8%; --prop-width: 6.6%; --prop-depth: 8; --prop-flip: -1;"><img data-map-src="assets/img/mapa-samambaia-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--plant world-prop--plant-small" style="--prop-x: 83%; --prop-y: 9%; --prop-width: 5.6%; --prop-depth: 9;"><img data-map-src="assets/img/mapa-planta-rasteira-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--plant world-prop--plant-fern" style="--prop-x: 95%; --prop-y: 39%; --prop-width: 6.8%; --prop-depth: 39;"><img data-map-src="assets/img/mapa-samambaia-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--plant world-prop--plant-small" style="--prop-x: 94%; --prop-y: 68%; --prop-width: 5.7%; --prop-depth: 68; --prop-flip: -1;"><img data-map-src="assets/img/mapa-planta-rasteira-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--plant world-prop--plant-fern" style="--prop-x: 78%; --prop-y: 96%; --prop-width: 6.4%; --prop-depth: 96;"><img data-map-src="assets/img/mapa-samambaia-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--plant world-prop--plant-small" style="--prop-x: 43%; --prop-y: 95%; --prop-width: 5.8%; --prop-depth: 95;"><img data-map-src="assets/img/mapa-planta-rasteira-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--plant world-prop--plant-fern" style="--prop-x: 34%; --prop-y: 63%; --prop-width: 6.7%; --prop-depth: 63; --prop-flip: -1;"><img data-map-src="assets/img/mapa-samambaia-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--plant world-prop--plant-small" style="--prop-x: 7%; --prop-y: 72%; --prop-width: 5.7%; --prop-depth: 72;"><img data-map-src="assets/img/mapa-planta-rasteira-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--plant world-prop--plant-fern" style="--prop-x: 48%; --prop-y: 43%; --prop-width: 6.5%; --prop-depth: 43;"><img data-map-src="assets/img/mapa-samambaia-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--plant world-prop--plant-small" style="--prop-x: 8%; --prop-y: 31%; --prop-width: 5.5%; --prop-depth: 31; --prop-flip: -1;"><img data-map-src="assets/img/mapa-planta-rasteira-v1.png" alt="" draggable="false"></span>
 
                                     <span class="world-prop world-prop--rock" style="--prop-x: 24%; --prop-y: 31%; --prop-width: 4.4%; --prop-depth: 31;"><img data-map-src="assets/img/mapa-rocha-simples-v2.png" alt="" draggable="false"></span>
                                     <span class="world-prop world-prop--rock world-prop--rock-round" style="--prop-x: 77%; --prop-y: 46%; --prop-width: 5%; --prop-depth: 46; --prop-flip: -1;"><img data-map-src="assets/img/mapa-pedra-redonda-v1.png" alt="" draggable="false"></span>
@@ -375,6 +397,14 @@
                                     <span class="world-prop world-prop--rock world-prop--rock-round" style="--prop-x: 40%; --prop-y: 32%; --prop-width: 4.2%; --prop-depth: 32; --prop-flip: -1;"><img data-map-src="assets/img/mapa-pedra-redonda-v1.png" alt="" draggable="false"></span>
                                     <span class="world-prop world-prop--rock" style="--prop-x: 66%; --prop-y: 66%; --prop-width: 4.8%; --prop-depth: 66;"><img data-map-src="assets/img/mapa-rocha-simples-v2.png" alt="" draggable="false"></span>
                                     <span class="world-prop world-prop--rock world-prop--rock-long" style="--prop-x: 83%; --prop-y: 71%; --prop-width: 4.9%; --prop-depth: 71; --prop-flip: -1;"><img data-map-src="assets/img/mapa-pedra-alongada-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--rock world-prop--rock-round" style="--prop-x: 17%; --prop-y: 9%; --prop-width: 3.8%; --prop-depth: 9;"><img data-map-src="assets/img/mapa-pedra-redonda-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--rock world-prop--rock-long" style="--prop-x: 46%; --prop-y: 8%; --prop-width: 4.2%; --prop-depth: 8; --prop-flip: -1;"><img data-map-src="assets/img/mapa-pedra-alongada-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--rock" style="--prop-x: 74%; --prop-y: 11%; --prop-width: 3.7%; --prop-depth: 11;"><img data-map-src="assets/img/mapa-rocha-simples-v2.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--rock world-prop--rock-round" style="--prop-x: 95%; --prop-y: 49%; --prop-width: 4%; --prop-depth: 49;"><img data-map-src="assets/img/mapa-pedra-redonda-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--rock world-prop--rock-long" style="--prop-x: 88%; --prop-y: 79%; --prop-width: 4.5%; --prop-depth: 79;"><img data-map-src="assets/img/mapa-pedra-alongada-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--rock" style="--prop-x: 46%; --prop-y: 88%; --prop-width: 3.8%; --prop-depth: 88;"><img data-map-src="assets/img/mapa-rocha-simples-v2.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--rock world-prop--rock-round" style="--prop-x: 39%; --prop-y: 57%; --prop-width: 3.8%; --prop-depth: 57; --prop-flip: -1;"><img data-map-src="assets/img/mapa-pedra-redonda-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--rock world-prop--rock-long" style="--prop-x: 7%; --prop-y: 59%; --prop-width: 4.3%; --prop-depth: 59;"><img data-map-src="assets/img/mapa-pedra-alongada-v1.png" alt="" draggable="false"></span>
 
                                     <button class="world-landmark world-landmark--museum" id="world-museum" type="button" aria-label="Museu da Rota da Manhã" style="--landmark-x: 55%; --landmark-y: 78%; --landmark-depth: 84;">
                                         <img data-map-src="assets/img/mapa-museu-brejo-v1.png" alt="" draggable="false">
