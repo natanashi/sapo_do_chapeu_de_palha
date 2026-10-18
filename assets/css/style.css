@@ -3164,6 +3164,7 @@ body.reduce-game-motion .resistance-duelist__sprite,
 body.reduce-game-motion .resistance-duelist__tongue,
 body.reduce-game-motion .resistance-duelist::before,
 body.reduce-game-motion .resistance-duelist::after,
+body.reduce-game-motion .result-card.is-victory .start-frog,
 body.reduce-game-motion .world-level,
 body.reduce-game-motion .world-landmark,
 body.reduce-game-motion .obstacle--ground-beetle,
@@ -3346,6 +3347,76 @@ body.reduce-game-motion .resistance-duelist.faces-right .resistance-duelist__ton
     line-height: 1.48;
 }
 
+.victory-score {
+    position: relative;
+    display: grid;
+    width: min(100%, 390px);
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 3px 16px;
+    margin: -8px 0 20px;
+    padding: 12px 14px 10px 48px;
+    border: 3px solid #2c4f2d;
+    border-radius: 3px;
+    color: #173622;
+    background: linear-gradient(180deg, #fff1ae, #e6c868);
+    box-shadow: inset 0 0 0 2px #fff4c3, 4px 5px 0 #173622;
+    image-rendering: pixelated;
+}
+
+.victory-score[hidden] { display: none; }
+
+.victory-score::before {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 11px;
+    display: grid;
+    width: 28px;
+    aspect-ratio: 1;
+    place-items: center;
+    border: 2px solid #173622;
+    color: #fff6bd;
+    background: #4f8b45;
+    box-shadow: 2px 2px 0 #173622;
+    font-family: var(--font-ui);
+    font-size: 0.9rem;
+    transform: translateY(-50%);
+}
+
+.victory-score span,
+.victory-score small {
+    font-family: var(--font-ui);
+    font-weight: 900;
+}
+
+.victory-score span {
+    align-self: end;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.victory-score strong {
+    grid-row: 1 / 3;
+    grid-column: 2;
+    align-self: center;
+    color: #173f2a;
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 4vw, 2.7rem);
+    line-height: 0.8;
+    text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.76);
+}
+
+.victory-score small {
+    color: #6a4a28;
+    font-size: 0.58rem;
+    line-height: 1.25;
+}
+
+.result-card.is-victory .start-frog {
+    animation: victory-frog-bounce 900ms steps(2, end) 2;
+}
+
 .start-frog {
     position: absolute;
     z-index: 1;
@@ -3490,6 +3561,12 @@ body.reduce-game-motion .resistance-duelist.faces-right .resistance-duelist__ton
     0% { translate: -3% 0; filter: brightness(1.18) drop-shadow(0 4px 2px rgba(17, 35, 18, 0.34)); }
     55% { translate: 2% 0; }
     100% { translate: 0 0; filter: brightness(1) drop-shadow(0 7px 3px rgba(17, 35, 18, 0.3)); }
+}
+
+@keyframes victory-frog-bounce {
+    0%, 100% { transform: translateY(0); }
+    45% { transform: translateY(-8px); }
+    65% { transform: translateY(-8px) rotate(-1deg); }
 }
 
 @keyframes capture-ring {
@@ -3711,6 +3788,8 @@ body.reduce-game-motion .resistance-duelist.faces-right .resistance-duelist__ton
     .overlay-copy { padding: clamp(28px, 7vw, 44px) 24px; }
     .overlay-card h1 { max-width: 76%; font-size: clamp(2.35rem, 11vw, 4.2rem); }
     .overlay-message { max-width: 70%; margin: 14px 0 20px; font-size: 0.92rem; }
+    .victory-score { width: min(70%, 390px); padding: 9px 10px 8px 42px; }
+    .victory-score strong { font-size: clamp(1.55rem, 8vw, 2.25rem); }
     .start-frog { right: -18%; bottom: -2%; left: auto; width: 72%; max-height: 76%; opacity: 0.78; }
     .controls-hint { max-width: 72%; margin-top: 22px; }
 }
@@ -3735,6 +3814,22 @@ body.reduce-game-motion .resistance-duelist.faces-right .resistance-duelist__ton
     .action-button--move { width: 46px; min-width: 46px; height: 46px; min-height: 46px; }
 }
 
+@media (max-height: 560px) and (orientation: landscape) {
+    .overlay-card {
+        width: min(820px, calc(100vw - 16px));
+        min-height: 0;
+        max-height: calc(100svh - 16px);
+    }
+
+    .overlay-copy { padding: 14px 24px 14px 8px; }
+    .overlay-kicker { margin-bottom: 5px; font-size: 0.58rem; }
+    .overlay-card h1 { font-size: clamp(1.85rem, 5vw, 3rem); }
+    .overlay-message { margin: 9px 0 12px; font-size: 0.78rem; line-height: 1.3; }
+    .victory-score { margin: -2px 0 12px; padding-block: 7px; }
+    .play-button { min-height: 44px; padding-block: 8px; }
+    .controls-hint { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .horizon-birds,
     .sky-clouds { display: none; }
@@ -3752,7 +3847,8 @@ body.reduce-game-motion .resistance-duelist.faces-right .resistance-duelist__ton
     .resistance-duelist__sprite,
     .resistance-duelist__tongue,
     .resistance-duelist::before,
-    .resistance-duelist::after { animation: none; }
+    .resistance-duelist::after,
+    .result-card.is-victory .start-frog { animation: none; }
     .resistance-duelist::before,
     .resistance-duelist::after { opacity: 0; }
     .resistance-duelist__tongue.is-visible {

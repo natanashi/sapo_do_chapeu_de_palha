@@ -8,8 +8,8 @@
     <meta name="description" content="Ajude o Sapo do Chapéu de Palha a atravessar quatro regiões da manhã, saltar obstáculos e capturar besouros e abelhas antes que eles se aproximem.">
     <link rel="icon" type="image/png" href="assets/img/sapo-capa.png">
     <link rel="preload" as="image" href="assets/img/menu-floresta-amanhecer-v1.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=117">
-    <script src="assets/js/script.js?v=117" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=118">
+    <script src="assets/js/script.js?v=118" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body class="is-app-loading has-indie-intro">
@@ -705,6 +705,11 @@
                         <p class="overlay-kicker" id="overlay-kicker">Beta para navegador</p>
                         <h1 id="overlay-title">Uma nova corrida começa aqui</h1>
                         <p class="overlay-message" id="overlay-message">Salte pedras, rodas e besouros terrestres, aterrisse nas plataformas e capture besouros e abelhas antes que eles encostem no sapo.</p>
+                        <div class="victory-score" id="victory-score" role="status" aria-live="polite" hidden>
+                            <span id="victory-score-label">Pontos conquistados</span>
+                            <strong id="victory-score-value">000</strong>
+                            <small id="victory-score-detail">Fase concluída</small>
+                        </div>
                         <button class="play-button" id="play-button" type="button" disabled>
                             <span class="play-icon" aria-hidden="true">▶</span>
                             <span id="play-label">Carregando...</span>
