@@ -324,7 +324,7 @@ const BOOT_ASSET_URLS = [
 
 const WORLD_MAP_ASSET_URLS = [
     'assets/img/mapa-mundo-grama-v2.png',
-    'assets/img/mapa-arvore-simples-v2.png',
+    'assets/img/mapa-planta-gigante-v1.png',
     'assets/img/mapa-rocha-simples-v2.png',
     'assets/img/mapa-museu-brejo-v1.png',
     'assets/img/sapo-resistencia-guarda-v1.png',

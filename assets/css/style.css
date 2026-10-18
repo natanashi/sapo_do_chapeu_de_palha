@@ -2288,6 +2288,8 @@ kbd {
     transform: scaleX(var(--prop-flip, 1));
 }
 
+.world-prop--plant { aspect-ratio: 448 / 472; transform: translate(-50%, -93%); }
+.world-prop--plant::after { width: 38%; height: 11%; bottom: 1%; }
 .world-prop--rock { aspect-ratio: 1.25 / 1; transform: translate(-50%, -82%); }
 .world-prop--rock::after { width: 78%; height: 18%; bottom: 4%; }
 
