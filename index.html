@@ -8,8 +8,8 @@
     <meta name="description" content="Ajude o Sapo do Chapéu de Palha a atravessar quatro regiões da manhã, saltar obstáculos e capturar besouros e abelhas antes que eles se aproximem.">
     <link rel="icon" type="image/png" href="assets/img/sapo-capa.png">
     <link rel="preload" as="image" href="assets/img/menu-floresta-amanhecer-v1.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=122">
-    <script src="assets/js/script.js?v=122" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=123">
+    <script src="assets/js/script.js?v=123" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body class="is-app-loading has-indie-intro">
@@ -359,11 +359,12 @@
                                 <div class="world-map" id="world-map" tabindex="0" aria-label="Mapa explorável da história. Use as setas para caminhar.">
                                 <div class="world-map-world" id="world-map-world">
                                     <div class="world-map-ground" aria-hidden="true"></div>
+                                    <img class="world-ground-cover" data-map-src="assets/img/mapa-vegetacao-densa-v1.png" alt="" draggable="false" aria-hidden="true">
 
                                     <svg class="world-route" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
                                         <defs>
-                                            <pattern id="world-road-texture" width="8" height="8" patternUnits="userSpaceOnUse">
-                                                <image href="assets/img/mapa-textura-estrada-v1.png" width="8" height="8" preserveAspectRatio="xMidYMid slice"></image>
+                                            <pattern id="world-road-texture" width="5.4" height="5.4" patternUnits="userSpaceOnUse">
+                                                <image href="assets/img/mapa-textura-estrada-v1.png" width="5.4" height="5.4" preserveAspectRatio="xMidYMid slice"></image>
                                             </pattern>
                                         </defs>
                                         <path class="world-route__edge" d="M 18 90 C 21 86 25 82 29 80 C 41 78 56 83 68 82 C 77 78 82 68 84 57 C 83 45 76 33 68 27 C 57 21 47 19 37 20 C 27 24 19 34 13 46"></path>
@@ -390,8 +391,14 @@
                                     <span class="world-prop world-prop--plant world-prop--plant-small" style="--prop-x: 7%; --prop-y: 72%; --prop-width: 5.7%; --prop-depth: 72;"><img data-map-src="assets/img/mapa-planta-rasteira-v1.png" alt="" draggable="false"></span>
                                     <span class="world-prop world-prop--plant world-prop--plant-fern" style="--prop-x: 48%; --prop-y: 43%; --prop-width: 6.5%; --prop-depth: 43;"><img data-map-src="assets/img/mapa-samambaia-v1.png" alt="" draggable="false"></span>
                                     <span class="world-prop world-prop--plant world-prop--plant-small" style="--prop-x: 8%; --prop-y: 31%; --prop-width: 5.5%; --prop-depth: 31; --prop-flip: -1;"><img data-map-src="assets/img/mapa-planta-rasteira-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--plant world-prop--plant-grass" style="--prop-x: 57%; --prop-y: 53%; --prop-width: 5.4%; --prop-depth: 53;"><img data-map-src="assets/img/mapa-planta-capim-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--plant world-prop--plant-grass" style="--prop-x: 23%; --prop-y: 61%; --prop-width: 5.1%; --prop-depth: 61; --prop-flip: -1;"><img data-map-src="assets/img/mapa-planta-capim-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--plant world-prop--plant-caladium" style="--prop-x: 90%; --prop-y: 14%; --prop-width: 5.5%; --prop-depth: 14;"><img data-map-src="assets/img/mapa-planta-caladio-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--plant world-prop--plant-caladium" style="--prop-x: 16%; --prop-y: 8%; --prop-width: 5.2%; --prop-depth: 8; --prop-flip: -1;"><img data-map-src="assets/img/mapa-planta-caladio-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--plant world-prop--plant-palm" style="--prop-x: 4%; --prop-y: 34%; --prop-width: 4.8%; --prop-depth: 34;"><img data-map-src="assets/img/mapa-palmeira-jovem-v1.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--plant world-prop--plant-palm" style="--prop-x: 95%; --prop-y: 94%; --prop-width: 5.2%; --prop-depth: 94; --prop-flip: -1;"><img data-map-src="assets/img/mapa-palmeira-jovem-v1.png" alt="" draggable="false"></span>
 
-                                    <span class="world-prop world-prop--rock" style="--prop-x: 24%; --prop-y: 31%; --prop-width: 4.4%; --prop-depth: 31;"><img data-map-src="assets/img/mapa-rocha-simples-v2.png" alt="" draggable="false"></span>
+                                    <span class="world-prop world-prop--rock" style="--prop-x: 11%; --prop-y: 21%; --prop-width: 4.4%; --prop-depth: 21;"><img data-map-src="assets/img/mapa-rocha-simples-v2.png" alt="" draggable="false"></span>
                                     <span class="world-prop world-prop--rock world-prop--rock-round" style="--prop-x: 77%; --prop-y: 46%; --prop-width: 5%; --prop-depth: 46; --prop-flip: -1;"><img data-map-src="assets/img/mapa-pedra-redonda-v1.png" alt="" draggable="false"></span>
                                     <span class="world-prop world-prop--rock world-prop--rock-long" style="--prop-x: 62%; --prop-y: 91%; --prop-width: 5.8%; --prop-depth: 91;"><img data-map-src="assets/img/mapa-pedra-alongada-v1.png" alt="" draggable="false"></span>
                                     <span class="world-prop world-prop--rock world-prop--rock-round" style="--prop-x: 40%; --prop-y: 32%; --prop-width: 4.2%; --prop-depth: 32; --prop-flip: -1;"><img data-map-src="assets/img/mapa-pedra-redonda-v1.png" alt="" draggable="false"></span>
@@ -406,7 +413,7 @@
                                     <span class="world-prop world-prop--rock world-prop--rock-round" style="--prop-x: 39%; --prop-y: 57%; --prop-width: 3.8%; --prop-depth: 57; --prop-flip: -1;"><img data-map-src="assets/img/mapa-pedra-redonda-v1.png" alt="" draggable="false"></span>
                                     <span class="world-prop world-prop--rock world-prop--rock-long" style="--prop-x: 7%; --prop-y: 59%; --prop-width: 4.3%; --prop-depth: 59;"><img data-map-src="assets/img/mapa-pedra-alongada-v1.png" alt="" draggable="false"></span>
 
-                                    <button class="world-landmark world-landmark--museum" id="world-museum" type="button" aria-label="Museu da Rota da Manhã" style="--landmark-x: 55%; --landmark-y: 78%; --landmark-depth: 84;">
+                                    <button class="world-landmark world-landmark--museum" id="world-museum" type="button" aria-label="Museu da Rota da Manhã" style="--landmark-x: 52%; --landmark-y: 57%; --landmark-depth: 63;">
                                         <img data-map-src="assets/img/mapa-museu-brejo-v1.png" alt="" draggable="false">
                                         <span>Museu da Mata</span>
                                     </button>

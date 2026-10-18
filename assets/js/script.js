@@ -324,11 +324,15 @@ const BOOT_ASSET_URLS = [
 
 const WORLD_MAP_ASSET_URLS = [
     'assets/img/mapa-mundo-grama-v2.png',
+    'assets/img/mapa-vegetacao-densa-v1.png',
     'assets/img/mapa-textura-estrada-v1.png',
     'assets/img/mapa-planta-gigante-v1.png',
     'assets/img/mapa-planta-rasteira-v1.png',
     'assets/img/mapa-samambaia-v1.png',
     'assets/img/mapa-planta-alta-v1.png',
+    'assets/img/mapa-planta-capim-v1.png',
+    'assets/img/mapa-planta-caladio-v1.png',
+    'assets/img/mapa-palmeira-jovem-v1.png',
     'assets/img/mapa-rocha-simples-v2.png',
     'assets/img/mapa-pedra-redonda-v1.png',
     'assets/img/mapa-pedra-alongada-v1.png',
@@ -1668,9 +1672,11 @@ const WORLD_LEVELS = [
     { name: 'Coração da Mata', category: 'Luta livre', x: 13, y: 46, unlocked: false, playable: false },
 ];
 
-const WORLD_MAP_SCALE = 2;
+const WORLD_MAP_SCALE = 3;
+const WORLD_MAP_SPEED_X = 8.4;
+const WORLD_MAP_SPEED_Y = 11.4;
 const WORLD_LEVEL_REACH = 4.8;
-const WORLD_MUSEUM = { name: 'Museu da Mata', x: 55, y: 84 };
+const WORLD_MUSEUM = { name: 'Museu da Mata', x: 52, y: 63 };
 const WORLD_MUSEUM_REACH = 10.5;
 const WORLD_RESISTANCE_NPC = { name: 'Sapo encapuzado', x: 74, y: 85 };
 const WORLD_RESISTANCE_NPC_REACH = 6.8;
@@ -1683,7 +1689,7 @@ const WORLD_MAP_BLOCKERS = [
     { x: 18, y: 65, width: 5.2, height: 3.5 },
     { x: 31, y: 39, width: 3.9, height: 2.7 },
     { x: 73, y: 38, width: 4.5, height: 3.1 },
-    { x: 24, y: 31, width: 3.2, height: 2.4 },
+    { x: 11, y: 21, width: 3.2, height: 2.4 },
     { x: 77, y: 46, width: 3.5, height: 2.5 },
     { x: 62, y: 91, width: 3.6, height: 2.6 },
     { x: 40, y: 32, width: 3.1, height: 2.3 },
@@ -1709,6 +1715,12 @@ const WORLD_MAP_BLOCKERS = [
     { x: 46, y: 88, width: 2.9, height: 2.2 },
     { x: 39, y: 57, width: 2.9, height: 2.2 },
     { x: 7, y: 59, width: 3.1, height: 2.2 },
+    { x: 57, y: 53, width: 3.3, height: 2.3 },
+    { x: 23, y: 61, width: 3.2, height: 2.3 },
+    { x: 90, y: 14, width: 3.4, height: 2.5 },
+    { x: 16, y: 8, width: 3.3, height: 2.4 },
+    { x: 4, y: 34, width: 3.1, height: 2.5 },
+    { x: 95, y: 94, width: 3.3, height: 2.6 },
     { x: WORLD_MUSEUM.x, y: WORLD_MUSEUM.y, width: 10.5, height: 6.2 },
 ];
 
@@ -2115,7 +2127,7 @@ function worldMapLoop(currentTime) {
         worldMapState.avoidanceSign = 0;
         worldMapState.resistanceApproachStage = 0;
         const length = Math.hypot(directionX, directionY) || 1;
-        moved = moveWorldMapFrog((directionX / length) * 12.5 * delta, (directionY / length) * 17 * delta);
+        moved = moveWorldMapFrog((directionX / length) * WORLD_MAP_SPEED_X * delta, (directionY / length) * WORLD_MAP_SPEED_Y * delta);
     } else if (worldMapState.targetX !== null && worldMapState.targetY !== null) {
         const dx = worldMapState.targetX - worldMapState.x;
         const dy = worldMapState.targetY - worldMapState.y;
@@ -2133,8 +2145,8 @@ function worldMapLoop(currentTime) {
         } else {
             directionX = dx / distance;
             directionY = dy / distance;
-            const stepX = directionX * 12.5 * delta;
-            const stepY = directionY * 17 * delta;
+            const stepX = directionX * WORLD_MAP_SPEED_X * delta;
+            const stepY = directionY * WORLD_MAP_SPEED_Y * delta;
             const directX = clamp(worldMapState.x + stepX, 2.5, 97.5);
             const directY = clamp(worldMapState.y + stepY, 3.5, 96.5);
 
@@ -2143,8 +2155,8 @@ function worldMapLoop(currentTime) {
                 worldMapState.avoidanceSign = 0;
             } else {
                 if (!worldMapState.avoidanceSign) worldMapState.avoidanceSign = 1;
-                const tangentX = -directionY * 12.5 * delta * worldMapState.avoidanceSign;
-                const tangentY = directionX * 17 * delta * worldMapState.avoidanceSign;
+                const tangentX = -directionY * WORLD_MAP_SPEED_X * delta * worldMapState.avoidanceSign;
+                const tangentY = directionX * WORLD_MAP_SPEED_Y * delta * worldMapState.avoidanceSign;
                 moved = moveWorldMapFrog(tangentX, tangentY);
                 if (!moved) {
                     worldMapState.avoidanceSign *= -1;

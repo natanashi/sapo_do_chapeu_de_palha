@@ -2216,8 +2216,8 @@ kbd {
     z-index: 1;
     top: 0;
     left: 0;
-    width: 200%;
-    height: 200%;
+    width: 300%;
+    height: 300%;
     overflow: hidden;
     background: #416b36;
     contain: layout paint style;
@@ -2249,9 +2249,21 @@ kbd {
     background: repeating-linear-gradient(0deg, transparent 0 11.8%, rgba(255, 248, 190, 0.045) 12%, transparent 12.35%);
 }
 
-.world-route {
+.world-ground-cover {
     position: absolute;
     z-index: 2;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    pointer-events: none;
+    image-rendering: pixelated;
+    user-select: none;
+}
+
+.world-route {
+    position: absolute;
+    z-index: 3;
     inset: 0;
     width: 100%;
     height: 100%;
@@ -2325,6 +2337,12 @@ kbd {
 .world-prop--plant-fern::after { width: 42%; }
 .world-prop--plant-tall { aspect-ratio: 320 / 560; transform: translate(-50%, -96%); }
 .world-prop--plant-tall::after { width: 48%; height: 8%; bottom: 1%; }
+.world-prop--plant-grass { aspect-ratio: 448 / 320; transform: translate(-50%, -88%); }
+.world-prop--plant-grass::after { width: 52%; height: 13%; bottom: 2%; }
+.world-prop--plant-caladium { aspect-ratio: 448 / 400; transform: translate(-50%, -91%); }
+.world-prop--plant-caladium::after { width: 46%; height: 12%; bottom: 1%; }
+.world-prop--plant-palm { aspect-ratio: 400 / 480; transform: translate(-50%, -94%); }
+.world-prop--plant-palm::after { width: 42%; height: 10%; bottom: 1%; }
 .world-prop--rock { aspect-ratio: 1.25 / 1; transform: translate(-50%, -82%); }
 .world-prop--rock::after { width: 78%; height: 18%; bottom: 4%; }
 .world-prop--rock-round { aspect-ratio: 384 / 256; }
