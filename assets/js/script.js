@@ -3194,7 +3194,7 @@ function startResistanceDuelNow({ adminTest = false } = {}) {
     element.setAttribute('aria-hidden', 'true');
     const tongue = document.createElement('img');
     tongue.className = 'resistance-duelist__tongue';
-    tongue.src = 'assets/img/sapo-lingua-v2.png';
+    tongue.src = 'assets/img/sapo-lingua-rubro-limpa-v3.png';
     tongue.alt = '';
     const sprite = document.createElement('span');
     sprite.className = 'resistance-duelist__sprite';
@@ -3351,7 +3351,7 @@ function stageAssets(kind, testArea = false) {
         ...FROG_SPRITES.map(([property]) => skinObjectUrls.get(property)).filter(Boolean),
         skinObjectUrls.get('tongue'),
     ].filter(Boolean);
-    if (kind === 'duel') return [...common, 'assets/img/sapo-resistencia-capuz-sprites-v1.png', 'assets/img/sapo-resistencia-ataque-sprites-v2.png', 'assets/img/sapo-lingua-v2.png'];
+    if (kind === 'duel') return [...common, 'assets/img/sapo-resistencia-capuz-sprites-v1.png', 'assets/img/sapo-resistencia-ataque-sprites-v2.png', 'assets/img/sapo-lingua-rubro-limpa-v3.png'];
     if (testArea) return [...common, 'assets/img/super-abelha-monstro-sprites-v2.png', 'assets/img/abelha-investida-sprites.png'];
     return [...common, ...Object.values(OBSTACLES).map((obstacle) => obstacle.src), 'assets/img/inseto-voando-sprites.png', 'assets/img/besouro-ondulante-voando-sprites.png', 'assets/img/abelha-investida-sprites.png'];
 }
