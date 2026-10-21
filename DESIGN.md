@@ -179,6 +179,8 @@ Victories in both playable story phases use the canonical rounded parchment resu
 
 Moving moss platforms use the visible grassy ledge as their collision surface rather than the transparent image boundary. Their geometry is reserved by an explicit image ratio, so loading order and full-screen resizing cannot collapse the platform height or let the frog sink through it.
 
+The biome route is a transparent raster pixel-art layer rather than a smooth SVG stroke. Its dirt surface reuses the established hand-pixelled earth palette, while stepped grass banks, compacted-earth marks and small embedded stones break the computer-perfect edge. The route keeps the same world coordinates as the phase layout and scales with nearest-neighbor rendering so map navigation and phase positions remain unchanged across screen sizes.
+
 ## Administrative testing
 
 Profile contains a clearly labeled local development login, separate from the unfinished player-account service. The public static build may expose its test credential, so this access never represents real authentication or protects private data. A successful session lasts only for the current browser tab and reveals one floating, original pixel-art command block on the overworld. Its app-owned dialog separates persistent progress controls from direct encounter shortcuts: the first edits the active character's record, six phase-completion flags and Rubro challenge state, while the second launches the Super Abelha or Rubro immediately as isolated admin tests. Direct tests return to the map and never mark story phases as completed. Completed seals receive a visible check state; future stages remain explicitly under construction.
