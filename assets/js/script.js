@@ -63,6 +63,7 @@ const adminBestScoreInput = document.querySelector('#admin-best-score');
 const adminChallengeUnlockedInput = document.querySelector('#admin-challenge-unlocked');
 const adminDuelWonInput = document.querySelector('#admin-duel-won');
 const adminPhaseInputs = [...document.querySelectorAll('[data-admin-phase]')];
+const adminFightButtons = [...document.querySelectorAll('[data-admin-fight]')];
 const resistanceDialog = document.querySelector('#resistance-dialog');
 const resistanceDialogKicker = document.querySelector('#resistance-dialog-kicker');
 const resistanceDialogTitle = document.querySelector('#resistance-dialog-title');
@@ -394,6 +395,7 @@ const state = {
     bossStarted: false,
     bossDefeated: false,
     isTestArea: false,
+    isAdminEncounter: false,
     isDuel: false,
     duel: null,
 };
@@ -445,6 +447,9 @@ function invalidateHudRenderCache() {
 }
 const DUEL_DODGE_COOLDOWN_MS = 1900;
 const DUEL_MOVE_SPEED = 132;
+const DUEL_MOVE_ACCELERATION = 680;
+const DUEL_MOVE_BRAKING = 920;
+const DUEL_REACTION_MS = 125;
 const DUEL_GRAVITY = 2200;
 const DUEL_JUMP_FORCE = 730;
 const DUEL_DASH_WINDUP_MS = 240;
@@ -1640,6 +1645,7 @@ function resetRun() {
     state.bossStarted = false;
     state.bossDefeated = false;
     state.isTestArea = false;
+    state.isAdminEncounter = false;
     state.isDuel = false;
     state.duel = null;
     state.runnerFacing = 1;
@@ -2872,6 +2878,16 @@ function closeAdminCommandDialog() {
     adminCommandDialog.close('cancelled');
 }
 
+function startAdminDirectFight(encounter) {
+    if (!adminSessionActive || !['super-bee', 'rubro'].includes(encounter)) return;
+    closeAdminCommandDialog();
+    if (encounter === 'super-bee') {
+        startGame({ testArea: true, adminTest: true });
+        return;
+    }
+    startResistanceDuel({ adminTest: true });
+}
+
 function applyAdminCommands(event) {
     event.preventDefault();
     if (!adminSessionActive) return;
@@ -3135,10 +3151,11 @@ function showResultOverlay() {
     overlay.classList.add('is-visible');
 }
 
-function startGameNow({ testArea = false } = {}) {
+function startGameNow({ testArea = false, adminTest = false } = {}) {
     state.difficulty = selectedDifficulty;
     resetRun();
     state.isTestArea = testArea;
+    state.isAdminEncounter = adminTest;
     if (testArea) {
         state.elapsedTime = BOSS_START_TIME;
         applyPhase(PHASES.length - 1, false);
@@ -3160,9 +3177,10 @@ function startGameNow({ testArea = false } = {}) {
     state.animationFrame = window.requestAnimationFrame(gameLoop);
 }
 
-function startResistanceDuelNow() {
+function startResistanceDuelNow({ adminTest = false } = {}) {
     resetRun();
     state.isDuel = true;
+    state.isAdminEncounter = adminTest;
     board.classList.add('is-duel');
     applyPhase(0, false);
     state.runnerX = clamp(state.boardWidth * 0.16, 54, 190);
@@ -3195,6 +3213,9 @@ function startResistanceDuelNow() {
         x: state.boardWidth * 0.72,
         y: 0,
         velocityY: 0,
+        velocityX: 0,
+        moveDirection: 0,
+        movementCommitUntil: currentTime,
         facing: -1,
         stage: 'moving',
         stageStartedAt: currentTime,
@@ -3216,6 +3237,8 @@ function startResistanceDuelNow() {
         nextDashAt: currentTime + 2100,
         dashDirection: 0,
         dashTargetX: state.boardWidth * 0.72,
+        queuedDodgeAt: 0,
+        queuedDodgeMode: '',
     };
     callout.textContent = 'Mostre como você luta.';
     callout.classList.add('is-visible');
@@ -3328,7 +3351,7 @@ function stageAssets(kind, testArea = false) {
         ...FROG_SPRITES.map(([property]) => skinObjectUrls.get(property)).filter(Boolean),
         skinObjectUrls.get('tongue'),
     ].filter(Boolean);
-    if (kind === 'duel') return [...common, 'assets/img/sapo-resistencia-capuz-sprites-v1.png', 'assets/img/sapo-lingua-v2.png'];
+    if (kind === 'duel') return [...common, 'assets/img/sapo-resistencia-capuz-sprites-v1.png', 'assets/img/sapo-resistencia-ataque-sprites-v2.png', 'assets/img/sapo-lingua-v2.png'];
     if (testArea) return [...common, 'assets/img/super-abelha-monstro-sprites-v2.png', 'assets/img/abelha-investida-sprites.png'];
     return [...common, ...Object.values(OBSTACLES).map((obstacle) => obstacle.src), 'assets/img/inseto-voando-sprites.png', 'assets/img/besouro-ondulante-voando-sprites.png', 'assets/img/abelha-investida-sprites.png'];
 }
@@ -3381,8 +3404,8 @@ function startGame(options = {}) {
     return runStageLoading({ kind: 'route', testArea: Boolean(options.testArea) }, () => startGameNow(options));
 }
 
-function startResistanceDuel() {
-    return runStageLoading({ kind: 'duel' }, startResistanceDuelNow);
+function startResistanceDuel(options = {}) {
+    return runStageLoading({ kind: 'duel' }, () => startResistanceDuelNow(options));
 }
 
 function renderResistanceDuel(duel) {
@@ -3466,6 +3489,10 @@ function startResistanceDuelDash(duel, currentTime, mode = 'retreat') {
     if (dashDistance < 62) return false;
 
     clearResistanceDuelAttack(duel);
+    duel.velocityX = 0;
+    duel.moveDirection = 0;
+    duel.queuedDodgeAt = 0;
+    duel.queuedDodgeMode = '';
     duel.dashTargetX = targetX;
     duel.dashDirection = Math.sign(targetX - duel.x);
     duel.facing = duel.dashDirection;
@@ -3481,6 +3508,8 @@ function startResistanceDuelDash(duel, currentTime, mode = 'retreat') {
 
 function startResistanceDuelJump(duel, currentTime, reason = 'jumping') {
     if (duel.y > 3) return;
+    duel.velocityX *= 0.42;
+    duel.moveDirection = 0;
     duel.velocityY = DUEL_JUMP_FORCE;
     duel.stage = reason;
     duel.stageStartedAt = currentTime;
@@ -3488,6 +3517,10 @@ function startResistanceDuelJump(duel, currentTime, reason = 'jumping') {
 }
 
 function startResistanceDuelTongue(duel, currentTime) {
+    duel.velocityX = 0;
+    duel.moveDirection = 0;
+    duel.queuedDodgeAt = 0;
+    duel.queuedDodgeMode = '';
     duel.facing = state.runnerX + runnerLayer.offsetWidth * 0.5 < duel.x + duel.element.offsetWidth * 0.5 ? -1 : 1;
     duel.stage = 'windup';
     duel.stageStartedAt = currentTime;
@@ -3521,8 +3554,23 @@ function observePlayerAttack(duel, currentTime) {
         && currentTime >= duel.nextDodgeAt
         && !['hurt', 'defeated', 'attacking'].includes(duel.stage);
 
-    if (!canDodge) return;
-    if (currentTime >= duel.nextDashAt && duel.dodgePattern === 1) {
+    if (!canDodge || duel.queuedDodgeAt) return;
+    duel.queuedDodgeMode = currentTime >= duel.nextDashAt && duel.dodgePattern === 1 ? 'dash' : 'jump';
+    duel.queuedDodgeAt = currentTime + DUEL_REACTION_MS + duel.dodgePattern * 18;
+}
+
+function performQueuedResistanceDodge(duel, currentTime) {
+    if (!duel.queuedDodgeAt || currentTime < duel.queuedDodgeAt) return;
+    const dodgeMode = duel.queuedDodgeMode;
+    duel.queuedDodgeAt = 0;
+    duel.queuedDodgeMode = '';
+    if (
+        currentTime > state.attackUntil
+        || duel.y > 3
+        || !['moving', 'idle'].includes(duel.stage)
+    ) return;
+
+    if (dodgeMode === 'dash') {
         duel.nextDodgeAt = currentTime + DUEL_DODGE_COOLDOWN_MS;
         duel.tactic = 'counter';
         duel.tacticUntil = currentTime + 1350;
@@ -3553,6 +3601,10 @@ function damageResistanceDuel(duel, currentTime) {
         duel.sprite.getBoundingClientRect().top - boardMetrics().top + duel.sprite.offsetHeight * 0.5,
     );
     clearResistanceDuelAttack(duel);
+    duel.velocityX = 0;
+    duel.moveDirection = 0;
+    duel.queuedDodgeAt = 0;
+    duel.queuedDodgeMode = '';
     duel.element.className = 'resistance-duelist is-hurt';
     playSound(jumpAudio);
 
@@ -3587,6 +3639,7 @@ function updateResistanceDuel(currentTime, delta) {
     duel.lastPlayerX = state.runnerX;
     if (duel.calloutUntil && currentTime >= duel.calloutUntil) duel.callout.classList.remove('is-visible');
     observePlayerAttack(duel, currentTime);
+    performQueuedResistanceDodge(duel, currentTime);
 
     if (duel.y > 0 || duel.velocityY > 0) {
         duel.y += duel.velocityY * delta;
@@ -3706,30 +3759,55 @@ function updateResistanceDuel(currentTime, delta) {
             preferredMaximum = clamp(state.boardWidth * 0.245, 240, 320);
         }
 
-        let direction = 0;
-        if (distance > preferredMaximum + 12) direction = Math.sign(state.runnerX - duel.x);
-        else if (distance < preferredMinimum - 12) direction = Math.sign(duel.x - state.runnerX);
+        let requestedDirection = 0;
+        if (distance > preferredMaximum + 18) requestedDirection = Math.sign(state.runnerX - duel.x);
+        else if (distance < preferredMinimum - 18) requestedDirection = Math.sign(duel.x - state.runnerX);
+        const urgentRetreat = playerAttackAimedAtRubro && distance < preferredMaximum + 42;
+        if (urgentRetreat) requestedDirection = Math.sign(duel.x - state.runnerX);
 
-        if (direction < 0) duel.tactic = counterWindow ? 'counter' : 'pressure';
-        else if (direction > 0) duel.tactic = 'retreat';
+        if (currentTime >= duel.movementCommitUntil || urgentRetreat || duel.moveDirection === 0) {
+            if (requestedDirection !== duel.moveDirection) {
+                duel.moveDirection = requestedDirection;
+                duel.movementCommitUntil = currentTime + (requestedDirection === 0 ? 170 : 300);
+            }
+        }
+        const direction = duel.moveDirection;
+        const movingTowardPlayer = direction !== 0 && direction === Math.sign(state.runnerX - duel.x);
+        if (movingTowardPlayer) duel.tactic = counterWindow ? 'counter' : 'pressure';
+        else if (direction !== 0) duel.tactic = 'retreat';
         else duel.tactic = counterWindow ? 'counter' : 'guard';
 
         const adaptiveSpeed = DUEL_MOVE_SPEED * (1 + pressure * 0.2) * (duel.tactic === 'pressure' ? 1.08 : 1);
-        duel.x += direction * adaptiveSpeed * delta;
+        const targetVelocityX = direction * adaptiveSpeed;
+        const velocityStep = (direction === 0 ? DUEL_MOVE_BRAKING : DUEL_MOVE_ACCELERATION) * delta;
+        duel.velocityX += clamp(targetVelocityX - duel.velocityX, -velocityStep, velocityStep);
+        if (Math.abs(duel.velocityX) < 1.5) duel.velocityX = 0;
+        duel.x += duel.velocityX * delta;
         const arenaBounds = resistanceDuelArenaBounds(duel);
-        duel.x = clamp(duel.x, arenaBounds.minimum, arenaBounds.maximum);
-        if (direction !== 0) duel.facing = direction;
-        else duel.facing = signedDistance >= 0 ? -1 : 1;
-        duel.element.className = direction === 0
+        const clampedX = clamp(duel.x, arenaBounds.minimum, arenaBounds.maximum);
+        if (clampedX !== duel.x) duel.velocityX = 0;
+        duel.x = clampedX;
+        if (Math.abs(duel.velocityX) > 12) duel.facing = Math.sign(duel.velocityX);
+        else if (direction === 0) duel.facing = signedDistance >= 0 ? -1 : 1;
+        duel.element.className = Math.abs(duel.velocityX) < 8
             ? 'resistance-duelist is-idle'
             : 'resistance-duelist is-moving';
 
         if (currentTime >= duel.nextDecisionAt) {
             duel.decisionCount += 1;
             const playerNearGround = state.runnerY < state.boardHeight * 0.12;
-            const inTongueRange = distance < Math.min(330, state.boardWidth * 0.3);
+            const predictionWindow = DUEL_TONGUE_WINDUP_MS / 1000 * 0.62;
+            const predictedPlayerX = state.runnerX + clamp(duel.playerVelocityX, -320, 320) * predictionWindow;
+            const predictedDistance = Math.abs(duel.x - predictedPlayerX);
+            const inTongueRange = predictedDistance < Math.min(330, state.boardWidth * 0.3);
             const safelyAligned = distance > runnerLayer.offsetWidth * 1.05;
-            const attackOpening = playerCoolingDown || playerApproaching || playerDescending || duel.decisionCount % 3 === 0;
+            const playerMovingAway = signedDistance >= 0
+                ? duel.playerVelocityX < -110
+                : duel.playerVelocityX > 110;
+            const attackOpening = playerCoolingDown
+                || playerDescending
+                || (playerApproaching && predictedDistance < distance)
+                || (duel.decisionCount % 4 === 0 && !playerMovingAway);
             const canBaitAttack = currentTime >= duel.nextBaitAt
                 && !playerCoolingDown
                 && !playerAttackAimedAtRubro
@@ -3772,16 +3850,20 @@ function completeResistanceDuel() {
         state.best = finalScore;
         saveBestScore(state.best);
     }
-    storyProgress.resistanceDuelWon = true;
-    storyProgress.completedPhases[1] = true;
-    saveStoryProgress();
+    if (!state.isAdminEncounter) {
+        storyProgress.resistanceDuelWon = true;
+        storyProgress.completedPhases[1] = true;
+        saveStoryProgress();
+    }
     pauseBackgroundMusic(true);
     setPlayingControls(false);
     clearAttack();
     updateScore();
-    overlayKicker.textContent = 'Fase 2 concluída · Luta livre';
+    overlayKicker.textContent = state.isAdminEncounter ? 'Teste direto concluído' : 'Fase 2 concluída · Luta livre';
     overlayTitle.textContent = 'Vitória sobre Rubro';
-    overlayMessage.textContent = 'Você venceu o duelo na clareira. Volte ao mapa para ouvir o que Rubro tem a dizer depois da luta.';
+    overlayMessage.textContent = state.isAdminEncounter
+        ? 'O duelo administrativo terminou sem alterar o progresso da história.'
+        : 'Você venceu o duelo na clareira. Volte ao mapa para ouvir o que Rubro tem a dizer depois da luta.';
     showVictoryScore(finalScore, `${DUEL_MAX_HEALTH} golpes certeiros · bônus de vitória +${DUEL_VICTORY_BONUS}`);
     playLabel.textContent = 'Lutar novamente';
     resultMenuButton.textContent = 'Voltar ao mapa';
@@ -4020,7 +4102,7 @@ function endGame(hazard = 'obstacle') {
             ? 'Você chegou ao castelo. Agora tente correr ainda mais longe e capture mais besouros.'
             : 'Um obstáculo encerrou a corrida. Tente novamente e observe o espaço entre os próximos ataques.';
     playLabel.textContent = state.isTestArea ? 'Repetir teste' : 'Jogar novamente';
-    resultMenuButton.textContent = 'Voltar ao menu';
+    resultMenuButton.textContent = state.isAdminEncounter ? 'Voltar ao mapa' : 'Voltar ao menu';
     showResultOverlay();
     playButton.focus({ preventScroll: true });
 }
@@ -4045,7 +4127,7 @@ function completeJourney() {
         saveStoryProgress();
         syncResistanceNpc();
     }
-    overlayKicker.textContent = state.isTestArea ? 'Teste concluído' : 'Fase 1 concluída · Corrida';
+    overlayKicker.textContent = state.isAdminEncounter ? 'Teste direto concluído' : state.isTestArea ? 'Teste concluído' : 'Fase 1 concluída · Corrida';
     overlayTitle.textContent = state.isTestArea ? 'Chefã derrotada!' : 'Vitória na Rota da Manhã';
     overlayMessage.textContent = state.isTestArea
         ? `Os cinco golpes foram registrados e a Super Abelha foi derrotada. Repita o teste se quiser praticar a investida do ferrão.`
@@ -4055,7 +4137,7 @@ function completeJourney() {
         state.isTestArea ? 'Área de testes concluída' : `Rota da Manhã · ${formatTime(JOURNEY_DURATION)}`,
     );
     playLabel.textContent = state.isTestArea ? 'Repetir teste' : 'Correr novamente';
-    resultMenuButton.textContent = state.isTestArea ? 'Voltar ao menu' : 'Voltar ao mapa';
+    resultMenuButton.textContent = state.isAdminEncounter ? 'Voltar ao mapa' : state.isTestArea ? 'Voltar ao menu' : 'Voltar ao mapa';
     showResultOverlay();
     playButton.focus({ preventScroll: true });
 }
@@ -4065,6 +4147,14 @@ function returnFromResult() {
         state.mode = 'idle';
         state.isDuel = false;
         board.classList.remove('is-duel');
+        mainMenuShell.classList.remove('is-hidden');
+        resultCard.classList.add('is-hidden');
+        overlay.classList.add('is-visible');
+        runWorldMapLoading();
+        return;
+    }
+    if (state.isAdminEncounter) {
+        state.mode = 'idle';
         mainMenuShell.classList.remove('is-hidden');
         resultCard.classList.add('is-hidden');
         overlay.classList.add('is-visible');
@@ -4722,8 +4812,8 @@ function syncBoardSize(width, height) {
 
 playButton.addEventListener('click', () => {
     if (state.mode === 'paused') resumeGame();
-    else if (state.isDuel) startResistanceDuel();
-    else if (state.mode !== 'loading') startGame({ testArea: state.isTestArea });
+    else if (state.isDuel) startResistanceDuel({ adminTest: state.isAdminEncounter });
+    else if (state.mode !== 'loading') startGame({ testArea: state.isTestArea, adminTest: state.isAdminEncounter });
 });
 
 storyMapTab?.addEventListener('click', () => showStoryCategory('map'));
@@ -4796,6 +4886,9 @@ adminCommandButton?.addEventListener('click', openAdminCommandDialog);
 adminCommandClose?.addEventListener('click', closeAdminCommandDialog);
 adminCommandCancel?.addEventListener('click', closeAdminCommandDialog);
 adminCommandForm?.addEventListener('submit', applyAdminCommands);
+adminFightButtons.forEach((button) => {
+    button.addEventListener('click', () => startAdminDirectFight(button.dataset.adminFight));
+});
 adminCommandDialog?.addEventListener('cancel', (event) => {
     event.preventDefault();
     closeAdminCommandDialog();

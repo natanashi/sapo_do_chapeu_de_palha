@@ -1162,23 +1162,6 @@ button { cursor: pointer; }
     animation: resistance-duelist-walk 640ms steps(1, end) infinite;
 }
 
-.resistance-duelist__sprite::after {
-    content: '';
-    position: absolute;
-    z-index: 3;
-    top: 39%;
-    left: 67%;
-    width: 10%;
-    height: 7%;
-    background: #3b1320;
-    border: max(1px, calc(var(--runner-size) * 0.009)) solid #180b10;
-    box-shadow: inset 0 -2px 0 #e86176;
-    opacity: 0;
-    transform: scaleY(0.15);
-    transform-origin: center;
-    image-rendering: pixelated;
-}
-
 .resistance-duelist__tongue {
     position: absolute;
     z-index: 1;
@@ -1220,17 +1203,17 @@ button { cursor: pointer; }
     animation: none;
 }
 .resistance-duelist.is-winding-up .resistance-duelist__sprite {
-    background-position: 100% 0;
+    background-image: url("../img/sapo-resistencia-ataque-sprites-v2.png");
+    background-position: 0 0;
+    background-size: 400% 100%;
     animation: resistance-duelist-warning 170ms steps(2, end) infinite;
 }
 .resistance-duelist.is-attacking .resistance-duelist__sprite {
-    background-position: 0 100%;
-    animation: none;
+    background-image: url("../img/sapo-resistencia-ataque-sprites-v2.png");
+    background-position: 0 0;
+    background-size: 400% 100%;
+    animation: resistance-duelist-attack 700ms steps(1, end) both;
     transform: scaleX(-1) translateX(-2%);
-}
-.resistance-duelist.is-attacking .resistance-duelist__sprite::after {
-    opacity: 1;
-    animation: resistance-mouth-open 700ms steps(2, end) both;
 }
 .resistance-duelist.faces-right.is-attacking .resistance-duelist__sprite {
     transform: scaleX(1) translateX(2%);
@@ -2761,6 +2744,45 @@ kbd {
 .admin-stat-grid input[type="number"] { min-width: 0; height: 42px; padding: 0 10px; border: 3px solid #805030; color: #2c291f; background: #fff8d7; font: 900 0.72rem/1 var(--font-data); }
 .admin-stat-grid input[type="number"]:focus { outline: 3px solid #efbd50; outline-offset: 2px; }
 .admin-stat-toggle span { height: 100%; justify-content: center; text-align: center; }
+.admin-direct-fights {
+    display: grid;
+    grid-template-columns: minmax(150px, 0.72fr) minmax(0, 1.28fr);
+    gap: 12px;
+    align-items: center;
+    margin-top: 10px;
+    padding: 12px;
+    border: 3px solid #704329;
+    background: rgba(255, 244, 196, 0.62);
+    box-shadow: inset 0 -4px 0 rgba(111, 62, 30, 0.12);
+}
+.admin-direct-fights > div:first-child small { color: #9a4d28; font-size: 0.5rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+.admin-direct-fights h4 { margin: 2px 0 3px; color: #193f29; font-family: var(--font-display); font-size: 0.95rem; line-height: 1; }
+.admin-direct-fights p { margin: 0; color: #65482f; font-size: 0.57rem; font-weight: 800; line-height: 1.35; }
+.admin-direct-fights__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.admin-direct-fights__grid button {
+    display: grid;
+    min-width: 0;
+    min-height: 58px;
+    grid-template-columns: 48px 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    border: 3px solid #342219;
+    color: #fff2bc;
+    background: #315f35;
+    box-shadow: inset 0 -5px 0 #183d25, 0 3px 0 #342219;
+    text-align: left;
+    cursor: pointer;
+}
+.admin-direct-fights__grid button:hover { filter: brightness(1.12); transform: translateY(-1px); }
+.admin-direct-fights__grid button:active { transform: translateY(3px); box-shadow: inset 0 -2px 0 #183d25; }
+.admin-direct-fights__grid b,
+.admin-direct-fights__grid small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-direct-fights__grid b { font-family: var(--font-ui); font-size: 0.59rem; }
+.admin-direct-fights__grid small { margin-top: 3px; color: #d5e5a3; font-size: 0.48rem; font-weight: 800; }
+.admin-fight-icon { width: 46px; aspect-ratio: 1; background-position: center; background-repeat: no-repeat; image-rendering: pixelated; }
+.admin-fight-icon--bee { background-image: url("../img/super-abelha-monstro-sprites-v2.png"); background-position: 0 0; background-size: 400% 200%; }
+.admin-fight-icon--rubro { background-image: url("../img/sapo-resistencia-guarda-v1.png"); background-size: contain; }
 .admin-command-status { min-height: 18px; color: #2f6b3c; }
 .admin-command-dialog footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
 .admin-command-dialog footer button { min-height: 42px; padding: 8px 13px; border: 3px solid #342219; font-family: var(--font-ui); font-size: 0.62rem; font-weight: 900; cursor: pointer; }
@@ -3586,9 +3608,11 @@ body.reduce-game-motion .resistance-duelist.faces-right .resistance-duelist__ton
     100% { opacity: 0; transform: translateY(-50%) scaleX(-0.02); }
 }
 
-@keyframes resistance-mouth-open {
-    0%, 9%, 88%, 100% { opacity: 0; transform: scaleY(0.15); }
-    20%, 72% { opacity: 1; transform: scaleY(1); }
+@keyframes resistance-duelist-attack {
+    0%, 14% { background-position: 33.333% 0; }
+    14.01%, 66% { background-position: 66.667% 0; }
+    66.01%, 86% { background-position: 100% 0; }
+    86.01%, 100% { background-position: 33.333% 0; }
 }
 
 @keyframes resistance-dash-windup {
@@ -3995,6 +4019,9 @@ body.reduce-game-motion .resistance-duelist.faces-right .resistance-duelist__ton
     .admin-command-dialog form { padding: 12px; }
     .admin-command-dialog header { grid-template-columns: 50px 1fr auto; gap: 8px; }
     .admin-command-dialog__icon { width: 44px; }
+    .admin-direct-fights { grid-template-columns: 1fr; }
+    .admin-direct-fights__grid button { grid-template-columns: 40px 1fr; }
+    .admin-fight-icon { width: 38px; }
     .admin-phase-grid { grid-template-columns: 1fr; max-height: 196px; overflow-y: auto; }
     .admin-stat-grid { grid-template-columns: 1fr; }
     .admin-stat-toggle span { min-height: 40px; }

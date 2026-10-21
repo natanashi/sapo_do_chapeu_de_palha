@@ -8,8 +8,8 @@
     <meta name="description" content="Ajude o Sapo do Chapéu de Palha a atravessar quatro regiões da manhã, saltar obstáculos e capturar besouros e abelhas antes que eles se aproximem.">
     <link rel="icon" type="image/png" href="assets/img/sapo-capa.png">
     <link rel="preload" as="image" href="assets/img/menu-floresta-amanhecer-v1.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=125">
-    <script src="assets/js/script.js?v=125" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=126">
+    <script src="assets/js/script.js?v=126" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body class="is-app-loading has-indie-intro">
@@ -510,6 +510,23 @@
                                         <label class="admin-stat-toggle"><input id="admin-challenge-unlocked" type="checkbox"><span>Desafio de Rubro liberado</span></label>
                                         <label class="admin-stat-toggle"><input id="admin-duel-won" type="checkbox"><span>Duelo de Rubro vencido</span></label>
                                     </div>
+                                    <section class="admin-direct-fights" aria-labelledby="admin-direct-fights-title">
+                                        <div>
+                                            <small>Atalho de testes</small>
+                                            <h4 id="admin-direct-fights-title">Encontros diretos</h4>
+                                            <p>Abra uma batalha sem alterar o progresso da história.</p>
+                                        </div>
+                                        <div class="admin-direct-fights__grid">
+                                            <button type="button" data-admin-fight="super-bee">
+                                                <span class="admin-fight-icon admin-fight-icon--bee" aria-hidden="true"></span>
+                                                <span><b>Super Abelha</b><small>Chefã da fase 1</small></span>
+                                            </button>
+                                            <button type="button" data-admin-fight="rubro">
+                                                <span class="admin-fight-icon admin-fight-icon--rubro" aria-hidden="true"></span>
+                                                <span><b>Rubro</b><small>Duelo da fase 2</small></span>
+                                            </button>
+                                        </div>
+                                    </section>
                                     <p class="admin-command-status" id="admin-command-status" role="status" aria-live="polite"></p>
                                     <footer>
                                         <button class="admin-command-cancel" id="admin-command-cancel" type="button">Cancelar</button>
