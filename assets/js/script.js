@@ -459,6 +459,8 @@ const DUEL_DASH_COOLDOWN_MS = 2800;
 const DUEL_DASH_SPEED = 610;
 const DUEL_HIT_POINTS = 120;
 const DUEL_VICTORY_BONUS = 400;
+const TONGUE_LENGTH_IN_FROG_SIZES = 4;
+const TONGUE_THICKNESS_IN_FROG_SIZES = 0.17;
 const BEE_AIM_DURATION_MS = 520;
 const BEE_PREDICTION_SECONDS = 0.18;
 const HORIZONTAL_SPEED_MIN = 210;
@@ -514,7 +516,10 @@ function applyWorldScale(width, height) {
     Object.entries(WORLD_SIZES).forEach(([property, desktopSize]) => {
         board.style.setProperty(property, `${(desktopSize * scale).toFixed(2)}px`);
     });
-    board.style.setProperty('--tongue-size', `${clamp(width * 0.3075, 220, 420).toFixed(2)}px`);
+    const runnerSize = WORLD_SIZES['--runner-size'] * scale;
+    board.style.setProperty('--tongue-length-frogs', String(TONGUE_LENGTH_IN_FROG_SIZES));
+    board.style.setProperty('--tongue-size', `${(runnerSize * TONGUE_LENGTH_IN_FROG_SIZES).toFixed(2)}px`);
+    board.style.setProperty('--tongue-thickness', `${(runnerSize * TONGUE_THICKNESS_IN_FROG_SIZES).toFixed(2)}px`);
 }
 
 function normalizeStoryProgress(progress = {}) {
@@ -2428,8 +2433,8 @@ function restoreDefaultFrogSkin() {
 
 function restoreDefaultTongueSkin() {
     clearSkinObjectUrl('tongue');
-    runnerAttack.src = 'assets/img/sapo-lingua-limpa-v3.png';
-    skinPreviewTongue.src = 'assets/img/sapo-lingua-limpa-v3.png';
+    runnerAttack.src = 'assets/img/sapo-lingua-padrao-v4.png';
+    skinPreviewTongue.src = 'assets/img/sapo-lingua-padrao-v4.png';
 }
 
 function markSelectedPresets(frogColor, tongueColor) {
@@ -2460,7 +2465,7 @@ async function applySkinColors(showSaved = false) {
         const [frogSprites, coverUrl, tongueUrl] = await Promise.all([
             frogChanged && !frogUsesDefaultArt ? Promise.all(FROG_SPRITES.map(async ([property, source]) => [property, await recolorImage(source, frogColor, 'frog')])) : Promise.resolve([]),
             frogChanged && !frogUsesDefaultArt ? recolorImage('assets/img/sapo-capa.png', frogColor, 'frog') : Promise.resolve(null),
-            tongueChanged && !tongueUsesDefaultArt ? recolorImage('assets/img/sapo-lingua-limpa-v3.png', tongueColor, 'tongue') : Promise.resolve(null),
+            tongueChanged && !tongueUsesDefaultArt ? recolorImage('assets/img/sapo-lingua-padrao-v4.png', tongueColor, 'tongue') : Promise.resolve(null),
         ]);
         const generatedUrls = [...frogSprites.map(([, url]) => url), coverUrl, tongueUrl].filter(Boolean);
         await Promise.allSettled(generatedUrls.map(preloadImage));
@@ -3194,7 +3199,7 @@ function startResistanceDuelNow({ adminTest = false } = {}) {
     element.setAttribute('aria-hidden', 'true');
     const tongue = document.createElement('img');
     tongue.className = 'resistance-duelist__tongue';
-    tongue.src = 'assets/img/sapo-lingua-rubro-limpa-v3.png';
+    tongue.src = 'assets/img/sapo-lingua-padrao-v4.png';
     tongue.alt = '';
     const sprite = document.createElement('span');
     sprite.className = 'resistance-duelist__sprite';
@@ -3346,12 +3351,12 @@ function stageAssets(kind, testArea = false) {
         'assets/img/sapo-corrida-bipede-v3.png',
         'assets/img/sapo-ciclo-natural-v2.png',
         'assets/img/sapo-boca-aberta-sprites.png',
-        'assets/img/sapo-lingua-limpa-v3.png',
+        'assets/img/sapo-lingua-padrao-v4.png',
         'assets/img/plataforma-musgo.png',
         ...FROG_SPRITES.map(([property]) => skinObjectUrls.get(property)).filter(Boolean),
         skinObjectUrls.get('tongue'),
     ].filter(Boolean);
-    if (kind === 'duel') return [...common, 'assets/img/sapo-resistencia-capuz-sprites-v1.png', 'assets/img/sapo-resistencia-ataque-sprites-v2.png', 'assets/img/sapo-lingua-rubro-limpa-v3.png'];
+    if (kind === 'duel') return [...common, 'assets/img/sapo-resistencia-capuz-sprites-v1.png', 'assets/img/sapo-resistencia-ataque-sprites-v2.png', 'assets/img/sapo-lingua-padrao-v4.png'];
     if (testArea) return [...common, 'assets/img/super-abelha-monstro-sprites-v2.png', 'assets/img/abelha-investida-sprites.png'];
     return [...common, ...Object.values(OBSTACLES).map((obstacle) => obstacle.src), 'assets/img/inseto-voando-sprites.png', 'assets/img/besouro-ondulante-voando-sprites.png', 'assets/img/abelha-investida-sprites.png'];
 }

@@ -622,7 +622,9 @@ button { cursor: pointer; }
     --ground-verge: #41773d;
     --scene-lift: 3%;
     --runner-size: 158px;
-    --tongue-size: 420px;
+    --tongue-length-frogs: 4;
+    --tongue-size: calc(var(--runner-size) * var(--tongue-length-frogs));
+    --tongue-thickness: calc(var(--runner-size) * 0.17);
     --rock-size: 124px;
     --wheel-size: 132px;
     --wheel-heavy-size: 148px;
@@ -1051,7 +1053,8 @@ button { cursor: pointer; }
     left: var(--mouth-x);
     width: var(--tongue-size);
     max-width: none;
-    height: auto;
+    height: var(--tongue-thickness);
+    object-fit: fill;
     opacity: 0;
     transform: translateY(-50%) scaleX(0.035);
     transform-origin: left center;
@@ -1169,7 +1172,8 @@ button { cursor: pointer; }
     left: 30%;
     width: var(--tongue-size);
     max-width: none;
-    height: auto;
+    height: var(--tongue-thickness);
+    object-fit: fill;
     opacity: 0;
     filter: drop-shadow(0 6px 3px rgba(17, 35, 18, 0.24));
     image-rendering: pixelated;
