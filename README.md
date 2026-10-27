@@ -5,7 +5,7 @@
 > [!IMPORTANT]
 > Esta é uma **versão beta para navegador**. A versão oficial do jogo será lançada para **Steam** e **Play Store**.
 
-Jogo de corrida em pixel art para navegador, com suporte a computador e celular. Esta beta permite testar a jogabilidade, os cenários, os inimigos e a progressão enquanto a versão oficial continua em desenvolvimento.
+Jogo de ação em pixel art para navegador, com corrida, luta livre e voo, além de suporte a computador e celular. Esta beta permite testar a jogabilidade, os cenários, os inimigos e a progressão enquanto a versão oficial continua em desenvolvimento.
 
 Ao abrir o jogo, uma mensagem apresenta sua origem indie: a **Natanashi Studios** é o codinome da pequena startup que desenvolve o projeto. IA é usada como apoio, mas código, personagens, cenários e animações passam por revisão e dedicação humana, apoiadas por uma prática de programação iniciada em 2018.
 
@@ -13,7 +13,9 @@ Ao abrir o jogo, uma mensagem apresenta sua origem indie: a **Natanashi Studios*
 
 - Quatro regiões inteiramente pela manhã: Vila do Sol, Campos do Orvalho, Floresta Antiga e Castelo da Manhã.
 - Jornada de 2 minutos e um mapa no topo que mostra a posição do jogador em toda a rota.
-- Mapa-múndi explorável 2×2 antes da partida: a câmera acompanha o mesmo sapinho da corrida por um gramado em perspectiva, com árvores, pedras e um museu em pixel art. A profundidade muda conforme o sapo passa na frente ou atrás dos elementos, todos com colisão. Há seis selos de fase; apenas **Rota da Manhã** está disponível e os outros cinco aparecem como “Em construção · em breve”. As quatro regiões continuam fazendo parte dessa mesma fase.
+- Mapa-múndi explorável 3×3 antes da partida: a câmera acompanha o mesmo sapinho da corrida por um gramado em perspectiva, com plantas, pedras, trilhas e um museu em pixel art. A profundidade muda conforme o sapo passa na frente ou atrás dos elementos, todos com colisão. Há seis selos de fase; as três primeiras fases são liberadas em sequência e as fases 4 a 6 aparecem como “Em construção · em breve”.
+- Fase 2 de luta livre contra Rubro, com deslocamento, pulo, língua, esquiva e inteligência de combate baseada na posição do jogador.
+- Fase 3 **Pedreira Musgosa**, um speed run aéreo de 60 segundos: o sapo monta em um pássaro animado, bate asas para controlar a altura e atravessa passagens entre colunas de pedra cada vez mais rápidas.
 - Museu da Mata acessível dentro do mapa, com um pequeno documentário sobre os cinco bichos do bioma, seus comportamentos e como aparecem na fase.
 - Perfil offline com nome do jogador editável e salvo no aparelho; cadastro, login e sincronização estão marcados como recursos futuros.
 - Três diários de jornada no Modo História. Cada personagem tem nome, cores do corpo e da língua, recorde e progresso próprios, tudo salvo no aparelho; a exclusão pede confirmação antes de apagar.
@@ -43,6 +45,7 @@ Ao abrir o jogo, uma mensagem apresenta sua origem indie: a **Natanashi Studios*
 
 - Movimento: use `A`/`D` ou `←`/`→` para recuar e avançar pelo cenário.
 - Computador: pressione `Espaço` ou `↑` para pular.
+- Na Pedreira Musgosa: `Espaço` ou `↑` bate as asas; `A`/`D` ou `←`/`→` ajusta a posição horizontal do voo.
 - Língua: pressione `X` para capturar os besouros que voam da direita para a esquerda. Encostar neles encerra a corrida.
 - Pausa: pressione `P` ou use o botão **Pausar**.
 - Celular: segure **Voltar** ou **Avançar** para se mover e use **Pular** e **Língua** para agir.

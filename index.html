@@ -175,7 +175,7 @@
                 <div class="control-group control-group--actions" aria-label="Ações">
                     <button class="action-button action-button--jump" id="jump-button" type="button" disabled>
                         <span class="action-symbol" aria-hidden="true">↑</span>
-                        <span>Pular <kbd>Espaço</kbd></span>
+                        <span><b id="jump-action-label">Pular</b> <kbd>Espaço</kbd></span>
                     </button>
                     <button class="action-button action-button--tongue" id="tongue-button" type="button" disabled>
                         <span class="action-symbol" aria-hidden="true">↝</span>
@@ -349,7 +349,7 @@
                                     <span>Modo história</span>
                                     <h2 id="map-menu-title">Trilha do Chapéu de Palha</h2>
                                 </div>
-                                <p id="world-map-help">Explore a mata com as setas ou toque no mapa. A Rota da Manhã é a única fase disponível.</p>
+                                <p id="world-map-help">Explore a mata com as setas ou toque no mapa. As três primeiras fases são liberadas em sequência.</p>
                             </div>
                             <div class="story-category-tabs" role="tablist" aria-label="Categorias do modo história">
                                 <button class="is-active" id="story-map-tab" type="button" role="tab" aria-selected="true" aria-controls="story-map-category" tabindex="0">Mapa das fases</button>
@@ -420,7 +420,10 @@
                                         <span class="world-resistance-npc__sprite" aria-hidden="true"></span>
                                         <strong>Sapo encapuzado</strong>
                                     </button>
-                                    <button class="world-level is-locked" type="button" data-world-level="2" aria-label="Fase 3, Pedreira Musgosa, categoria Corrida, em construção" style="--level-x: 84%; --level-y: 57%; --level-depth: 57;">
+                                    <span class="world-rock-mountain" aria-hidden="true" style="--mountain-x: 92%; --mountain-y: 66%; --mountain-depth: 66;">
+                                        <img data-map-src="assets/img/mapa-montanha-pedreira-v1.png" alt="" draggable="false">
+                                    </span>
+                                    <button class="world-level is-locked" type="button" data-world-level="2" aria-label="Fase 3, Pedreira Musgosa, categoria Voo speed run, bloqueada" style="--level-x: 84%; --level-y: 57%; --level-depth: 57;">
                                         <span><b>3</b></span><strong>Pedreira Musgosa</strong>
                                     </button>
                                     <button class="world-level is-locked" type="button" data-world-level="3" aria-label="Fase 4, Clareira dos Ventos, categoria Luta livre, em construção" style="--level-x: 68%; --level-y: 27%; --level-depth: 27;">
@@ -438,7 +441,7 @@
                                     <span class="admin-command-button__block" aria-hidden="true"><i></i></span>
                                     <strong>Comando admin</strong>
                                 </button>
-                                <div class="world-map-future" aria-label="Uma fase disponível e cinco em construção"><span aria-hidden="true">⚒</span> Fases 2 a 6 ainda não estão jogáveis</div>
+                                <div class="world-map-future" aria-label="Três fases implementadas e três em construção"><span aria-hidden="true">⚒</span> Fases 4 a 6 ainda estão em construção</div>
                                 <div class="world-map-prompt" id="world-map-prompt" aria-live="polite" aria-hidden="true">
                                     <small id="world-map-prompt-kicker">Fase encontrada</small>
                                     <strong id="world-map-stage-name">Rota da Manhã</strong>

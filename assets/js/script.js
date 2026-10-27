@@ -133,6 +133,7 @@ const moveLeftButton = document.querySelector('#move-left-button');
 const moveRightButton = document.querySelector('#move-right-button');
 const crouchButton = document.querySelector('#crouch-button');
 const jumpButton = document.querySelector('#jump-button');
+const jumpActionLabel = document.querySelector('#jump-action-label');
 const tongueButton = document.querySelector('#tongue-button');
 const scoreDisplay = document.querySelector('#score');
 const bestScoreDisplay = document.querySelector('#best-score');
@@ -149,6 +150,7 @@ const phaseName = document.querySelector('#phase-name');
 const journeyProgress = document.querySelector('#journey-progress');
 const routeTimeDisplay = document.querySelector('#route-time');
 const routeMapStops = [...document.querySelectorAll('[data-route-stop]')];
+const routeMapStopLabels = routeMapStops.map((stop) => stop.querySelector('span'));
 const sceneLayers = [document.querySelector('#scenery-a'), document.querySelector('#scenery-b')];
 const orientationGuard = document.querySelector('#orientation-guard');
 
@@ -338,6 +340,7 @@ const WORLD_MAP_ASSET_URLS = [
     'assets/img/mapa-pedra-redonda-v1.png',
     'assets/img/mapa-pedra-alongada-v1.png',
     'assets/img/mapa-museu-brejo-v1.png',
+    'assets/img/mapa-montanha-pedreira-v1.png',
     'assets/img/sapo-resistencia-guarda-v1.png',
 ];
 
@@ -398,6 +401,10 @@ const state = {
     isAdminEncounter: false,
     isDuel: false,
     duel: null,
+    isFlight: false,
+    flightGates: [],
+    flightGateCooldown: 0,
+    flightLastFlapAt: 0,
 };
 
 const PACE_REFERENCE_SPEED = 270;
@@ -413,6 +420,11 @@ const ATTACK_CAPTURE_CLOSE = 290;
 const ATTACK_RETRACT_AT = 320;
 const ATTACK_SWALLOW_AT = 485;
 const JOURNEY_DURATION = 120;
+const FLIGHT_DURATION = 60;
+const FLIGHT_GRAVITY = 1180;
+const FLIGHT_FLAP_FORCE = 405;
+const FLIGHT_BASE_SPEED = 255;
+const FLIGHT_SPEED_GAIN = 165;
 const BOSS_START_TIME = 88;
 const BOSS_MAX_HEALTH = 5;
 const BOSS_ATTACK_STAGE_MS = 3600;
@@ -656,16 +668,34 @@ function formatTime(value) {
     return `${minutes}:${seconds}`;
 }
 
+function configureJourneyLabels(flightMode = false) {
+    const labels = flightMode
+        ? ['Subida', 'Arcos', 'Picos', 'Ninho']
+        : ['Vila', 'Campos', 'Floresta', 'Castelo'];
+    routeMapStopLabels.forEach((label, index) => {
+        if (label) label.textContent = labels[index];
+    });
+    document.querySelector('.route-map')?.setAttribute(
+        'aria-label',
+        flightMode ? 'Mapa do voo pelas quatro partes da pedreira' : 'Mapa da jornada pelas quatro regiões',
+    );
+}
+
 function updateScore() {
     const nextScore = formatScore(state.score);
     const nextBest = formatScore(state.best);
-    const nextPhase = `${state.phaseIndex + 1}/${PHASES.length}`;
-    const nextPace = `${currentPaceMultiplier().toFixed(2)}x`;
-    const nextRegion = PHASES[state.phaseIndex].name;
-    const nextProgress = Math.round(clamp((state.elapsedTime / JOURNEY_DURATION) * 100, 0, 100) * 5) / 5;
-    const nextTime = state.isTestArea
-        ? `TESTE · ${formatTime(Math.max(0, state.elapsedTime - BOSS_START_TIME))}`
-        : `${formatTime(state.elapsedTime)} / ${formatTime(JOURNEY_DURATION)}`;
+    const flightProgress = clamp(state.elapsedTime / FLIGHT_DURATION, 0, 1);
+    const nextPhase = state.isFlight ? '3/6' : `${state.phaseIndex + 1}/${PHASES.length}`;
+    const nextPace = state.isFlight
+        ? `${((FLIGHT_BASE_SPEED + FLIGHT_SPEED_GAIN * flightProgress) / FLIGHT_BASE_SPEED).toFixed(2)}x`
+        : `${currentPaceMultiplier().toFixed(2)}x`;
+    const nextRegion = state.isFlight ? 'Pedreira dos Ventos' : PHASES[state.phaseIndex].name;
+    const nextProgress = Math.round(clamp((state.elapsedTime / (state.isFlight ? FLIGHT_DURATION : JOURNEY_DURATION)) * 100, 0, 100) * 5) / 5;
+    const nextTime = state.isFlight
+        ? `${formatTime(state.elapsedTime)} / ${formatTime(FLIGHT_DURATION)}`
+        : (state.isTestArea
+            ? `TESTE · ${formatTime(Math.max(0, state.elapsedTime - BOSS_START_TIME))}`
+            : `${formatTime(state.elapsedTime)} / ${formatTime(JOURNEY_DURATION)}`);
 
     if (hudRenderCache.score !== nextScore) scoreDisplay.textContent = hudRenderCache.score = nextScore;
     if (hudRenderCache.best !== nextBest) bestScoreDisplay.textContent = hudRenderCache.best = nextBest;
@@ -677,12 +707,13 @@ function updateScore() {
         journeyProgress.style.width = `${nextProgress}%`;
     }
     if (hudRenderCache.time !== nextTime) routeTimeDisplay.textContent = hudRenderCache.time = nextTime;
-    if (hudRenderCache.routePhase !== state.phaseIndex) {
-        hudRenderCache.routePhase = state.phaseIndex;
+    const routePhase = state.isFlight ? Math.min(3, Math.floor(flightProgress * 4)) : state.phaseIndex;
+    if (hudRenderCache.routePhase !== routePhase) {
+        hudRenderCache.routePhase = routePhase;
         routeMapStops.forEach((stop, index) => {
-            stop.classList.toggle('is-passed', index < state.phaseIndex);
-            stop.classList.toggle('is-active', index === state.phaseIndex);
-            if (index === state.phaseIndex) stop.setAttribute('aria-current', 'step');
+            stop.classList.toggle('is-passed', index < routePhase);
+            stop.classList.toggle('is-active', index === routePhase);
+            if (index === routePhase) stop.setAttribute('aria-current', 'step');
             else stop.removeAttribute('aria-current');
         });
     }
@@ -862,7 +893,7 @@ function primeStageActorMetrics() {
 
 function runnerBounds() {
     const size = Math.max(1, state.runnerWidth || runnerLayer.offsetWidth);
-    const bottom = state.boardHeight * 0.135;
+    const bottom = state.isFlight ? 0 : state.boardHeight * 0.135;
     return {
         left: state.runnerX,
         right: state.runnerX + size,
@@ -907,7 +938,9 @@ function runnerHorizontalBounds() {
     const edgeMargin = clamp(width * 0.012, 6, 20);
     return {
         minimum: edgeMargin,
-        maximum: Math.max(edgeMargin, width - runnerWidth - edgeMargin),
+        maximum: state.isFlight
+            ? Math.max(edgeMargin, width * 0.46 - runnerWidth)
+            : Math.max(edgeMargin, width - runnerWidth - edgeMargin),
     };
 }
 
@@ -947,6 +980,7 @@ function clearHorizontalInput() {
 }
 
 function setCrouching(pressed) {
+    if (state.isFlight) return;
     if (pressed && state.mode !== 'playing') return;
     state.isCrouching = pressed;
     const isGrounded = state.runnerY <= 3 || Boolean(state.standingPlatform);
@@ -1055,6 +1089,7 @@ function clearActors() {
     state.obstacles = [];
     state.insects = [];
     state.platforms = [];
+    state.flightGates = [];
     state.standingPlatform = null;
     obstacleLayer.replaceChildren();
     collectibleLayer.replaceChildren();
@@ -1555,6 +1590,13 @@ function clearAttack() {
 }
 
 function updateTongueCooldown(currentTime = performance.now()) {
+    if (state.isFlight) {
+        tongueButton.disabled = true;
+        tongueButton.classList.remove('is-cooling-down');
+        tongueButton.setAttribute('aria-label', 'Língua indisponível durante o voo');
+        delete tongueButton.dataset.cooldown;
+        return;
+    }
     const remaining = Math.max(0, state.attackReadyAt - currentTime);
     const isCoolingDown = state.mode === 'playing' && remaining > 0;
     const remainingBucket = isCoolingDown ? Math.ceil(remaining / 50) : 0;
@@ -1653,9 +1695,18 @@ function resetRun() {
     state.isAdminEncounter = false;
     state.isDuel = false;
     state.duel = null;
+    state.isFlight = false;
+    state.flightGates = [];
+    state.flightGateCooldown = 0;
+    state.flightLastFlapAt = 0;
     state.runnerFacing = 1;
-    board.classList.remove('is-duel');
+    board.classList.remove('is-duel', 'is-flight');
+    state.runnerWidth = Math.max(1, runnerLayer.offsetWidth);
+    if (jumpActionLabel) jumpActionLabel.textContent = 'Pular';
+    configureJourneyLabels(false);
     runnerLayer.classList.remove('faces-left');
+    runnerLayer.classList.remove('is-flapping');
+    runnerLayer.style.removeProperty('--flight-tilt');
     clearHorizontalInput();
     runnerLayer.classList.remove('is-hit', 'is-airborne', 'is-swallowing', ...RUNNER_MOTION_CLASSES);
     renderRunnerPosition();
@@ -1666,9 +1717,9 @@ function resetRun() {
 function setPlayingControls(enabled) {
     moveLeftButton.disabled = !enabled;
     moveRightButton.disabled = !enabled;
-    crouchButton.disabled = !enabled;
+    crouchButton.disabled = !enabled || state.isFlight;
     jumpButton.disabled = !enabled;
-    tongueButton.disabled = !enabled;
+    tongueButton.disabled = !enabled || state.isFlight;
     pauseButton.disabled = !enabled;
     if (!enabled) clearHorizontalInput();
     updateTongueCooldown();
@@ -1677,7 +1728,7 @@ function setPlayingControls(enabled) {
 const WORLD_LEVELS = [
     { name: 'Rota da Manhã', category: 'Corrida', x: 29, y: 80, unlocked: true, playable: true },
     { name: 'Bosque dos Cogumelos', category: 'Luta livre', x: 68, y: 82, unlocked: false, playable: false },
-    { name: 'Pedreira Musgosa', category: 'Corrida', x: 84, y: 57, unlocked: false, playable: false },
+    { name: 'Pedreira Musgosa', category: 'Voo speed run', x: 84, y: 57, unlocked: false, playable: true },
     { name: 'Clareira dos Ventos', category: 'Luta livre', x: 68, y: 27, unlocked: false, playable: false },
     { name: 'Vale das Folhas', category: 'Corrida', x: 37, y: 20, unlocked: false, playable: false },
     { name: 'Coração da Mata', category: 'Luta livre', x: 13, y: 46, unlocked: false, playable: false },
@@ -1733,6 +1784,7 @@ const WORLD_MAP_BLOCKERS = [
     { x: 4, y: 34, width: 3.1, height: 2.5 },
     { x: 95, y: 94, width: 3.3, height: 2.6 },
     { x: WORLD_MUSEUM.x, y: WORLD_MUSEUM.y, width: 10.5, height: 6.2 },
+    { x: 92, y: 66, width: 12.5, height: 8.8 },
 ];
 
 const worldMapState = {
@@ -1828,7 +1880,7 @@ function syncResistanceNpc() {
         if (number) number.textContent = completed ? '✓' : String(index + 1);
         button?.setAttribute(
             'aria-label',
-            `Fase ${index + 1}, ${level.name}, categoria ${level.category}, ${completed ? 'concluída' : unlocked ? index === 0 ? 'disponível' : 'desbloqueada e em construção' : 'bloqueada'}`,
+            `Fase ${index + 1}, ${level.name}, categoria ${level.category}, ${completed ? 'concluída' : unlocked ? level.playable ? 'disponível' : 'desbloqueada e em construção' : 'bloqueada'}`,
         );
     });
     worldResistanceNpc.hidden = !storyProgress.phaseOneComplete;
@@ -2093,12 +2145,12 @@ function updateWorldMapProximity() {
     worldMapCategory.hidden = isNearMuseum;
     if (!isNearMuseum) worldMapCategory.textContent = `Categoria · ${level.category}`;
     storyMapButton.dataset.action = isNearMuseum ? 'museum' : 'level';
-    storyMapButton.disabled = !worldMapState.ready || !hasNearbyTarget || (!isNearMuseum && !level.playable);
+    storyMapButton.disabled = !worldMapState.ready || !hasNearbyTarget || (!isNearMuseum && (!level.playable || !level.unlocked));
     storyMapButton.hidden = !isNearMuseum && !level.playable;
     storyMapButton.innerHTML = isNearMuseum
         ? '<span aria-hidden="true">◆</span> Entrar no museu'
         : '<span aria-hidden="true">▶</span> Entrar na fase';
-    difficultyPicker.hidden = isNearMuseum || !level.playable;
+    difficultyPicker.hidden = isNearMuseum || !level.playable || !level.unlocked;
 
     if (!worldMapState.ready) storyMapStatus.textContent = 'Preparando o mapa...';
     else if (isNearMuseum) storyMapStatus.textContent = 'Documentário da Rota da Manhã';
@@ -2112,6 +2164,7 @@ function updateWorldMapProximity() {
 function activateWorldMapTarget() {
     if (storyMapButton.disabled || state.mode === 'loading') return;
     if (storyMapButton.dataset.action === 'museum') showMenuScreen('museum');
+    else if (worldMapState.nearestLevel === 2) startFlightStage();
     else startGame();
 }
 
@@ -3182,6 +3235,40 @@ function startGameNow({ testArea = false, adminTest = false } = {}) {
     state.animationFrame = window.requestAnimationFrame(gameLoop);
 }
 
+function startFlightNow() {
+    state.difficulty = selectedDifficulty;
+    resetRun();
+    state.isFlight = true;
+    board.classList.add('is-flight');
+    state.runnerWidth = Math.max(1, runnerLayer.offsetWidth);
+    board.dataset.phase = '3';
+    configureJourneyLabels(true);
+    if (jumpActionLabel) jumpActionLabel.textContent = 'Bater asas';
+    applyPhase(2, false);
+    state.runnerX = clamp(state.boardWidth * 0.12, 34, 150);
+    state.runnerY = Math.max(80, state.boardHeight * 0.42);
+    state.velocityY = FLIGHT_FLAP_FORCE * 0.45;
+    state.flightGateCooldown = 2.2;
+    state.mode = 'playing';
+    state.previousTime = performance.now();
+    state.renderedRunnerX = Number.NaN;
+    state.renderedRunnerY = Number.NaN;
+    renderRunnerPosition();
+    setRuntimeScene('stage');
+    playBackgroundMusic(true);
+    overlay.classList.remove('is-visible');
+    setPlayingControls(true);
+    pauseButton.textContent = 'Pausar';
+    pauseButton.setAttribute('aria-label', 'Pausar voo');
+    showPhaseBanner(2);
+    phaseKicker.textContent = 'FASE 3 · VOO';
+    phaseName.textContent = 'Pedreira Musgosa';
+    setStatus(`Voo iniciado · ${DIFFICULTIES[state.difficulty].label} · Espaço para bater asas`);
+    updateScore();
+    board.focus({ preventScroll: true });
+    state.animationFrame = window.requestAnimationFrame(gameLoop);
+}
+
 function startResistanceDuelNow({ adminTest = false } = {}) {
     resetRun();
     state.isDuel = true;
@@ -3278,6 +3365,12 @@ const STAGE_LOADING_TIPS = [
     'Aplicando a velocidade escolhida...',
 ];
 
+const FLIGHT_LOADING_TIPS = [
+    'Sincronizando o sapinho com as asas...',
+    'Abrindo correntes de ar entre as pedras...',
+    'Conferindo passagens possíveis em cada dificuldade...',
+];
+
 const MAP_LOADING_TIPS = [
     'Carregando somente o primeiro bioma...',
     'Posicionando fases, plantas e caminhos...',
@@ -3357,6 +3450,7 @@ function stageAssets(kind, testArea = false) {
         skinObjectUrls.get('tongue'),
     ].filter(Boolean);
     if (kind === 'duel') return [...common, 'assets/img/sapo-resistencia-capuz-sprites-v1.png', 'assets/img/sapo-resistencia-ataque-sprites-v2.png', 'assets/img/sapo-lingua-padrao-v4.png'];
+    if (kind === 'flight') return [...AMBIENT_ASSET_URLS, 'assets/img/sapo-passaro-voo-sprites-v1.png', 'assets/img/pedras-musgo.png'];
     if (testArea) return [...common, 'assets/img/super-abelha-monstro-sprites-v2.png', 'assets/img/abelha-investida-sprites.png'];
     return [...common, ...Object.values(OBSTACLES).map((obstacle) => obstacle.src), 'assets/img/inseto-voando-sprites.png', 'assets/img/besouro-ondulante-voando-sprites.png', 'assets/img/abelha-investida-sprites.png'];
 }
@@ -3370,10 +3464,13 @@ function runStageLoading({ kind = 'route', testArea = false } = {}, startAction)
     if (resistanceDialog?.open) resistanceDialog.close();
 
     const isDuel = kind === 'duel';
+    const isFlight = kind === 'flight';
     showSceneLoader({
-        kicker: isDuel ? 'Luta livre · Clareira inicial' : testArea ? 'Área de testes · Chefã' : 'Corrida · Rota da Manhã',
-        title: isDuel ? 'Preparando o duelo' : 'Preparando a trilha',
-        tip: STAGE_LOADING_TIPS[Math.floor(Math.random() * STAGE_LOADING_TIPS.length)],
+        kicker: isDuel ? 'Luta livre · Clareira inicial' : isFlight ? 'Voo speed run · Pedreira Musgosa' : testArea ? 'Área de testes · Chefã' : 'Corrida · Rota da Manhã',
+        title: isDuel ? 'Preparando o duelo' : isFlight ? 'Ajustando as asas' : 'Preparando a trilha',
+        tip: isFlight
+            ? FLIGHT_LOADING_TIPS[Math.floor(Math.random() * FLIGHT_LOADING_TIPS.length)]
+            : STAGE_LOADING_TIPS[Math.floor(Math.random() * STAGE_LOADING_TIPS.length)],
     });
 
     const assets = [...new Set(stageAssets(kind, testArea))];
@@ -3411,6 +3508,10 @@ function startGame(options = {}) {
 
 function startResistanceDuel(options = {}) {
     return runStageLoading({ kind: 'duel' }, () => startResistanceDuelNow(options));
+}
+
+function startFlightStage() {
+    return runStageLoading({ kind: 'flight' }, startFlightNow);
 }
 
 function renderResistanceDuel(duel) {
@@ -3885,7 +3986,7 @@ function resumeGame() {
     overlay.classList.remove('is-visible');
     setPlayingControls(true);
     pauseButton.textContent = 'Pausar';
-    pauseButton.setAttribute('aria-label', 'Pausar jogo');
+    pauseButton.setAttribute('aria-label', state.isFlight ? 'Pausar voo' : 'Pausar jogo');
     board.focus({ preventScroll: true });
     state.animationFrame = window.requestAnimationFrame(gameLoop);
 }
@@ -3906,11 +4007,13 @@ function pauseGame() {
     pauseButton.disabled = false;
     pauseButton.textContent = 'Continuar';
     pauseButton.setAttribute('aria-label', 'Continuar jogo');
-    overlayKicker.textContent = state.isDuel ? 'Clareira da primeira floresta' : PHASES[state.phaseIndex].name;
-    overlayTitle.textContent = state.isDuel ? 'Duelo pausado' : 'Corrida pausada';
+    overlayKicker.textContent = state.isDuel ? 'Clareira da primeira floresta' : state.isFlight ? 'Pedreira Musgosa' : PHASES[state.phaseIndex].name;
+    overlayTitle.textContent = state.isDuel ? 'Duelo pausado' : state.isFlight ? 'Voo pausado' : 'Corrida pausada';
     overlayMessage.textContent = state.isDuel
         ? 'Rubro vai esperar. Continue quando estiver pronto para voltar à luta.'
-        : 'Continue quando estiver pronto. Sua corrida está guardada exatamente neste ponto.';
+        : state.isFlight
+            ? 'O pássaro está planando. Continue quando estiver pronto para atravessar a próxima passagem.'
+            : 'Continue quando estiver pronto. Sua corrida está guardada exatamente neste ponto.';
     playLabel.textContent = 'Continuar';
     showResultOverlay();
     playButton.focus({ preventScroll: true });
@@ -3918,6 +4021,17 @@ function pauseGame() {
 
 function jump() {
     if (state.mode !== 'playing') return;
+    if (state.isFlight) {
+        const now = performance.now();
+        if (now - state.flightLastFlapAt < 95) return;
+        state.flightLastFlapAt = now;
+        state.velocityY = FLIGHT_FLAP_FORCE;
+        runnerLayer.classList.remove('is-flapping');
+        void runnerLayer.offsetWidth;
+        runnerLayer.classList.add('is-flapping');
+        playSound(jumpAudio);
+        return;
+    }
     if (state.runnerY > 3 && !state.standingPlatform) return;
     state.standingPlatform = null;
     state.velocityY = JUMP_FORCE;
@@ -3926,7 +4040,7 @@ function jump() {
 }
 
 function attack() {
-    if (state.mode !== 'playing') return;
+    if (state.mode !== 'playing' || state.isFlight) return;
     const now = performance.now();
     if (now < state.attackReadyAt) return;
 
@@ -4082,6 +4196,27 @@ function endGame(hazard = 'obstacle') {
         return;
     }
 
+    if (state.isFlight) {
+        const finalScore = Math.floor(state.score);
+        if (finalScore > state.best) {
+            state.best = finalScore;
+            saveBestScore(state.best);
+            overlayKicker.textContent = 'Novo recorde de voo!';
+        } else {
+            overlayKicker.textContent = 'Voo pela Pedreira Musgosa';
+        }
+        updateScore();
+        overlayTitle.textContent = `${formatScore(finalScore)} pontos`;
+        overlayMessage.textContent = hazard === 'flight-boundary'
+            ? 'O pássaro saiu da corrente de ar segura. Dê toques curtos para corrigir a altura sem subir ou descer de uma vez.'
+            : 'A dupla encostou numa coluna da pedreira. Mantenha o ritmo das asas e atravesse o centro da abertura.';
+        playLabel.textContent = 'Tentar o voo novamente';
+        resultMenuButton.textContent = 'Voltar ao mapa';
+        showResultOverlay();
+        playButton.focus({ preventScroll: true });
+        return;
+    }
+
     const finalScore = Math.floor(state.score);
     if (finalScore > state.best) {
         state.best = finalScore;
@@ -4147,7 +4282,44 @@ function completeJourney() {
     playButton.focus({ preventScroll: true });
 }
 
+function completeFlightStage() {
+    state.mode = 'completed';
+    pauseBackgroundMusic(true);
+    state.elapsedTime = FLIGHT_DURATION;
+    setPlayingControls(false);
+    const finalScore = Math.floor(state.score) + 300;
+    state.score = finalScore;
+    if (finalScore > state.best) {
+        state.best = finalScore;
+        saveBestScore(state.best);
+    }
+    storyProgress.completedPhases[2] = true;
+    saveStoryProgress();
+    syncResistanceNpc();
+    updateScore();
+    overlayKicker.textContent = 'Fase 3 concluída · Voo speed run';
+    overlayTitle.textContent = 'Travessia da pedreira completa!';
+    overlayMessage.textContent = 'O sapo e seu companheiro de asas cruzaram os arcos de pedra. A fase 4 agora aparece desbloqueada no mapa.';
+    showVictoryScore(finalScore, `Pedreira Musgosa · ${formatTime(FLIGHT_DURATION)} · bônus +300`);
+    playLabel.textContent = 'Voar novamente';
+    resultMenuButton.textContent = 'Voltar ao mapa';
+    showResultOverlay();
+    playButton.focus({ preventScroll: true });
+}
+
 function returnFromResult() {
+    if (state.isFlight) {
+        state.mode = 'idle';
+        state.isFlight = false;
+        board.classList.remove('is-flight');
+        configureJourneyLabels(false);
+        if (jumpActionLabel) jumpActionLabel.textContent = 'Pular';
+        mainMenuShell.classList.remove('is-hidden');
+        resultCard.classList.add('is-hidden');
+        overlay.classList.add('is-visible');
+        runWorldMapLoading();
+        return;
+    }
     if (state.isDuel) {
         state.mode = 'idle';
         state.isDuel = false;
@@ -4466,6 +4638,102 @@ function scheduleActors(delta) {
     }
 }
 
+function currentFlightSpeed() {
+    const progress = clamp(state.elapsedTime / FLIGHT_DURATION, 0, 1);
+    return (FLIGHT_BASE_SPEED + FLIGHT_SPEED_GAIN * progress)
+        * DIFFICULTIES[state.difficulty].speedScale
+        * worldSpeedScale();
+}
+
+function spawnFlightGate() {
+    const height = state.boardHeight;
+    const runnerSize = Math.max(1, state.runnerWidth || runnerLayer.offsetWidth);
+    const difficultyGap = state.difficulty === 'easy' ? 0.47 : state.difficulty === 'hard' ? 0.36 : 0.41;
+    const gapHeight = clamp(height * difficultyGap, runnerSize * 1.5, height * 0.5);
+    const safeTop = Math.max(74, height * 0.16);
+    const safeBottom = Math.max(42, height * 0.09);
+    const maximumTop = Math.max(safeTop, height - gapHeight - safeBottom);
+    const gapTop = safeTop + Math.random() * Math.max(1, maximumTop - safeTop);
+    const width = clamp(state.boardWidth * 0.078, 76, 124);
+
+    const element = document.createElement('div');
+    element.className = 'flight-gate';
+    element.setAttribute('aria-hidden', 'true');
+    const top = document.createElement('span');
+    top.className = 'flight-rock-column flight-rock-column--top';
+    const bottom = document.createElement('span');
+    bottom.className = 'flight-rock-column flight-rock-column--bottom';
+    top.style.height = `${gapTop}px`;
+    bottom.style.top = `${gapTop + gapHeight}px`;
+    element.style.width = `${width}px`;
+    element.append(top, bottom);
+    obstacleLayer.append(element);
+
+    state.flightGates.push({
+        element,
+        x: state.boardWidth + width,
+        width,
+        gapTop,
+        gapHeight,
+        scored: false,
+    });
+}
+
+function flightGateHitsRunner(gate) {
+    const box = runnerBounds();
+    const left = box.left + box.width * 0.14;
+    const right = box.right - box.width * 0.12;
+    const top = box.top + box.height * 0.2;
+    const bottom = box.bottom - box.height * 0.18;
+    const overlapsHorizontally = right > gate.x + gate.width * 0.12
+        && left < gate.x + gate.width * 0.88;
+    if (!overlapsHorizontally) return false;
+    return top < gate.gapTop || bottom > gate.gapTop + gate.gapHeight;
+}
+
+function updateFlightStage(delta) {
+    state.velocityY -= FLIGHT_GRAVITY * delta;
+    state.runnerY += state.velocityY * delta;
+    const flightTilt = clamp(-state.velocityY / 17, -22, 24);
+    runnerLayer.style.setProperty('--flight-tilt', `${flightTilt.toFixed(1)}deg`);
+    renderRunnerPosition();
+
+    const runnerSize = Math.max(1, state.runnerWidth || runnerLayer.offsetWidth);
+    const boundary = Math.max(14, state.boardHeight * 0.028);
+    if (state.runnerY < boundary || state.runnerY > state.boardHeight - runnerSize - boundary) return 'flight-boundary';
+
+    const speed = currentFlightSpeed();
+    state.flightGateCooldown -= delta;
+    if (state.flightGateCooldown <= 0) {
+        spawnFlightGate();
+        const progress = clamp(state.elapsedTime / FLIGHT_DURATION, 0, 1);
+        const difficultyScale = state.difficulty === 'easy' ? 1.12 : state.difficulty === 'hard' ? 0.9 : 1;
+        state.flightGateCooldown = Math.max(1.18, (1.72 - progress * 0.28) * difficultyScale);
+    }
+
+    state.flightGates.forEach((gate) => {
+        gate.x -= speed * delta;
+        gate.element.style.transform = `translate3d(${gate.x.toFixed(2)}px, 0, 0)`;
+        if (!gate.scored && gate.x + gate.width < state.runnerX) {
+            gate.scored = true;
+            state.score += 30;
+            setStatus('Passagem limpa · +30');
+        }
+    });
+
+    const collision = state.flightGates.some(flightGateHitsRunner);
+    state.flightGates = state.flightGates.filter((gate) => {
+        if (gate.x + gate.width >= -30) return true;
+        gate.element.remove();
+        return false;
+    });
+    if (collision) return 'flight-rock';
+
+    if (!shouldReduceMotion()) state.sceneTravel += speed * 0.1 * delta;
+    updateWorldMotion();
+    return '';
+}
+
 function gameLoop(currentTime) {
     if (state.mode !== 'playing') return;
 
@@ -4484,6 +4752,24 @@ function gameLoop(currentTime) {
         updateRunnerHorizontalMovement(delta);
         updateRunnerPhysics(delta, currentTime);
         if (updateResistanceDuel(currentTime, delta) || state.mode !== 'playing') return;
+        state.animationFrame = window.requestAnimationFrame(gameLoop);
+        return;
+    }
+
+    if (state.isFlight) {
+        updateRunnerHorizontalMovement(delta);
+        const hazard = updateFlightStage(delta);
+        if (hazard) {
+            endGame(hazard);
+            return;
+        }
+        state.score += delta * 4.4;
+        state.elapsedTime += delta;
+        updateScore();
+        if (state.elapsedTime >= FLIGHT_DURATION) {
+            completeFlightStage();
+            return;
+        }
         state.animationFrame = window.requestAnimationFrame(gameLoop);
         return;
     }
@@ -4766,6 +5052,7 @@ async function initializeGame() {
 
 function syncBoardSize(width, height) {
     const previousWidth = state.boardWidth;
+    const previousHeight = state.boardHeight;
     if (state.boardWidth > 0 && state.mode === 'playing') {
         const widthRatio = width / state.boardWidth;
         const heightRatio = height / state.boardHeight;
@@ -4791,6 +5078,16 @@ function syncBoardSize(width, height) {
             if (insect.diveStartX !== null) insect.diveStartX *= widthRatio;
             if (insect.diveTargetX !== null) insect.diveTargetX *= widthRatio;
         });
+        state.flightGates.forEach((gate) => {
+            gate.x *= widthRatio;
+            gate.width *= widthRatio;
+            gate.gapTop *= heightRatio;
+            gate.gapHeight *= heightRatio;
+            gate.element.style.width = `${gate.width}px`;
+            const [top, bottom] = gate.element.children;
+            if (top) top.style.height = `${gate.gapTop}px`;
+            if (bottom) bottom.style.top = `${gate.gapTop + gate.gapHeight}px`;
+        });
     }
     state.boardWidth = width;
     state.boardHeight = height;
@@ -4808,7 +5105,7 @@ function syncBoardSize(width, height) {
     state.renderedRunnerY = Number.NaN;
     state.renderedSceneX = Number.NaN;
     state.renderedGroundX = Number.NaN;
-    if (previousWidth === 0 || state.runnerX === 0) state.runnerX = initialRunnerX(width);
+    if (previousWidth === 0 || previousHeight === 0 || state.runnerX === 0) state.runnerX = initialRunnerX(width);
     const bounds = runnerHorizontalBounds();
     state.runnerX = clamp(state.runnerX, bounds.minimum, bounds.maximum);
     renderRunnerPosition();
@@ -4818,6 +5115,7 @@ function syncBoardSize(width, height) {
 playButton.addEventListener('click', () => {
     if (state.mode === 'paused') resumeGame();
     else if (state.isDuel) startResistanceDuel({ adminTest: state.isAdminEncounter });
+    else if (state.isFlight) startFlightStage();
     else if (state.mode !== 'loading') startGame({ testArea: state.isTestArea, adminTest: state.isAdminEncounter });
 });
 
@@ -4925,16 +5223,17 @@ worldLevelButtons.forEach((button, index) => {
     button.addEventListener('click', () => {
         const level = WORLD_LEVELS[index];
         const distance = Math.hypot(worldMapState.x - level.x, (worldMapState.y - level.y) * 1.35);
-        if (distance < WORLD_LEVEL_REACH && level.playable && worldMapState.ready) {
-            startGame();
+        if (distance < WORLD_LEVEL_REACH && level.playable && level.unlocked && worldMapState.ready) {
+            if (index === 2) startFlightStage();
+            else startGame();
             return;
         }
         worldMapState.targetX = level.x;
         worldMapState.targetY = level.y;
-        storyMapStatus.textContent = level.playable
-            ? 'Caminhando até a fase...'
-            : level.unlocked
-                ? 'Indo até a fase desbloqueada...'
+        storyMapStatus.textContent = !level.unlocked
+            ? 'Indo até a fase bloqueada...'
+            : level.playable
+                ? 'Caminhando até a fase...'
                 : 'Indo até a fase em construção...';
         wakeWorldMapNavigation();
     });

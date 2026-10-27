@@ -1089,6 +1089,85 @@ button { cursor: pointer; }
 .runner-layer.is-hit { animation: hit-wobble 420ms ease-out both; }
 .runner-layer.is-hit .runner { filter: grayscale(0.35) drop-shadow(0 7px 3px rgba(17, 35, 18, 0.22)); }
 
+.game-board.is-flight {
+    background: linear-gradient(180deg, #82c7df 0%, #c8e3d1 72%, #dce7c5 100%);
+}
+
+.game-board.is-flight .ground,
+.game-board.is-flight .platform-layer,
+.game-board.is-flight .collectible-layer,
+.game-board.is-flight .boss-layer,
+.game-board.is-flight .runner-attack,
+.game-board.is-flight .action-button--crouch,
+.game-board.is-flight .action-button--tongue { display: none; }
+
+.game-board.is-flight .scenery-panel::before {
+    inset: 28% 0 0;
+    background-position: center bottom;
+    background-size: 100% auto;
+    opacity: 0.76;
+}
+
+.game-board.is-flight .sun-haze {
+    background: linear-gradient(180deg, rgba(255, 246, 198, 0.08), rgba(74, 145, 119, 0.12));
+}
+
+.game-board.is-flight .sky-clouds { inset: 0; opacity: 0.78; }
+
+.game-board.is-flight .runner-layer {
+    z-index: 9;
+    bottom: 0;
+    width: calc(var(--runner-size) * 1.35);
+    transform: translate3d(var(--runner-x, 8vw), calc(var(--jump-y, 0) * -1px), 0) rotate(var(--flight-tilt, 0deg));
+    transform-origin: 48% 55%;
+}
+
+.game-board.is-flight .runner {
+    background-image: url("../img/sapo-passaro-voo-sprites-v1.png");
+    background-position: 0 0;
+    background-size: 600% 100%;
+    animation: mounted-bird-flight 520ms steps(1, end) infinite;
+    filter: drop-shadow(0 7px 3px rgba(17, 35, 18, 0.24));
+}
+
+.game-board.is-flight .runner-layer.is-flapping .runner { animation-duration: 340ms; }
+
+.flight-gate {
+    position: absolute;
+    z-index: 7;
+    inset: 0 auto 0 0;
+    width: 100px;
+    pointer-events: none;
+    will-change: transform;
+}
+
+.flight-rock-column {
+    position: absolute;
+    right: 0;
+    left: 0;
+    display: block;
+    min-height: 26px;
+    border-inline: 4px solid #354c33;
+    background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 22% 78%, rgba(24, 48, 30, 0.22)),
+        url("../img/pedras-musgo.png") center / cover repeat-y,
+        #64755c;
+    box-shadow: inset 7px 0 0 rgba(137, 157, 101, 0.22), inset -7px 0 0 rgba(31, 53, 35, 0.25);
+    image-rendering: pixelated;
+}
+
+.flight-rock-column--top {
+    top: 0;
+    border-bottom: 7px solid #2d492f;
+    clip-path: polygon(0 0, 100% 0, 100% 94%, 84% 94%, 84% 100%, 58% 100%, 58% 95%, 31% 95%, 31% 100%, 0 100%);
+}
+
+.flight-rock-column--bottom {
+    bottom: 0;
+    border-top: 7px solid #799846;
+    clip-path: polygon(0 6%, 18% 6%, 18% 0, 42% 0, 42% 5%, 71% 5%, 71% 0, 100% 0, 100% 100%, 0 100%);
+}
+
 .obstacle-layer,
 .platform-layer,
 .collectible-layer,
@@ -2319,6 +2398,41 @@ kbd {
 .world-prop--rock-round { aspect-ratio: 384 / 256; }
 .world-prop--rock-long { aspect-ratio: 448 / 256; }
 
+.world-rock-mountain {
+    position: absolute;
+    z-index: calc(15 + var(--mountain-depth, 60));
+    top: var(--mountain-y);
+    left: var(--mountain-x);
+    width: clamp(210px, 18%, 360px);
+    aspect-ratio: 1;
+    pointer-events: none;
+    transform: translate(-50%, -84%);
+    transform-origin: center bottom;
+}
+
+.world-rock-mountain::after {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    right: 8%;
+    bottom: 4%;
+    left: 8%;
+    height: 10%;
+    background: rgba(24, 50, 28, 0.3);
+    clip-path: polygon(4% 20%, 96% 20%, 100% 62%, 82% 100%, 18% 100%, 0 62%);
+}
+
+.world-rock-mountain img {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: saturate(0.88) contrast(1.04) drop-shadow(4px 7px 0 rgba(29, 48, 25, 0.24));
+    image-rendering: pixelated;
+}
+
 .world-landmark {
     position: absolute;
     z-index: calc(100 + var(--landmark-depth, 50));
@@ -3234,6 +3348,7 @@ body.reduce-game-motion .resistance-duelist::after,
 body.reduce-game-motion .result-card.is-victory .start-frog,
 body.reduce-game-motion .world-level,
 body.reduce-game-motion .world-landmark,
+body.reduce-game-motion .world-rock-mountain,
 body.reduce-game-motion .obstacle--ground-beetle,
 body.reduce-game-motion .obstacle--leaping-beetle { animation: none !important; }
 body.reduce-game-motion .scenery-layer,
@@ -3739,6 +3854,15 @@ body.reduce-game-motion .resistance-duelist.faces-right .resistance-duelist__ton
     61%, 72.99% { background-position: 33.333% 100%; }
     73%, 85.99% { background-position: 66.667% 100%; }
     86%, 100% { background-position: 100% 100%; }
+}
+
+@keyframes mounted-bird-flight {
+    0%, 15.99% { background-position: 0 0; }
+    16%, 32.99% { background-position: 20% 0; }
+    33%, 49.99% { background-position: 40% 0; }
+    50%, 65.99% { background-position: 60% 0; }
+    66%, 82.99% { background-position: 80% 0; }
+    83%, 100% { background-position: 100% 0; }
 }
 
 @keyframes world-frog-walk {
