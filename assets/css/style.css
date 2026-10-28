@@ -1150,11 +1150,80 @@ button { cursor: pointer; }
     z-index: 1;
     top: 0;
     left: 0;
-    object-fit: contain;
-    filter: drop-shadow(5px 7px 0 rgba(23, 49, 29, 0.28));
     image-rendering: pixelated;
     pointer-events: none;
     will-change: transform;
+}
+
+.flight-rock {
+    z-index: 2;
+    object-fit: contain;
+    filter: drop-shadow(5px 7px 0 rgba(23, 49, 29, 0.28));
+    transform-origin: center center;
+}
+
+.flight-rock.is-ceiling { filter: drop-shadow(5px -7px 0 rgba(23, 49, 29, 0.28)); }
+
+.flight-insect {
+    z-index: 3;
+    background-repeat: no-repeat;
+    background-size: 400% 100%;
+    filter: drop-shadow(2px 3px 0 rgba(21, 45, 25, 0.3));
+    animation: insect-flap 360ms steps(1, end) infinite;
+}
+
+.flight-insect--golden { background-image: url("../img/inseto-voando-sprites.png"); }
+.flight-insect--wave {
+    background-image: url("../img/besouro-ondulante-voando-sprites.png");
+    background-position: 0 55%;
+    background-size: 402% auto;
+}
+.flight-insect--bee {
+    background-image: url("../img/abelha-investida-sprites.png");
+    background-position: 0 55%;
+    background-size: 402% auto;
+    animation-duration: 280ms;
+}
+
+.flight-good-cloud {
+    position: absolute;
+    z-index: 0;
+    top: 0;
+    left: 0;
+    object-fit: contain;
+    opacity: 0.58;
+    filter: saturate(0.68) brightness(1.04);
+    image-rendering: pixelated;
+    pointer-events: none;
+    will-change: transform;
+}
+
+.flight-storm-cloud {
+    z-index: 4;
+    filter: drop-shadow(4px 6px 0 rgba(25, 27, 51, 0.34));
+}
+
+.flight-storm-cloud__body,
+.flight-storm-cloud__bolt {
+    position: absolute;
+    inset: 0;
+    background: url("../img/nuvem-tempestade-raio-v1.png") center / contain no-repeat;
+    image-rendering: pixelated;
+}
+
+.flight-storm-cloud__body { clip-path: inset(0 0 36% 0); }
+.flight-storm-cloud__bolt {
+    clip-path: inset(44% 34% 0 34%);
+    opacity: 0;
+}
+
+.flight-storm-cloud.is-charging .flight-storm-cloud__body {
+    animation: storm-cloud-warning 180ms steps(2, end) infinite;
+}
+
+.flight-storm-cloud.is-striking .flight-storm-cloud__bolt {
+    opacity: 1;
+    animation: storm-lightning-strike 120ms steps(2, end) infinite;
 }
 
 .obstacle-layer,
@@ -3858,6 +3927,16 @@ body.reduce-game-motion .resistance-duelist.faces-right .resistance-duelist__ton
 @keyframes flight-speed-streaks {
     from { background-position: 0 0; }
     to { background-position: -220px 0; }
+}
+
+@keyframes storm-cloud-warning {
+    0%, 49.99% { filter: brightness(0.9) saturate(0.85); transform: translateY(0); }
+    50%, 100% { filter: brightness(1.28) saturate(1.12); transform: translateY(2px); }
+}
+
+@keyframes storm-lightning-strike {
+    0%, 49.99% { filter: brightness(1) drop-shadow(0 0 2px rgba(255, 239, 129, 0.72)); }
+    50%, 100% { filter: brightness(1.5) drop-shadow(0 0 9px rgba(255, 224, 91, 0.95)); }
 }
 
 @keyframes world-frog-walk {

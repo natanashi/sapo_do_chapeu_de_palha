@@ -21,10 +21,18 @@ assert.ok(source.includes("else if (worldMapState.nearestLevel === 2) startFligh
 assert.ok(styles.includes('sapo-passaro-voo-sprites-v2.png'), 'O voo deve usar a folha estabilizada');
 assert.ok(styles.includes('animation: mounted-bird-flight 720ms'), 'O ciclo base não pode sacudir a ave rápido demais');
 assert.match(source, /runnerLayer\.classList\.remove\('is-flapping'\);\s+state\.flightFlapVisualTimer = 0;/, 'O impulso deve voltar ao ciclo de voo normal');
-assert.ok(source.includes('function spawnFlightHazard()'), 'A fase deve usar obstáculos individuais');
+assert.ok(source.includes('function spawnFlightInsect()'), 'A fase deve reutilizar os insetos voadores');
+assert.ok(source.includes('function spawnFlightRock()'), 'A fase deve manter pedras somente nas extremidades');
+assert.ok(source.includes('function spawnFriendlyFlightCloud()'), 'A fase deve ter nuvens claras decorativas');
+assert.ok(source.includes('function spawnStormFlightCloud()'), 'A fase deve ter nuvens de tempestade');
+assert.ok(source.includes("return collision?.kind || ''"), 'A colisão precisa identificar inseto, pedra ou tempestade');
 assert.ok(!source.includes('spawnFlightGate'), 'As colunas no estilo Flappy Bird não podem permanecer');
 assert.ok(!source.includes('flight-boundary'), 'Encostar na borda não pode matar o jogador');
 assert.ok(styles.includes('.flight-hazard'), 'As rochas individuais precisam de apresentação própria');
+assert.ok(styles.includes('.flight-insect--golden'), 'O besouro dourado precisa aparecer na corrida aérea');
+assert.ok(styles.includes('.flight-insect--wave'), 'O besouro ondulante precisa aparecer na corrida aérea');
+assert.ok(styles.includes('.flight-insect--bee'), 'A abelha precisa aparecer na corrida aérea');
+assert.ok(styles.includes('.flight-storm-cloud.is-striking'), 'O raio precisa ter um estado de ataque explícito');
 assert.ok(!styles.includes('.flight-gate'), 'O visual das colunas antigas deve ser removido');
 assert.ok(styles.includes('width: clamp(320px, 25%, 620px)'), 'A montanha do mapa deve ter presença maior');
 
@@ -49,8 +57,13 @@ for (const asset of [
     new URL('../assets/img/sapo-passaro-voo-sprites-v2.png', import.meta.url),
     new URL('../assets/img/mapa-montanha-pedreira-v1.png', import.meta.url),
     new URL('../assets/img/pedras-musgo.png', import.meta.url),
+    new URL('../assets/img/nuvem-pixel-flutuante-v1.png', import.meta.url),
+    new URL('../assets/img/nuvem-tempestade-raio-v1.png', import.meta.url),
+    new URL('../assets/img/inseto-voando-sprites.png', import.meta.url),
+    new URL('../assets/img/besouro-ondulante-voando-sprites.png', import.meta.url),
+    new URL('../assets/img/abelha-investida-sprites.png', import.meta.url),
 ]) {
     assert.ok(existsSync(asset), `Asset ausente: ${asset.pathname}`);
 }
 
-console.log('Flight speed-run checks passed for free movement and individual hazards in 4 landscape sizes.');
+console.log('Flight ecosystem checks passed for free movement, insects, edge rocks, and storm clouds in 4 landscape sizes.');

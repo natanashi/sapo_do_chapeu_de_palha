@@ -404,7 +404,13 @@ const state = {
     duel: null,
     isFlight: false,
     flightHazards: [],
-    flightHazardCooldown: 0,
+    flightDecorations: [],
+    flightInsectCooldown: 0,
+    flightRockCooldown: 0,
+    flightCloudCooldown: 0,
+    flightStormCooldown: 0,
+    flightInsectSequence: 0,
+    flightRockSequence: 0,
     flightLastFlapAt: 0,
     flightFlapVisualTimer: 0,
     flightClimbing: false,
@@ -1098,6 +1104,7 @@ function clearActors() {
     state.insects = [];
     state.platforms = [];
     state.flightHazards = [];
+    state.flightDecorations = [];
     state.standingPlatform = null;
     obstacleLayer.replaceChildren();
     collectibleLayer.replaceChildren();
@@ -1706,7 +1713,13 @@ function resetRun() {
     state.duel = null;
     state.isFlight = false;
     state.flightHazards = [];
-    state.flightHazardCooldown = 0;
+    state.flightDecorations = [];
+    state.flightInsectCooldown = 0;
+    state.flightRockCooldown = 0;
+    state.flightCloudCooldown = 0;
+    state.flightStormCooldown = 0;
+    state.flightInsectSequence = 0;
+    state.flightRockSequence = 0;
     state.flightLastFlapAt = 0;
     state.flightFlapVisualTimer = 0;
     state.flightClimbing = false;
@@ -3263,7 +3276,10 @@ function startFlightNow() {
     state.runnerX = clamp(state.boardWidth * 0.12, 34, 150);
     state.runnerY = Math.max(80, state.boardHeight * 0.42);
     state.velocityY = 0;
-    state.flightHazardCooldown = 2.2;
+    state.flightInsectCooldown = 1.4;
+    state.flightRockCooldown = 2.8;
+    state.flightCloudCooldown = 0.5;
+    state.flightStormCooldown = 5.2;
     state.mode = 'playing';
     state.previousTime = performance.now();
     state.renderedRunnerX = Number.NaN;
@@ -3465,7 +3481,16 @@ function stageAssets(kind, testArea = false) {
         skinObjectUrls.get('tongue'),
     ].filter(Boolean);
     if (kind === 'duel') return [...common, 'assets/img/sapo-resistencia-capuz-sprites-v1.png', 'assets/img/sapo-resistencia-ataque-sprites-v2.png', 'assets/img/sapo-lingua-padrao-v4.png'];
-    if (kind === 'flight') return [...AMBIENT_ASSET_URLS, 'assets/img/sapo-passaro-voo-sprites-v2.png', 'assets/img/pedras-musgo.png'];
+    if (kind === 'flight') return [
+        ...AMBIENT_ASSET_URLS,
+        'assets/img/sapo-passaro-voo-sprites-v2.png',
+        'assets/img/pedras-musgo.png',
+        'assets/img/nuvem-pixel-flutuante-v1.png',
+        'assets/img/nuvem-tempestade-raio-v1.png',
+        'assets/img/inseto-voando-sprites.png',
+        'assets/img/besouro-ondulante-voando-sprites.png',
+        'assets/img/abelha-investida-sprites.png',
+    ];
     if (testArea) return [...common, 'assets/img/super-abelha-monstro-sprites-v2.png', 'assets/img/abelha-investida-sprites.png'];
     return [...common, ...Object.values(OBSTACLES).map((obstacle) => obstacle.src), 'assets/img/inseto-voando-sprites.png', 'assets/img/besouro-ondulante-voando-sprites.png', 'assets/img/abelha-investida-sprites.png'];
 }
@@ -4241,7 +4266,11 @@ function endGame(hazard = 'obstacle') {
         }
         updateScore();
         overlayTitle.textContent = `${formatScore(finalScore)} pontos`;
-        overlayMessage.textContent = 'A dupla encostou numa rocha solta da pedreira. Use toda a pista aérea para mudar de altura e escolher outra linha de corrida.';
+        overlayMessage.textContent = hazard === 'flight-storm'
+            ? 'O raio da nuvem de tempestade atingiu a dupla. Observe o clarão de aviso e troque de linha antes da descarga.'
+            : hazard === 'flight-insect'
+                ? 'Um dos insetos voadores acertou a dupla. Eles são menores nesta rota, mas mudam de altura enquanto avançam.'
+                : 'A dupla encostou numa pedra presa ao chão ou ao teto. Use toda a pista aérea para escolher outra linha de corrida.';
         playLabel.textContent = 'Tentar o voo novamente';
         resultMenuButton.textContent = 'Voltar ao mapa';
         showResultOverlay();
@@ -4679,50 +4708,186 @@ function currentFlightSpeed() {
         * worldSpeedScale();
 }
 
-function spawnFlightHazard() {
-    const height = state.boardHeight;
-    const progress = clamp(state.elapsedTime / FLIGHT_DURATION, 0, 1);
-    const difficultySize = state.difficulty === 'easy' ? 0.82 : state.difficulty === 'hard' ? 1.08 : 0.94;
-    const size = clamp(height * (0.085 + Math.random() * 0.045) * difficultySize, 42, 104);
-    const width = size * 1.5;
-    const safeTop = clamp(height * 0.13, 52, 96);
-    const safeBottom = clamp(height * 0.1, 40, 72);
-    const maximumTop = Math.max(safeTop, height - size - safeBottom);
-    const y = safeTop + Math.random() * (maximumTop - safeTop);
+function flightSpawnX(width) {
+    return threatSpawnX(width + 30) + Math.random() * state.boardWidth * 0.08;
+}
+
+function spawnFlightInsect() {
+    const species = [
+        { name: 'golden', className: 'flight-insect--golden', speed: 1.03, wave: 5, aspect: 1.09 },
+        { name: 'wave', className: 'flight-insect--wave', speed: 1.09, wave: 18, aspect: 1.18 },
+        { name: 'bee', className: 'flight-insect--bee', speed: 1.16, wave: 25, aspect: 1.22 },
+    ][state.flightInsectSequence % 3];
+    state.flightInsectSequence += 1;
+    const width = clamp(state.runnerWidth * 0.25, 34, 58);
+    const height = width / species.aspect;
+    const safeTop = clamp(state.boardHeight * 0.14, 58, 96);
+    const safeBottom = clamp(state.boardHeight * 0.12, 42, 76);
+    const y = safeTop + Math.random() * Math.max(1, state.boardHeight - safeTop - safeBottom - height);
+    const element = document.createElement('div');
+    element.className = `flight-hazard flight-insect ${species.className}`;
+    element.setAttribute('aria-hidden', 'true');
+    element.style.width = `${width}px`;
+    element.style.height = `${height}px`;
+    obstacleLayer.append(element);
+    state.flightHazards.push({
+        kind: 'insect',
+        species: species.name,
+        element,
+        x: flightSpawnX(width),
+        y,
+        renderedY: y,
+        width,
+        height,
+        wave: species.wave,
+        wavePhase: Math.random() * Math.PI * 2,
+        speedScale: species.speed,
+        scored: false,
+    });
+}
+
+function spawnFlightRock() {
+    const ceiling = state.flightRockSequence % 2 === 1;
+    state.flightRockSequence += 1;
+    const height = clamp(state.boardHeight * (0.11 + Math.random() * 0.045), 54, 112);
+    const width = height * 1.5;
+    const y = ceiling ? 0 : state.boardHeight - height;
     const element = document.createElement('img');
-    element.className = 'flight-hazard';
+    element.className = `flight-hazard flight-rock${ceiling ? ' is-ceiling' : ' is-grounded'}`;
     element.src = 'assets/img/pedras-musgo.png';
     element.alt = '';
     element.draggable = false;
     element.style.width = `${width}px`;
-    element.style.height = `${size}px`;
+    element.style.height = `${height}px`;
     obstacleLayer.append(element);
-
     state.flightHazards.push({
+        kind: 'rock',
         element,
-        x: threatSpawnX(width + 30) + Math.random() * state.boardWidth * 0.08,
+        x: flightSpawnX(width),
         y,
         renderedY: y,
         width,
-        height: size,
-        drift: Math.min(12, 4 + progress * 8),
-        driftPhase: Math.random() * Math.PI * 2,
-        rotation: -8 + Math.random() * 16,
-        flip: Math.random() < 0.5 ? -1 : 1,
+        height,
+        ceiling,
+        speedScale: 1,
+        scored: false,
+    });
+}
+
+function spawnFriendlyFlightCloud() {
+    const width = clamp(state.boardWidth * (0.11 + Math.random() * 0.07), 105, 210);
+    const height = width * 0.5;
+    const y = clamp(state.boardHeight * (0.13 + Math.random() * 0.56), 48, state.boardHeight - height - 48);
+    const element = document.createElement('img');
+    element.className = 'flight-good-cloud';
+    element.src = 'assets/img/nuvem-pixel-flutuante-v1.png';
+    element.alt = '';
+    element.draggable = false;
+    element.style.width = `${width}px`;
+    element.style.height = `${height}px`;
+    obstacleLayer.append(element);
+    state.flightDecorations.push({ element, x: state.boardWidth + width, y, width, height, speedScale: 0.42 });
+}
+
+function spawnStormFlightCloud() {
+    const width = clamp(state.boardWidth * 0.15, 128, 224);
+    const height = width * 0.5;
+    const y = clamp(state.boardHeight * (0.12 + Math.random() * 0.27), 52, state.boardHeight * 0.46);
+    const element = document.createElement('div');
+    element.className = 'flight-hazard flight-storm-cloud';
+    element.setAttribute('aria-hidden', 'true');
+    element.style.width = `${width}px`;
+    element.style.height = `${height}px`;
+    element.innerHTML = '<span class="flight-storm-cloud__body"></span><span class="flight-storm-cloud__bolt"></span>';
+    obstacleLayer.append(element);
+    state.flightHazards.push({
+        kind: 'storm',
+        element,
+        x: flightSpawnX(width),
+        y,
+        renderedY: y,
+        width,
+        height,
+        speedScale: 0.72,
+        spawnedAt: state.elapsedTime,
+        striking: false,
         scored: false,
     });
 }
 
 function flightHazardHitsRunner(hazard) {
     const box = runnerBounds();
-    const left = box.left + box.width * 0.22;
-    const right = box.right - box.width * 0.2;
-    const top = box.top + box.height * 0.24;
-    const bottom = box.bottom - box.height * 0.2;
-    return right > hazard.x + hazard.width * 0.2
-        && left < hazard.x + hazard.width * 0.8
-        && bottom > hazard.renderedY + hazard.height * 0.18
-        && top < hazard.renderedY + hazard.height * 0.82;
+    const runnerLeft = box.left + box.width * 0.22;
+    const runnerRight = box.right - box.width * 0.2;
+    const runnerTop = box.top + box.height * 0.24;
+    const runnerBottom = box.bottom - box.height * 0.2;
+    let hazardLeft = hazard.x + hazard.width * 0.18;
+    let hazardRight = hazard.x + hazard.width * 0.82;
+    let hazardTop = hazard.renderedY + hazard.height * 0.16;
+    let hazardBottom = hazard.renderedY + hazard.height * 0.84;
+    if (hazard.kind === 'storm') {
+        if (!hazard.striking) return false;
+        hazardLeft = hazard.x + hazard.width * 0.42;
+        hazardRight = hazard.x + hazard.width * 0.59;
+        hazardTop = hazard.renderedY + hazard.height * 0.5;
+        hazardBottom = hazard.renderedY + hazard.height;
+    }
+    return runnerRight > hazardLeft
+        && runnerLeft < hazardRight
+        && runnerBottom > hazardTop
+        && runnerTop < hazardBottom;
+}
+
+function updateFlightActors(delta, speed) {
+    state.flightDecorations.forEach((cloud) => {
+        cloud.x -= speed * cloud.speedScale * delta;
+        cloud.element.style.transform = `translate3d(${cloud.x.toFixed(2)}px, ${cloud.y.toFixed(2)}px, 0)`;
+    });
+    state.flightDecorations = state.flightDecorations.filter((cloud) => {
+        if (cloud.x + cloud.width >= -30) return true;
+        cloud.element.remove();
+        return false;
+    });
+
+    state.flightHazards.forEach((hazard) => {
+        hazard.x -= speed * hazard.speedScale * delta;
+        if (hazard.kind === 'insect') {
+            hazard.renderedY = clamp(
+                hazard.y + Math.sin(state.elapsedTime * (hazard.species === 'bee' ? 5.2 : 3.3) + hazard.wavePhase) * hazard.wave,
+                0,
+                state.boardHeight - hazard.height,
+            );
+            const tilt = hazard.species === 'bee' ? Math.sin(state.elapsedTime * 7 + hazard.wavePhase) * 7 : 0;
+            hazard.element.style.transform = `translate3d(${hazard.x.toFixed(2)}px, ${hazard.renderedY.toFixed(2)}px, 0) rotate(${tilt.toFixed(1)}deg)`;
+        } else if (hazard.kind === 'storm') {
+            const cycle = (state.elapsedTime - hazard.spawnedAt) % 2.4;
+            const charging = cycle >= 0.82 && cycle < 1.25;
+            hazard.striking = cycle >= 1.25 && cycle < 1.72;
+            hazard.element.classList.toggle('is-charging', charging);
+            hazard.element.classList.toggle('is-striking', hazard.striking);
+            hazard.element.style.transform = `translate3d(${hazard.x.toFixed(2)}px, ${hazard.y.toFixed(2)}px, 0)`;
+        } else {
+            const flipY = hazard.ceiling ? -1 : 1;
+            hazard.element.style.transform = `translate3d(${hazard.x.toFixed(2)}px, ${hazard.y.toFixed(2)}px, 0) scaleY(${flipY})`;
+        }
+        if (!hazard.scored && hazard.x + hazard.width < state.runnerX) {
+            hazard.scored = true;
+            state.score += hazard.kind === 'storm' ? 45 : hazard.kind === 'insect' ? 30 : 25;
+            setStatus(hazard.kind === 'storm' ? 'Tempestade evitada · +45' : hazard.kind === 'insect' ? 'Inseto evitado · +30' : 'Pedra evitada · +25');
+        }
+    });
+
+    const collision = state.flightHazards.find(flightHazardHitsRunner);
+    state.flightHazards = state.flightHazards.filter((hazard) => {
+        if (hazard.x + hazard.width >= -30) return true;
+        hazard.element.remove();
+        return false;
+    });
+    return collision?.kind || '';
+}
+
+function flightEntranceIsClear() {
+    return !state.flightHazards.some((hazard) => hazard.x > state.boardWidth * 0.74);
 }
 
 function updateFlightStage(delta) {
@@ -4742,36 +4907,30 @@ function updateFlightStage(delta) {
     renderRunnerPosition();
 
     const speed = currentFlightSpeed();
-    state.flightHazardCooldown -= delta;
-    if (state.flightHazardCooldown <= 0) {
-        spawnFlightHazard();
-        const progress = clamp(state.elapsedTime / FLIGHT_DURATION, 0, 1);
-        const difficultyScale = state.difficulty === 'easy' ? 1.16 : state.difficulty === 'hard' ? 0.88 : 1;
-        state.flightHazardCooldown = Math.max(0.92, (1.58 - progress * 0.24) * difficultyScale);
-    }
-
-    state.flightHazards.forEach((hazard) => {
-        hazard.x -= speed * delta;
-        hazard.renderedY = clamp(
-            hazard.y + Math.sin(state.elapsedTime * 1.7 + hazard.driftPhase) * hazard.drift,
-            0,
-            state.boardHeight - hazard.height,
-        );
-        hazard.element.style.transform = `translate3d(${hazard.x.toFixed(2)}px, ${hazard.renderedY.toFixed(2)}px, 0) rotate(${hazard.rotation.toFixed(1)}deg) scaleX(${hazard.flip})`;
-        if (!hazard.scored && hazard.x + hazard.width < state.runnerX) {
-            hazard.scored = true;
-            state.score += 25;
-            setStatus('Desvio limpo · +25');
+    const progress = clamp(state.elapsedTime / FLIGHT_DURATION, 0, 1);
+    const difficultyScale = state.difficulty === 'easy' ? 1.14 : state.difficulty === 'hard' ? 0.9 : 1;
+    state.flightInsectCooldown -= delta;
+    state.flightRockCooldown -= delta;
+    state.flightCloudCooldown -= delta;
+    state.flightStormCooldown -= delta;
+    if (flightEntranceIsClear()) {
+        if (state.flightStormCooldown <= 0) {
+            spawnStormFlightCloud();
+            state.flightStormCooldown = Math.max(4.7, (6.4 - progress * 0.8) * difficultyScale);
+        } else if (state.flightRockCooldown <= 0) {
+            spawnFlightRock();
+            state.flightRockCooldown = (3.4 + Math.random() * 1.15) * difficultyScale;
+        } else if (state.flightInsectCooldown <= 0) {
+            spawnFlightInsect();
+            state.flightInsectCooldown = Math.max(1.02, (1.72 - progress * 0.26) * difficultyScale);
         }
-    });
-
-    const collision = state.flightHazards.some(flightHazardHitsRunner);
-    state.flightHazards = state.flightHazards.filter((hazard) => {
-        if (hazard.x + hazard.width >= -30) return true;
-        hazard.element.remove();
-        return false;
-    });
-    if (collision) return 'flight-rock';
+    }
+    if (state.flightCloudCooldown <= 0) {
+        spawnFriendlyFlightCloud();
+        state.flightCloudCooldown = 1.75 + Math.random() * 1.1;
+    }
+    const collision = updateFlightActors(delta, speed);
+    if (collision) return `flight-${collision}`;
 
     if (!shouldReduceMotion()) state.sceneTravel += speed * 0.1 * delta;
     updateWorldMotion();
@@ -5154,9 +5313,17 @@ function syncBoardSize(width, height) {
             hazard.renderedY *= heightRatio;
             hazard.width *= heightRatio;
             hazard.height *= heightRatio;
-            hazard.drift *= heightRatio;
+            if (hazard.wave) hazard.wave *= heightRatio;
             hazard.element.style.width = `${hazard.width}px`;
             hazard.element.style.height = `${hazard.height}px`;
+        });
+        state.flightDecorations.forEach((cloud) => {
+            cloud.x *= widthRatio;
+            cloud.y *= heightRatio;
+            cloud.width *= heightRatio;
+            cloud.height *= heightRatio;
+            cloud.element.style.width = `${cloud.width}px`;
+            cloud.element.style.height = `${cloud.height}px`;
         });
     }
     state.boardWidth = width;
