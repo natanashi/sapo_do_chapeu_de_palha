@@ -1098,7 +1098,6 @@ button { cursor: pointer; }
 .game-board.is-flight .collectible-layer,
 .game-board.is-flight .boss-layer,
 .game-board.is-flight .runner-attack,
-.game-board.is-flight .action-button--crouch,
 .game-board.is-flight .action-button--tongue { display: none; }
 
 .game-board.is-flight .scenery-panel::before {
@@ -1132,40 +1131,30 @@ button { cursor: pointer; }
 
 .game-board.is-flight .runner-layer.is-flapping .runner { animation-duration: 430ms; }
 
-.flight-gate {
+.game-board.is-flight .obstacle-layer::before {
+    content: "";
     position: absolute;
-    z-index: 7;
-    inset: 0 auto 0 0;
-    width: 100px;
+    z-index: 0;
+    inset: 9% -18% 12%;
+    background-image: linear-gradient(90deg, transparent 0 8%, rgba(239, 252, 226, 0.34) 10% 63%, transparent 66% 100%);
+    background-size: 220px 54px;
+    opacity: 0.46;
+    pointer-events: none;
+    animation: flight-speed-streaks 540ms linear infinite;
+    will-change: background-position;
+}
+
+.flight-hazard {
+    position: absolute;
+    display: block;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    object-fit: contain;
+    filter: drop-shadow(5px 7px 0 rgba(23, 49, 29, 0.28));
+    image-rendering: pixelated;
     pointer-events: none;
     will-change: transform;
-}
-
-.flight-rock-column {
-    position: absolute;
-    right: 0;
-    left: 0;
-    display: block;
-    min-height: 26px;
-    border-inline: 4px solid #354c33;
-    background:
-        linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 22% 78%, rgba(24, 48, 30, 0.22)),
-        url("../img/pedras-musgo.png") center / cover repeat-y,
-        #64755c;
-    box-shadow: inset 7px 0 0 rgba(137, 157, 101, 0.22), inset -7px 0 0 rgba(31, 53, 35, 0.25);
-    image-rendering: pixelated;
-}
-
-.flight-rock-column--top {
-    top: 0;
-    border-bottom: 7px solid #2d492f;
-    clip-path: polygon(0 0, 100% 0, 100% 94%, 84% 94%, 84% 100%, 58% 100%, 58% 95%, 31% 95%, 31% 100%, 0 100%);
-}
-
-.flight-rock-column--bottom {
-    bottom: 0;
-    border-top: 7px solid #799846;
-    clip-path: polygon(0 6%, 18% 6%, 18% 0, 42% 0, 42% 5%, 71% 5%, 71% 0, 100% 0, 100% 100%, 0 100%);
 }
 
 .obstacle-layer,
@@ -2403,10 +2392,10 @@ kbd {
     z-index: calc(15 + var(--mountain-depth, 60));
     top: var(--mountain-y);
     left: var(--mountain-x);
-    width: clamp(210px, 18%, 360px);
+    width: clamp(320px, 25%, 620px);
     aspect-ratio: 1;
     pointer-events: none;
-    transform: translate(-50%, -84%);
+    transform: translate(-50%, -88%);
     transform-origin: center bottom;
 }
 
@@ -3337,6 +3326,7 @@ body.controls-palette-sunset .action-button--jump { color: #51371d; background: 
 body.controls-palette-sunset .action-button--tongue { background: radial-gradient(circle at 36% 25%, #ff9a8c 0 7%, transparent 8%), linear-gradient(150deg, #c94f51, #842f42 72%); }
 body.reduce-game-motion .horizon-birds,
 body.reduce-game-motion .sky-clouds { display: none; }
+body.reduce-game-motion .game-board.is-flight .obstacle-layer::before { display: none; }
 body.reduce-game-motion .insect,
 body.reduce-game-motion .runner,
 body.reduce-game-motion .world-map-frog,
@@ -3863,6 +3853,11 @@ body.reduce-game-motion .resistance-duelist.faces-right .resistance-duelist__ton
     50%, 65.99% { background-position: 60% 0; }
     66%, 82.99% { background-position: 80% 0; }
     83%, 100% { background-position: 100% 0; }
+}
+
+@keyframes flight-speed-streaks {
+    from { background-position: 0 0; }
+    to { background-position: -220px 0; }
 }
 
 @keyframes world-frog-walk {

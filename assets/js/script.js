@@ -134,6 +134,7 @@ const moveRightButton = document.querySelector('#move-right-button');
 const crouchButton = document.querySelector('#crouch-button');
 const jumpButton = document.querySelector('#jump-button');
 const jumpActionLabel = document.querySelector('#jump-action-label');
+const crouchActionLabel = document.querySelector('#crouch-action-label');
 const tongueButton = document.querySelector('#tongue-button');
 const scoreDisplay = document.querySelector('#score');
 const bestScoreDisplay = document.querySelector('#best-score');
@@ -402,10 +403,11 @@ const state = {
     isDuel: false,
     duel: null,
     isFlight: false,
-    flightGates: [],
-    flightGateCooldown: 0,
+    flightHazards: [],
+    flightHazardCooldown: 0,
     flightLastFlapAt: 0,
     flightFlapVisualTimer: 0,
+    flightClimbing: false,
 };
 
 const PACE_REFERENCE_SPEED = 270;
@@ -422,8 +424,7 @@ const ATTACK_RETRACT_AT = 320;
 const ATTACK_SWALLOW_AT = 485;
 const JOURNEY_DURATION = 120;
 const FLIGHT_DURATION = 60;
-const FLIGHT_GRAVITY = 1180;
-const FLIGHT_FLAP_FORCE = 405;
+const FLIGHT_VERTICAL_SPEED = 540;
 const FLIGHT_BASE_SPEED = 255;
 const FLIGHT_SPEED_GAIN = 165;
 const BOSS_START_TIME = 88;
@@ -671,7 +672,7 @@ function formatTime(value) {
 
 function configureJourneyLabels(flightMode = false) {
     const labels = flightMode
-        ? ['Subida', 'Arcos', 'Picos', 'Ninho']
+        ? ['Largada', 'Mata Alta', 'Picos', 'Ninho']
         : ['Vila', 'Campos', 'Floresta', 'Castelo'];
     routeMapStopLabels.forEach((label, index) => {
         if (label) label.textContent = labels[index];
@@ -936,12 +937,10 @@ function initialRunnerX(width = state.boardWidth || boardMetrics().width) {
 function runnerHorizontalBounds() {
     const width = Math.max(1, state.boardWidth || boardMetrics().width);
     const runnerWidth = Math.max(1, state.runnerWidth || runnerLayer.offsetWidth);
-    const edgeMargin = clamp(width * 0.012, 6, 20);
+    const edgeMargin = state.isFlight ? 0 : clamp(width * 0.012, 6, 20);
     return {
         minimum: edgeMargin,
-        maximum: state.isFlight
-            ? Math.max(edgeMargin, width * 0.46 - runnerWidth)
-            : Math.max(edgeMargin, width - runnerWidth - edgeMargin),
+        maximum: Math.max(edgeMargin, width - runnerWidth - edgeMargin),
     };
 }
 
@@ -972,16 +971,24 @@ function renderRunnerPosition() {
 function clearHorizontalInput() {
     state.moveLeft = false;
     state.moveRight = false;
+    state.flightClimbing = false;
     state.renderedMoveDirection = Number.NaN;
     moveLeftButton.classList.remove('is-held');
     moveRightButton.classList.remove('is-held');
     crouchButton.classList.remove('is-held');
     state.isCrouching = false;
-    runnerLayer.classList.remove('is-retreating', 'is-advancing', 'is-crouching');
+    jumpButton.classList.remove('is-held');
+    runnerLayer.classList.remove('is-retreating', 'is-advancing', 'is-crouching', 'is-climbing', 'is-diving');
 }
 
 function setCrouching(pressed) {
-    if (state.isFlight) return;
+    if (state.isFlight) {
+        if (pressed && state.mode !== 'playing') return;
+        state.isCrouching = pressed;
+        crouchButton.classList.toggle('is-held', pressed);
+        runnerLayer.classList.toggle('is-diving', pressed);
+        return;
+    }
     if (pressed && state.mode !== 'playing') return;
     state.isCrouching = pressed;
     const isGrounded = state.runnerY <= 3 || Boolean(state.standingPlatform);
@@ -1090,7 +1097,7 @@ function clearActors() {
     state.obstacles = [];
     state.insects = [];
     state.platforms = [];
-    state.flightGates = [];
+    state.flightHazards = [];
     state.standingPlatform = null;
     obstacleLayer.replaceChildren();
     collectibleLayer.replaceChildren();
@@ -1698,14 +1705,17 @@ function resetRun() {
     state.isDuel = false;
     state.duel = null;
     state.isFlight = false;
-    state.flightGates = [];
-    state.flightGateCooldown = 0;
+    state.flightHazards = [];
+    state.flightHazardCooldown = 0;
     state.flightLastFlapAt = 0;
     state.flightFlapVisualTimer = 0;
+    state.flightClimbing = false;
     state.runnerFacing = 1;
     board.classList.remove('is-duel', 'is-flight');
     state.runnerWidth = Math.max(1, runnerLayer.offsetWidth);
     if (jumpActionLabel) jumpActionLabel.textContent = 'Pular';
+    if (crouchActionLabel) crouchActionLabel.textContent = 'Agachar';
+    crouchButton.setAttribute('aria-label', 'Agachar o sapo');
     configureJourneyLabels(false);
     runnerLayer.classList.remove('faces-left');
     runnerLayer.classList.remove('is-flapping');
@@ -1720,7 +1730,7 @@ function resetRun() {
 function setPlayingControls(enabled) {
     moveLeftButton.disabled = !enabled;
     moveRightButton.disabled = !enabled;
-    crouchButton.disabled = !enabled || state.isFlight;
+    crouchButton.disabled = !enabled;
     jumpButton.disabled = !enabled;
     tongueButton.disabled = !enabled || state.isFlight;
     pauseButton.disabled = !enabled;
@@ -3246,12 +3256,14 @@ function startFlightNow() {
     state.runnerWidth = Math.max(1, runnerLayer.offsetWidth);
     board.dataset.phase = '3';
     configureJourneyLabels(true);
-    if (jumpActionLabel) jumpActionLabel.textContent = 'Bater asas';
+    if (jumpActionLabel) jumpActionLabel.textContent = 'Subir';
+    if (crouchActionLabel) crouchActionLabel.textContent = 'Descer';
+    crouchButton.setAttribute('aria-label', 'Descer durante o voo');
     applyPhase(2, false);
     state.runnerX = clamp(state.boardWidth * 0.12, 34, 150);
     state.runnerY = Math.max(80, state.boardHeight * 0.42);
-    state.velocityY = FLIGHT_FLAP_FORCE * 0.45;
-    state.flightGateCooldown = 2.2;
+    state.velocityY = 0;
+    state.flightHazardCooldown = 2.2;
     state.mode = 'playing';
     state.previousTime = performance.now();
     state.renderedRunnerX = Number.NaN;
@@ -3266,7 +3278,7 @@ function startFlightNow() {
     showPhaseBanner(2);
     phaseKicker.textContent = 'FASE 3 · VOO';
     phaseName.textContent = 'Pedreira Musgosa';
-    setStatus(`Voo iniciado · ${DIFFICULTIES[state.difficulty].label} · Espaço para bater asas`);
+    setStatus(`Corrida aérea iniciada · ${DIFFICULTIES[state.difficulty].label} · Use todas as direções`);
     updateScore();
     board.focus({ preventScroll: true });
     state.animationFrame = window.requestAnimationFrame(gameLoop);
@@ -3370,8 +3382,8 @@ const STAGE_LOADING_TIPS = [
 
 const FLIGHT_LOADING_TIPS = [
     'Sincronizando o sapinho com as asas...',
-    'Abrindo correntes de ar entre as pedras...',
-    'Conferindo passagens possíveis em cada dificuldade...',
+    'Preparando a rota aérea de velocidade...',
+    'Distribuindo rochas soltas com espaço para desviar...',
 ];
 
 const MAP_LOADING_TIPS = [
@@ -4022,22 +4034,36 @@ function pauseGame() {
     playButton.focus({ preventScroll: true });
 }
 
+function pulseFlightWings() {
+    const now = performance.now();
+    if (now - state.flightLastFlapAt < 95) return;
+    state.flightLastFlapAt = now;
+    runnerLayer.classList.remove('is-flapping');
+    void runnerLayer.offsetWidth;
+    runnerLayer.classList.add('is-flapping');
+    window.clearTimeout(state.flightFlapVisualTimer);
+    state.flightFlapVisualTimer = window.setTimeout(() => {
+        runnerLayer.classList.remove('is-flapping');
+        state.flightFlapVisualTimer = 0;
+    }, 360);
+    playSound(jumpAudio);
+}
+
+function setFlightClimbing(pressed) {
+    if (!state.isFlight) return;
+    if (pressed && state.mode !== 'playing') return;
+    const wasClimbing = state.flightClimbing;
+    state.flightClimbing = pressed;
+    jumpButton.classList.toggle('is-held', pressed);
+    runnerLayer.classList.toggle('is-climbing', pressed);
+    if (pressed && !wasClimbing) pulseFlightWings();
+}
+
 function jump() {
     if (state.mode !== 'playing') return;
     if (state.isFlight) {
-        const now = performance.now();
-        if (now - state.flightLastFlapAt < 95) return;
-        state.flightLastFlapAt = now;
-        state.velocityY = FLIGHT_FLAP_FORCE;
-        runnerLayer.classList.remove('is-flapping');
-        void runnerLayer.offsetWidth;
-        runnerLayer.classList.add('is-flapping');
-        window.clearTimeout(state.flightFlapVisualTimer);
-        state.flightFlapVisualTimer = window.setTimeout(() => {
-            runnerLayer.classList.remove('is-flapping');
-            state.flightFlapVisualTimer = 0;
-        }, 360);
-        playSound(jumpAudio);
+        state.velocityY = Math.max(state.velocityY, FLIGHT_VERTICAL_SPEED * 0.72);
+        pulseFlightWings();
         return;
     }
     if (state.runnerY > 3 && !state.standingPlatform) return;
@@ -4215,9 +4241,7 @@ function endGame(hazard = 'obstacle') {
         }
         updateScore();
         overlayTitle.textContent = `${formatScore(finalScore)} pontos`;
-        overlayMessage.textContent = hazard === 'flight-boundary'
-            ? 'O pássaro saiu da corrente de ar segura. Dê toques curtos para corrigir a altura sem subir ou descer de uma vez.'
-            : 'A dupla encostou numa coluna da pedreira. Mantenha o ritmo das asas e atravesse o centro da abertura.';
+        overlayMessage.textContent = 'A dupla encostou numa rocha solta da pedreira. Use toda a pista aérea para mudar de altura e escolher outra linha de corrida.';
         playLabel.textContent = 'Tentar o voo novamente';
         resultMenuButton.textContent = 'Voltar ao mapa';
         showResultOverlay();
@@ -4307,7 +4331,7 @@ function completeFlightStage() {
     updateScore();
     overlayKicker.textContent = 'Fase 3 concluída · Voo speed run';
     overlayTitle.textContent = 'Travessia da pedreira completa!';
-    overlayMessage.textContent = 'O sapo e seu companheiro de asas cruzaram os arcos de pedra. A fase 4 agora aparece desbloqueada no mapa.';
+    overlayMessage.textContent = 'O sapo e seu companheiro de asas completaram a rota aérea da pedreira. A fase 4 agora aparece desbloqueada no mapa.';
     showVictoryScore(finalScore, `Pedreira Musgosa · ${formatTime(FLIGHT_DURATION)} · bônus +300`);
     playLabel.textContent = 'Voar novamente';
     resultMenuButton.textContent = 'Voltar ao mapa';
@@ -4322,6 +4346,8 @@ function returnFromResult() {
         board.classList.remove('is-flight');
         configureJourneyLabels(false);
         if (jumpActionLabel) jumpActionLabel.textContent = 'Pular';
+        if (crouchActionLabel) crouchActionLabel.textContent = 'Agachar';
+        crouchButton.setAttribute('aria-label', 'Agachar o sapo');
         mainMenuShell.classList.remove('is-hidden');
         resultCard.classList.add('is-hidden');
         overlay.classList.add('is-visible');
@@ -4653,86 +4679,96 @@ function currentFlightSpeed() {
         * worldSpeedScale();
 }
 
-function spawnFlightGate() {
+function spawnFlightHazard() {
     const height = state.boardHeight;
-    const runnerSize = Math.max(1, state.runnerWidth || runnerLayer.offsetWidth);
-    const difficultyGap = state.difficulty === 'easy' ? 0.47 : state.difficulty === 'hard' ? 0.36 : 0.41;
-    const gapHeight = clamp(height * difficultyGap, runnerSize * 1.5, height * 0.5);
-    const safeTop = Math.max(74, height * 0.16);
-    const safeBottom = Math.max(42, height * 0.09);
-    const maximumTop = Math.max(safeTop, height - gapHeight - safeBottom);
-    const gapTop = safeTop + Math.random() * Math.max(1, maximumTop - safeTop);
-    const width = clamp(state.boardWidth * 0.078, 76, 124);
-
-    const element = document.createElement('div');
-    element.className = 'flight-gate';
-    element.setAttribute('aria-hidden', 'true');
-    const top = document.createElement('span');
-    top.className = 'flight-rock-column flight-rock-column--top';
-    const bottom = document.createElement('span');
-    bottom.className = 'flight-rock-column flight-rock-column--bottom';
-    top.style.height = `${gapTop}px`;
-    bottom.style.top = `${gapTop + gapHeight}px`;
+    const progress = clamp(state.elapsedTime / FLIGHT_DURATION, 0, 1);
+    const difficultySize = state.difficulty === 'easy' ? 0.82 : state.difficulty === 'hard' ? 1.08 : 0.94;
+    const size = clamp(height * (0.085 + Math.random() * 0.045) * difficultySize, 42, 104);
+    const width = size * 1.5;
+    const safeTop = clamp(height * 0.13, 52, 96);
+    const safeBottom = clamp(height * 0.1, 40, 72);
+    const maximumTop = Math.max(safeTop, height - size - safeBottom);
+    const y = safeTop + Math.random() * (maximumTop - safeTop);
+    const element = document.createElement('img');
+    element.className = 'flight-hazard';
+    element.src = 'assets/img/pedras-musgo.png';
+    element.alt = '';
+    element.draggable = false;
     element.style.width = `${width}px`;
-    element.append(top, bottom);
+    element.style.height = `${size}px`;
     obstacleLayer.append(element);
 
-    state.flightGates.push({
+    state.flightHazards.push({
         element,
-        x: state.boardWidth + width,
+        x: threatSpawnX(width + 30) + Math.random() * state.boardWidth * 0.08,
+        y,
+        renderedY: y,
         width,
-        gapTop,
-        gapHeight,
+        height: size,
+        drift: Math.min(12, 4 + progress * 8),
+        driftPhase: Math.random() * Math.PI * 2,
+        rotation: -8 + Math.random() * 16,
+        flip: Math.random() < 0.5 ? -1 : 1,
         scored: false,
     });
 }
 
-function flightGateHitsRunner(gate) {
+function flightHazardHitsRunner(hazard) {
     const box = runnerBounds();
-    const left = box.left + box.width * 0.14;
-    const right = box.right - box.width * 0.12;
-    const top = box.top + box.height * 0.2;
-    const bottom = box.bottom - box.height * 0.18;
-    const overlapsHorizontally = right > gate.x + gate.width * 0.12
-        && left < gate.x + gate.width * 0.88;
-    if (!overlapsHorizontally) return false;
-    return top < gate.gapTop || bottom > gate.gapTop + gate.gapHeight;
+    const left = box.left + box.width * 0.22;
+    const right = box.right - box.width * 0.2;
+    const top = box.top + box.height * 0.24;
+    const bottom = box.bottom - box.height * 0.2;
+    return right > hazard.x + hazard.width * 0.2
+        && left < hazard.x + hazard.width * 0.8
+        && bottom > hazard.renderedY + hazard.height * 0.18
+        && top < hazard.renderedY + hazard.height * 0.82;
 }
 
 function updateFlightStage(delta) {
-    state.velocityY -= FLIGHT_GRAVITY * delta;
+    const verticalDirection = Number(state.flightClimbing) - Number(state.isCrouching);
+    const targetVelocity = verticalDirection * FLIGHT_VERTICAL_SPEED;
+    const response = 1 - Math.exp(-(verticalDirection === 0 ? 6 : 11) * delta);
+    state.velocityY += (targetVelocity - state.velocityY) * response;
     state.runnerY += state.velocityY * delta;
-    const flightTilt = clamp(-state.velocityY / 17, -22, 24);
+    const runnerSize = Math.max(1, state.runnerWidth || runnerLayer.offsetWidth);
+    const maximumY = Math.max(0, state.boardHeight - runnerSize);
+    state.runnerY = clamp(state.runnerY, 0, maximumY);
+    if ((state.runnerY === 0 && state.velocityY < 0) || (state.runnerY === maximumY && state.velocityY > 0)) {
+        state.velocityY = 0;
+    }
+    const flightTilt = clamp(-state.velocityY / 24, -18, 18);
     runnerLayer.style.setProperty('--flight-tilt', `${flightTilt.toFixed(1)}deg`);
     renderRunnerPosition();
 
-    const runnerSize = Math.max(1, state.runnerWidth || runnerLayer.offsetWidth);
-    const boundary = Math.max(14, state.boardHeight * 0.028);
-    if (state.runnerY < boundary || state.runnerY > state.boardHeight - runnerSize - boundary) return 'flight-boundary';
-
     const speed = currentFlightSpeed();
-    state.flightGateCooldown -= delta;
-    if (state.flightGateCooldown <= 0) {
-        spawnFlightGate();
+    state.flightHazardCooldown -= delta;
+    if (state.flightHazardCooldown <= 0) {
+        spawnFlightHazard();
         const progress = clamp(state.elapsedTime / FLIGHT_DURATION, 0, 1);
-        const difficultyScale = state.difficulty === 'easy' ? 1.12 : state.difficulty === 'hard' ? 0.9 : 1;
-        state.flightGateCooldown = Math.max(1.18, (1.72 - progress * 0.28) * difficultyScale);
+        const difficultyScale = state.difficulty === 'easy' ? 1.16 : state.difficulty === 'hard' ? 0.88 : 1;
+        state.flightHazardCooldown = Math.max(0.92, (1.58 - progress * 0.24) * difficultyScale);
     }
 
-    state.flightGates.forEach((gate) => {
-        gate.x -= speed * delta;
-        gate.element.style.transform = `translate3d(${gate.x.toFixed(2)}px, 0, 0)`;
-        if (!gate.scored && gate.x + gate.width < state.runnerX) {
-            gate.scored = true;
-            state.score += 30;
-            setStatus('Passagem limpa · +30');
+    state.flightHazards.forEach((hazard) => {
+        hazard.x -= speed * delta;
+        hazard.renderedY = clamp(
+            hazard.y + Math.sin(state.elapsedTime * 1.7 + hazard.driftPhase) * hazard.drift,
+            0,
+            state.boardHeight - hazard.height,
+        );
+        hazard.element.style.transform = `translate3d(${hazard.x.toFixed(2)}px, ${hazard.renderedY.toFixed(2)}px, 0) rotate(${hazard.rotation.toFixed(1)}deg) scaleX(${hazard.flip})`;
+        if (!hazard.scored && hazard.x + hazard.width < state.runnerX) {
+            hazard.scored = true;
+            state.score += 25;
+            setStatus('Desvio limpo · +25');
         }
     });
 
-    const collision = state.flightGates.some(flightGateHitsRunner);
-    state.flightGates = state.flightGates.filter((gate) => {
-        if (gate.x + gate.width >= -30) return true;
-        gate.element.remove();
+    const collision = state.flightHazards.some(flightHazardHitsRunner);
+    state.flightHazards = state.flightHazards.filter((hazard) => {
+        if (hazard.x + hazard.width >= -30) return true;
+        hazard.element.remove();
         return false;
     });
     if (collision) return 'flight-rock';
@@ -4845,6 +4881,14 @@ function handleJumpInput(event) {
     jump();
 }
 
+function handleFlightVerticalKey(event, isPressed) {
+    if (!state.isFlight || !['Space', 'ArrowUp', 'KeyW', 'ArrowDown', 'KeyS'].includes(event.code)) return false;
+    event.preventDefault();
+    if (['Space', 'ArrowUp', 'KeyW'].includes(event.code)) setFlightClimbing(isPressed);
+    else setCrouching(isPressed);
+    return true;
+}
+
 function handleAttackInput(event) {
     if (event.type === 'keydown') {
         if (event.code !== 'KeyX' || event.repeat) return;
@@ -4949,6 +4993,24 @@ function bindCrouchButton() {
         release();
     });
     crouchButton.addEventListener('blur', release);
+}
+
+function bindJumpButton() {
+    const release = () => setFlightClimbing(false);
+    jumpButton.addEventListener('pointerdown', (event) => {
+        if (jumpButton.disabled || state.mode !== 'playing') return;
+        event.preventDefault();
+        if (!state.isFlight) {
+            jump();
+            return;
+        }
+        jumpButton.setPointerCapture?.(event.pointerId);
+        setFlightClimbing(true);
+    });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((eventName) => {
+        jumpButton.addEventListener(eventName, release);
+    });
+    jumpButton.addEventListener('blur', release);
 }
 
 function preloadImage(source) {
@@ -5086,15 +5148,15 @@ function syncBoardSize(width, height) {
             if (insect.diveStartX !== null) insect.diveStartX *= widthRatio;
             if (insect.diveTargetX !== null) insect.diveTargetX *= widthRatio;
         });
-        state.flightGates.forEach((gate) => {
-            gate.x *= widthRatio;
-            gate.width *= widthRatio;
-            gate.gapTop *= heightRatio;
-            gate.gapHeight *= heightRatio;
-            gate.element.style.width = `${gate.width}px`;
-            const [top, bottom] = gate.element.children;
-            if (top) top.style.height = `${gate.gapTop}px`;
-            if (bottom) bottom.style.top = `${gate.gapTop + gate.gapHeight}px`;
+        state.flightHazards.forEach((hazard) => {
+            hazard.x *= widthRatio;
+            hazard.y *= heightRatio;
+            hazard.renderedY *= heightRatio;
+            hazard.width *= heightRatio;
+            hazard.height *= heightRatio;
+            hazard.drift *= heightRatio;
+            hazard.element.style.width = `${hazard.width}px`;
+            hazard.element.style.height = `${hazard.height}px`;
         });
     }
     state.boardWidth = width;
@@ -5116,6 +5178,7 @@ function syncBoardSize(width, height) {
     if (previousWidth === 0 || previousHeight === 0 || state.runnerX === 0) state.runnerX = initialRunnerX(width);
     const bounds = runnerHorizontalBounds();
     state.runnerX = clamp(state.runnerX, bounds.minimum, bounds.maximum);
+    if (state.isFlight) state.runnerY = clamp(state.runnerY, 0, Math.max(0, height - state.runnerWidth));
     renderRunnerPosition();
     updateWorldMotion();
 }
@@ -5385,7 +5448,7 @@ pauseButton.addEventListener('click', () => {
     else pauseGame();
 });
 
-jumpButton.addEventListener('pointerdown', handleJumpInput);
+bindJumpButton();
 tongueButton.addEventListener('pointerdown', handleAttackInput);
 bindMovementButton(moveLeftButton, 'left');
 bindMovementButton(moveRightButton, 'right');
@@ -5400,12 +5463,12 @@ board.addEventListener('pointerdown', (event) => {
 document.addEventListener('keydown', (event) => {
     if (event.isComposing || isTextEntryTarget(event.target)) return;
     if (handleWorldMapKey(event, true)) return;
-    if (!handleHorizontalKey(event, true) && !handleCrouchKey(event, true)) handleKeyboard(event);
+    if (!handleFlightVerticalKey(event, true) && !handleHorizontalKey(event, true) && !handleCrouchKey(event, true)) handleKeyboard(event);
 });
 document.addEventListener('keyup', (event) => {
     if (event.isComposing || isTextEntryTarget(event.target)) return;
     if (handleWorldMapKey(event, false)) return;
-    if (!handleHorizontalKey(event, false)) handleCrouchKey(event, false);
+    if (!handleFlightVerticalKey(event, false) && !handleHorizontalKey(event, false)) handleCrouchKey(event, false);
 });
 window.addEventListener('blur', clearHorizontalInput);
 document.addEventListener('visibilitychange', () => {
