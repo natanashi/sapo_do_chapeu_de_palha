@@ -1123,14 +1123,14 @@ button { cursor: pointer; }
 }
 
 .game-board.is-flight .runner {
-    background-image: url("../img/sapo-passaro-voo-sprites-v1.png");
+    background-image: url("../img/sapo-passaro-voo-sprites-v2.png");
     background-position: 0 0;
     background-size: 600% 100%;
-    animation: mounted-bird-flight 520ms steps(1, end) infinite;
+    animation: mounted-bird-flight 720ms steps(1, end) infinite;
     filter: drop-shadow(0 7px 3px rgba(17, 35, 18, 0.24));
 }
 
-.game-board.is-flight .runner-layer.is-flapping .runner { animation-duration: 340ms; }
+.game-board.is-flight .runner-layer.is-flapping .runner { animation-duration: 430ms; }
 
 .flight-gate {
     position: absolute;

@@ -405,6 +405,7 @@ const state = {
     flightGates: [],
     flightGateCooldown: 0,
     flightLastFlapAt: 0,
+    flightFlapVisualTimer: 0,
 };
 
 const PACE_REFERENCE_SPEED = 270;
@@ -1659,6 +1660,7 @@ function setRunnerMotion(motion) {
 
 function resetRun() {
     window.cancelAnimationFrame(state.animationFrame);
+    window.clearTimeout(state.flightFlapVisualTimer);
     clearActors();
     clearAttack();
     state.score = 0;
@@ -1699,6 +1701,7 @@ function resetRun() {
     state.flightGates = [];
     state.flightGateCooldown = 0;
     state.flightLastFlapAt = 0;
+    state.flightFlapVisualTimer = 0;
     state.runnerFacing = 1;
     board.classList.remove('is-duel', 'is-flight');
     state.runnerWidth = Math.max(1, runnerLayer.offsetWidth);
@@ -3450,7 +3453,7 @@ function stageAssets(kind, testArea = false) {
         skinObjectUrls.get('tongue'),
     ].filter(Boolean);
     if (kind === 'duel') return [...common, 'assets/img/sapo-resistencia-capuz-sprites-v1.png', 'assets/img/sapo-resistencia-ataque-sprites-v2.png', 'assets/img/sapo-lingua-padrao-v4.png'];
-    if (kind === 'flight') return [...AMBIENT_ASSET_URLS, 'assets/img/sapo-passaro-voo-sprites-v1.png', 'assets/img/pedras-musgo.png'];
+    if (kind === 'flight') return [...AMBIENT_ASSET_URLS, 'assets/img/sapo-passaro-voo-sprites-v2.png', 'assets/img/pedras-musgo.png'];
     if (testArea) return [...common, 'assets/img/super-abelha-monstro-sprites-v2.png', 'assets/img/abelha-investida-sprites.png'];
     return [...common, ...Object.values(OBSTACLES).map((obstacle) => obstacle.src), 'assets/img/inseto-voando-sprites.png', 'assets/img/besouro-ondulante-voando-sprites.png', 'assets/img/abelha-investida-sprites.png'];
 }
@@ -4029,6 +4032,11 @@ function jump() {
         runnerLayer.classList.remove('is-flapping');
         void runnerLayer.offsetWidth;
         runnerLayer.classList.add('is-flapping');
+        window.clearTimeout(state.flightFlapVisualTimer);
+        state.flightFlapVisualTimer = window.setTimeout(() => {
+            runnerLayer.classList.remove('is-flapping');
+            state.flightFlapVisualTimer = 0;
+        }, 360);
         playSound(jumpAudio);
         return;
     }

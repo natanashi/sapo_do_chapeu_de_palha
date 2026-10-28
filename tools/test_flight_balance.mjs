@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 
 const source = readFileSync(new URL('../assets/js/script.js', import.meta.url), 'utf8');
+const styles = readFileSync(new URL('../assets/css/style.css', import.meta.url), 'utf8');
 const readConstant = (name) => {
     const match = source.match(new RegExp(`const ${name} = ([0-9.]+);`));
     assert.ok(match, `Constante ${name} não encontrada`);
@@ -15,6 +16,9 @@ assert.equal(duration, 60, 'A fase aérea deve durar 60 segundos');
 assert.ok(source.includes("category: 'Voo speed run'"), 'A fase 3 precisa expor a categoria de voo');
 assert.ok(source.includes('storyProgress.completedPhases[2] = true'), 'A vitória precisa persistir a fase 3');
 assert.ok(source.includes("else if (worldMapState.nearestLevel === 2) startFlightStage()"), 'O selo 3 precisa abrir a fase aérea');
+assert.ok(styles.includes('sapo-passaro-voo-sprites-v2.png'), 'O voo deve usar a folha estabilizada');
+assert.ok(styles.includes('animation: mounted-bird-flight 720ms'), 'O ciclo base não pode sacudir a ave rápido demais');
+assert.match(source, /runnerLayer\.classList\.remove\('is-flapping'\);\s+state\.flightFlapVisualTimer = 0;/, 'O impulso deve voltar ao ciclo de voo normal');
 
 for (const { width, height } of [
     { width: 640, height: 360 },
@@ -35,7 +39,7 @@ for (const { width, height } of [
 }
 
 for (const asset of [
-    new URL('../assets/img/sapo-passaro-voo-sprites-v1.png', import.meta.url),
+    new URL('../assets/img/sapo-passaro-voo-sprites-v2.png', import.meta.url),
     new URL('../assets/img/mapa-montanha-pedreira-v1.png', import.meta.url),
     new URL('../assets/img/pedras-musgo.png', import.meta.url),
 ]) {
