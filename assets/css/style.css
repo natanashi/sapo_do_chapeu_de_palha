@@ -1122,7 +1122,7 @@ button { cursor: pointer; }
 }
 
 .game-board.is-flight .runner {
-    background-image: url("../img/sapo-passaro-voo-sprites-v4.png");
+    background-image: url("../img/passaro-voo-sprites-v1.png");
     background-position: 0 0;
     background-size: 600% 100%;
     animation: mounted-bird-flight 720ms steps(1, end) infinite;

@@ -3481,7 +3481,7 @@ function stageAssets(kind, testArea = false) {
     if (kind === 'duel') return [...common, 'assets/img/sapo-resistencia-capuz-sprites-v1.png', 'assets/img/sapo-resistencia-ataque-sprites-v2.png', 'assets/img/sapo-lingua-padrao-v4.png'];
     if (kind === 'flight') return [
         ...AMBIENT_ASSET_URLS,
-        'assets/img/sapo-passaro-voo-sprites-v4.png',
+        'assets/img/passaro-voo-sprites-v1.png',
         'assets/img/pedras-musgo.png',
         'assets/img/nuvem-pixel-flutuante-v1.png',
         'assets/img/nuvem-tempestade-raio-v1.png',
