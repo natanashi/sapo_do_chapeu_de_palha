@@ -1122,7 +1122,7 @@ button { cursor: pointer; }
 }
 
 .game-board.is-flight .runner {
-    background-image: url("../img/sapo-passaro-voo-sprites-v2.png");
+    background-image: url("../img/sapo-passaro-voo-sprites-v3.png");
     background-position: 0 0;
     background-size: 600% 100%;
     animation: mounted-bird-flight 720ms steps(1, end) infinite;
@@ -1161,8 +1161,6 @@ button { cursor: pointer; }
     filter: drop-shadow(5px 7px 0 rgba(23, 49, 29, 0.28));
     transform-origin: center center;
 }
-
-.flight-rock.is-ceiling { filter: drop-shadow(5px -7px 0 rgba(23, 49, 29, 0.28)); }
 
 .flight-insect {
     z-index: 3;

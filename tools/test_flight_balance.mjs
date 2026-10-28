@@ -18,11 +18,13 @@ assert.equal(verticalSpeed, 540, 'O controle vertical deve responder como corrid
 assert.ok(source.includes("category: 'Voo speed run'"), 'A fase 3 precisa expor a categoria de voo');
 assert.ok(source.includes('storyProgress.completedPhases[2] = true'), 'A vitória precisa persistir a fase 3');
 assert.ok(source.includes("else if (worldMapState.nearestLevel === 2) startFlightStage()"), 'O selo 3 precisa abrir a fase aérea');
-assert.ok(styles.includes('sapo-passaro-voo-sprites-v2.png'), 'O voo deve usar a folha estabilizada');
+assert.ok(styles.includes('sapo-passaro-voo-sprites-v3.png'), 'O voo deve usar a folha sentada e estabilizada');
 assert.ok(styles.includes('animation: mounted-bird-flight 720ms'), 'O ciclo base não pode sacudir a ave rápido demais');
 assert.match(source, /runnerLayer\.classList\.remove\('is-flapping'\);\s+state\.flightFlapVisualTimer = 0;/, 'O impulso deve voltar ao ciclo de voo normal');
 assert.ok(source.includes('function spawnFlightInsect()'), 'A fase deve reutilizar os insetos voadores');
 assert.ok(source.includes('function spawnFlightRock()'), 'A fase deve manter pedras somente nas extremidades');
+assert.ok(source.includes('const y = state.boardHeight - height;'), 'As pedras da fase aérea devem ficar somente no chão');
+assert.ok(!source.includes('is-ceiling'), 'A fase aérea não pode colocar pedras no céu');
 assert.ok(source.includes('function spawnFriendlyFlightCloud()'), 'A fase deve ter nuvens claras decorativas');
 assert.ok(source.includes('function spawnStormFlightCloud()'), 'A fase deve ter nuvens de tempestade');
 assert.ok(source.includes("return collision?.kind || ''"), 'A colisão precisa identificar inseto, pedra ou tempestade');
@@ -54,7 +56,7 @@ for (const { width, height } of [
 }
 
 for (const asset of [
-    new URL('../assets/img/sapo-passaro-voo-sprites-v2.png', import.meta.url),
+    new URL('../assets/img/sapo-passaro-voo-sprites-v3.png', import.meta.url),
     new URL('../assets/img/mapa-montanha-pedreira-v1.png', import.meta.url),
     new URL('../assets/img/pedras-musgo.png', import.meta.url),
     new URL('../assets/img/nuvem-pixel-flutuante-v1.png', import.meta.url),

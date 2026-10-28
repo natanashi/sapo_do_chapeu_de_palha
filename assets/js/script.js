@@ -410,7 +410,6 @@ const state = {
     flightCloudCooldown: 0,
     flightStormCooldown: 0,
     flightInsectSequence: 0,
-    flightRockSequence: 0,
     flightLastFlapAt: 0,
     flightFlapVisualTimer: 0,
     flightClimbing: false,
@@ -1719,7 +1718,6 @@ function resetRun() {
     state.flightCloudCooldown = 0;
     state.flightStormCooldown = 0;
     state.flightInsectSequence = 0;
-    state.flightRockSequence = 0;
     state.flightLastFlapAt = 0;
     state.flightFlapVisualTimer = 0;
     state.flightClimbing = false;
@@ -3483,7 +3481,7 @@ function stageAssets(kind, testArea = false) {
     if (kind === 'duel') return [...common, 'assets/img/sapo-resistencia-capuz-sprites-v1.png', 'assets/img/sapo-resistencia-ataque-sprites-v2.png', 'assets/img/sapo-lingua-padrao-v4.png'];
     if (kind === 'flight') return [
         ...AMBIENT_ASSET_URLS,
-        'assets/img/sapo-passaro-voo-sprites-v2.png',
+        'assets/img/sapo-passaro-voo-sprites-v3.png',
         'assets/img/pedras-musgo.png',
         'assets/img/nuvem-pixel-flutuante-v1.png',
         'assets/img/nuvem-tempestade-raio-v1.png',
@@ -4270,7 +4268,7 @@ function endGame(hazard = 'obstacle') {
             ? 'O raio da nuvem de tempestade atingiu a dupla. Observe o clarão de aviso e troque de linha antes da descarga.'
             : hazard === 'flight-insect'
                 ? 'Um dos insetos voadores acertou a dupla. Eles são menores nesta rota, mas mudam de altura enquanto avançam.'
-                : 'A dupla encostou numa pedra presa ao chão ou ao teto. Use toda a pista aérea para escolher outra linha de corrida.';
+                : 'A dupla encostou numa formação de pedra no chão. Ganhe altura antes de alcançar a próxima.';
         playLabel.textContent = 'Tentar o voo novamente';
         resultMenuButton.textContent = 'Voltar ao mapa';
         showResultOverlay();
@@ -4747,13 +4745,11 @@ function spawnFlightInsect() {
 }
 
 function spawnFlightRock() {
-    const ceiling = state.flightRockSequence % 2 === 1;
-    state.flightRockSequence += 1;
     const height = clamp(state.boardHeight * (0.11 + Math.random() * 0.045), 54, 112);
     const width = height * 1.5;
-    const y = ceiling ? 0 : state.boardHeight - height;
+    const y = state.boardHeight - height;
     const element = document.createElement('img');
-    element.className = `flight-hazard flight-rock${ceiling ? ' is-ceiling' : ' is-grounded'}`;
+    element.className = 'flight-hazard flight-rock is-grounded';
     element.src = 'assets/img/pedras-musgo.png';
     element.alt = '';
     element.draggable = false;
@@ -4768,7 +4764,6 @@ function spawnFlightRock() {
         renderedY: y,
         width,
         height,
-        ceiling,
         speedScale: 1,
         scored: false,
     });
@@ -4867,8 +4862,7 @@ function updateFlightActors(delta, speed) {
             hazard.element.classList.toggle('is-striking', hazard.striking);
             hazard.element.style.transform = `translate3d(${hazard.x.toFixed(2)}px, ${hazard.y.toFixed(2)}px, 0)`;
         } else {
-            const flipY = hazard.ceiling ? -1 : 1;
-            hazard.element.style.transform = `translate3d(${hazard.x.toFixed(2)}px, ${hazard.y.toFixed(2)}px, 0) scaleY(${flipY})`;
+            hazard.element.style.transform = `translate3d(${hazard.x.toFixed(2)}px, ${hazard.y.toFixed(2)}px, 0)`;
         }
         if (!hazard.scored && hazard.x + hazard.width < state.runnerX) {
             hazard.scored = true;
