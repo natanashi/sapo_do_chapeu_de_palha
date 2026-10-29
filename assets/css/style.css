@@ -1264,6 +1264,15 @@ button { cursor: pointer; }
     transform-origin: 50% 100%;
 }
 
+.flight-tornado {
+    z-index: 2;
+    opacity: 0.72;
+    background: url("../img/redemoinho-vento-sprites-v1.png") 0 0 / 400% 100% no-repeat;
+    animation: insect-flap 680ms steps(1, end) infinite;
+}
+
+.game-board.is-in-wind .flight-tornado { opacity: 0.9; }
+
 .flight-good-cloud {
     position: absolute;
     z-index: 0;
@@ -3490,6 +3499,7 @@ body.reduce-game-motion .world-rock-mountain,
 body.reduce-game-motion .obstacle--ground-beetle,
 body.reduce-game-motion .obstacle--leaping-beetle,
 body.reduce-game-motion .flight-hawk,
+body.reduce-game-motion .flight-tornado,
 body.reduce-game-motion .flight-mist-track { animation: none !important; }
 body.reduce-game-motion .scenery-layer,
 body.reduce-game-motion .game-overlay,

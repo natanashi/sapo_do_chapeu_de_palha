@@ -205,24 +205,27 @@ let settingsSavedTimer = 0;
 const DIFFICULTIES = {
     easy: {
         label: 'Fácil',
-        speedScale: 0.92,
-        spawnGapScale: 1.16,
-        minimumObstacleGap: 1.34,
-        minimumInsectGap: 1.9,
+        speedScale: 0.98,
+        spawnGapScale: 0.96,
+        minimumObstacleGap: 1.18,
+        minimumInsectGap: 1.85,
+        duelTempo: 0.96,
     },
     medium: {
         label: 'Médio',
-        speedScale: 1,
-        spawnGapScale: 1,
-        minimumObstacleGap: 1.18,
-        minimumInsectGap: 1.72,
+        speedScale: 1.08,
+        spawnGapScale: 0.82,
+        minimumObstacleGap: 1.05,
+        minimumInsectGap: 1.65,
+        duelTempo: 1.12,
     },
     hard: {
         label: 'Difícil',
-        speedScale: 1.1,
-        spawnGapScale: 0.87,
-        minimumObstacleGap: 1.05,
-        minimumInsectGap: 1.48,
+        speedScale: 1.2,
+        spawnGapScale: 0.68,
+        minimumObstacleGap: 0.94,
+        minimumInsectGap: 1.5,
+        duelTempo: 1.3,
     },
 };
 let selectedDifficulty = 'medium';
@@ -411,6 +414,9 @@ const state = {
     flightVultureCooldown: 0,
     flightHawkCooldown: 0,
     flightGroundSpireCooldown: 0,
+    flightTornadoCooldown: 0,
+    flightWindStrength: 0,
+    flightNextSpawnAt: 0,
     flightInsectSequence: 0,
     flightLastFlapAt: 0,
     flightFlapVisualTimer: 0,
@@ -430,10 +436,10 @@ const ATTACK_CAPTURE_CLOSE = 290;
 const ATTACK_RETRACT_AT = 320;
 const ATTACK_SWALLOW_AT = 485;
 const JOURNEY_DURATION = 120;
-const FLIGHT_DURATION = 60;
+const FLIGHT_DURATION = 70;
 const FLIGHT_VERTICAL_SPEED = 540;
-const FLIGHT_BASE_SPEED = 255;
-const FLIGHT_SPEED_GAIN = 225;
+const FLIGHT_BASE_SPEED = 285;
+const FLIGHT_SPEED_GAIN = 270;
 const BOSS_START_TIME = 88;
 const BOSS_MAX_HEALTH = 5;
 const BOSS_ATTACK_STAGE_MS = 3600;
@@ -1305,7 +1311,8 @@ function updateBoss(currentTime) {
     } else if (boss.stage === 'attacking') {
         if (currentTime >= boss.nextSpawnAt) {
             spawnBossBee(currentTime);
-            boss.nextSpawnAt = currentTime + 1900 + Math.random() * 750;
+            const swarmGap = state.difficulty === 'hard' ? 720 : state.difficulty === 'easy' ? 1150 : 900;
+            boss.nextSpawnAt = currentTime + swarmGap + Math.random() * 350;
         }
         if (currentTime >= boss.nextStageAt) {
             boss.stage = 'tired';
@@ -1437,8 +1444,9 @@ function groundInsectLaneIsSafe() {
 }
 
 function incomingObstacleBlocksInsects() {
-    const reactionLine = state.boardWidth * 0.42;
-    return state.obstacles.some((obstacle) => obstacle.x > reactionLine);
+    const waveStartX = threatSpawnX(Math.max(48, state.boardWidth * 0.05));
+    const crossingGap = currentWorldSpeed() * 0.52;
+    return state.obstacles.some((obstacle) => Math.abs(obstacle.x - waveStartX) < crossingGap);
 }
 
 function spawnInsectWave() {
@@ -1458,8 +1466,9 @@ function spawnInsectWave() {
     const insectBox = measureActor(sample, `insect:${speciesKey}`);
     sample.remove();
 
-    const tripleWaveChance = 0.34 + pressure * 0.28;
-    const count = isBee || isWaveSpecies ? 1 : (Math.random() < tripleWaveChance ? 3 : 2);
+    const tripleWaveChance = 0.6 + pressure * 0.25;
+    const pairedSpecialists = pressure > 0.3 && state.difficulty !== 'easy' && Math.random() < 0.45;
+    const count = isBee || isWaveSpecies ? (pairedSpecialists ? 2 : 1) : (Math.random() < tripleWaveChance ? 3 : 2);
     const useGroundLane = !isBee && !isWaveSpecies && Math.random() < 0.12 && groundInsectLaneIsSafe();
     const mouthY = runnerBox.top + runnerBox.height * 0.46;
     const flightCeiling = boardBox.height * 0.36;
@@ -1475,7 +1484,9 @@ function spawnInsectWave() {
             : isWaveSpecies
                 ? waveCenterY
                 : boardBox.height * (0.49 + Math.random() * 0.09);
-    const spacing = Math.max(58, insectBox.width * 0.82);
+    const spacing = isBee || isWaveSpecies
+        ? Math.max(insectBox.width * 1.7, currentWorldSpeed() * 0.85)
+        : Math.max(58, insectBox.width * 0.82);
     const waveStartX = threatSpawnX(Math.max(48, boardBox.width * 0.05));
     const waveSpeed = isBee ? 0.8 : isWaveSpecies ? 0.98 + Math.random() * 0.08 : 0.86 + Math.random() * 0.12;
     const yOffsets = count === 1 ? [0] : count === 2 ? [-7, 7] : [0, -14, 10];
@@ -1516,7 +1527,7 @@ function spawnInsectWave() {
         renderInsect(insect, performance.now());
     }
 
-    state.obstacleCooldown = Math.max(state.obstacleCooldown, isBee ? 3.2 : useGroundLane ? 3 : isWaveSpecies ? 1.85 : 1.55);
+    state.obstacleCooldown = Math.max(state.obstacleCooldown, isBee ? 1.6 : useGroundLane ? 2 : isWaveSpecies ? 1.15 : 1);
 }
 
 function spawnPlatform() {
@@ -1721,6 +1732,10 @@ function resetRun() {
     state.flightVultureCooldown = 0;
     state.flightHawkCooldown = 0;
     state.flightGroundSpireCooldown = 0;
+    state.flightTornadoCooldown = 0;
+    state.flightWindStrength = 0;
+    state.flightNextSpawnAt = 0;
+    board.classList.remove('is-in-wind');
     state.flightInsectSequence = 0;
     state.flightLastFlapAt = 0;
     state.flightFlapVisualTimer = 0;
@@ -3284,6 +3299,7 @@ function startFlightNow() {
     state.flightVultureCooldown = 7.4;
     state.flightHawkCooldown = 5.8;
     state.flightGroundSpireCooldown = 2.7;
+    state.flightTornadoCooldown = 7;
     state.mode = 'playing';
     state.previousTime = performance.now();
     state.renderedRunnerX = Number.NaN;
@@ -3305,6 +3321,7 @@ function startFlightNow() {
 }
 
 function startResistanceDuelNow({ adminTest = false } = {}) {
+    state.difficulty = selectedDifficulty;
     resetRun();
     state.isDuel = true;
     state.isAdminEncounter = adminTest;
@@ -3493,6 +3510,7 @@ function stageAssets(kind, testArea = false) {
         'assets/img/urubu-voo-sprites-v1.png',
         'assets/img/gaviao-carijo-voo-sprites-v1.png',
         'assets/img/ponta-rochosa-terra-v1.png',
+        'assets/img/redemoinho-vento-sprites-v1.png',
         'assets/img/nuvem-pixel-flutuante-v1.png',
         'assets/img/nuvem-tempestade-raio-v1.png',
         'assets/img/inseto-voando-sprites.png',
@@ -3652,7 +3670,7 @@ function startResistanceDuelDash(duel, currentTime, mode = 'retreat') {
     duel.facing = duel.dashDirection;
     duel.stage = 'dash-windup';
     duel.stageStartedAt = currentTime;
-    duel.nextDashAt = currentTime + DUEL_DASH_COOLDOWN_MS;
+    duel.nextDashAt = currentTime + DUEL_DASH_COOLDOWN_MS / DIFFICULTIES[state.difficulty].duelTempo;
     duel.dodgeInvulnerableUntil = currentTime + DUEL_DASH_WINDUP_MS + DUEL_DASH_DURATION_MS;
     duel.element.className = 'resistance-duelist is-dash-windup';
     showResistanceCallout(duel, mode === 'close' ? 'Agora eu avanço.' : 'Troca de posição.', currentTime, 780);
@@ -3710,7 +3728,7 @@ function observePlayerAttack(duel, currentTime) {
 
     if (!canDodge || duel.queuedDodgeAt) return;
     duel.queuedDodgeMode = currentTime >= duel.nextDashAt && duel.dodgePattern === 1 ? 'dash' : 'jump';
-    duel.queuedDodgeAt = currentTime + DUEL_REACTION_MS + duel.dodgePattern * 18;
+    duel.queuedDodgeAt = currentTime + DUEL_REACTION_MS / DIFFICULTIES[state.difficulty].duelTempo + duel.dodgePattern * 18;
 }
 
 function performQueuedResistanceDodge(duel, currentTime) {
@@ -3725,7 +3743,7 @@ function performQueuedResistanceDodge(duel, currentTime) {
     ) return;
 
     if (dodgeMode === 'dash') {
-        duel.nextDodgeAt = currentTime + DUEL_DODGE_COOLDOWN_MS;
+        duel.nextDodgeAt = currentTime + DUEL_DODGE_COOLDOWN_MS / DIFFICULTIES[state.difficulty].duelTempo;
         duel.tactic = 'counter';
         duel.tacticUntil = currentTime + 1350;
         if (startResistanceDuelDash(duel, currentTime, 'retreat')) {
@@ -3735,7 +3753,7 @@ function performQueuedResistanceDodge(duel, currentTime) {
     }
 
     clearResistanceDuelAttack(duel);
-    duel.nextDodgeAt = currentTime + DUEL_DODGE_COOLDOWN_MS;
+    duel.nextDodgeAt = currentTime + DUEL_DODGE_COOLDOWN_MS / DIFFICULTIES[state.difficulty].duelTempo;
     duel.dodgeInvulnerableUntil = currentTime + 420;
     duel.tactic = 'counter';
     duel.tacticUntil = currentTime + 1350;
@@ -3787,6 +3805,7 @@ function damageResistanceDuel(duel, currentTime) {
 function updateResistanceDuel(currentTime, delta) {
     const duel = state.duel;
     if (!duel) return false;
+    const tempo = DIFFICULTIES[state.difficulty].duelTempo;
 
     duel.homeX = state.boardWidth * 0.72;
     duel.playerVelocityX = (state.runnerX - duel.lastPlayerX) / Math.max(delta, 0.001);
@@ -3837,7 +3856,7 @@ function updateResistanceDuel(currentTime, delta) {
         }
     } else if (duel.stage === 'dashing') {
         const remaining = duel.dashTargetX - duel.x;
-        const dashStep = DUEL_DASH_SPEED * delta;
+        const dashStep = DUEL_DASH_SPEED * tempo * delta;
         const dashExpired = currentTime - duel.stageStartedAt >= DUEL_DASH_DURATION_MS;
         if (Math.abs(remaining) <= dashStep || dashExpired) {
             if (Math.abs(remaining) <= dashStep) duel.x = duel.dashTargetX;
@@ -3848,14 +3867,14 @@ function updateResistanceDuel(currentTime, delta) {
             duel.x += Math.sign(remaining) * dashStep;
         }
     } else if (duel.stage === 'dash-recovering') {
-        if (currentTime - duel.stageStartedAt >= DUEL_DASH_RECOVER_MS) {
+        if (currentTime - duel.stageStartedAt >= DUEL_DASH_RECOVER_MS / tempo) {
             duel.stage = 'moving';
             duel.stageStartedAt = currentTime;
-            duel.nextDecisionAt = currentTime + 520;
+            duel.nextDecisionAt = currentTime + 360 / tempo;
             duel.element.className = 'resistance-duelist is-moving';
             setStatus('O dash de Rubro terminou. Ele voltou à guarda.');
         }
-    } else if (duel.stage === 'windup' && currentTime - duel.stageStartedAt >= DUEL_TONGUE_WINDUP_MS) {
+    } else if (duel.stage === 'windup' && currentTime - duel.stageStartedAt >= Math.max(300, DUEL_TONGUE_WINDUP_MS / tempo)) {
         duel.stage = 'attacking';
         duel.stageStartedAt = currentTime;
         duel.element.className = 'resistance-duelist is-attacking';
@@ -3875,10 +3894,10 @@ function updateResistanceDuel(currentTime, delta) {
             duel.element.className = 'resistance-duelist is-recovering';
         }
     } else if (duel.stage === 'recovering') {
-        if (currentTime - duel.stageStartedAt >= DUEL_RECOVER_MS) {
+        if (currentTime - duel.stageStartedAt >= Math.max(480, DUEL_RECOVER_MS / tempo)) {
             duel.stage = 'moving';
             duel.stageStartedAt = currentTime;
-            duel.nextDecisionAt = currentTime + 760;
+            duel.nextDecisionAt = currentTime + 420 / tempo;
             duel.element.className = 'resistance-duelist is-moving';
             setStatus('Rubro terminou o golpe. Esta é a abertura.');
         }
@@ -3931,7 +3950,7 @@ function updateResistanceDuel(currentTime, delta) {
         else if (direction !== 0) duel.tactic = 'retreat';
         else duel.tactic = counterWindow ? 'counter' : 'guard';
 
-        const adaptiveSpeed = DUEL_MOVE_SPEED * (1 + pressure * 0.2) * (duel.tactic === 'pressure' ? 1.08 : 1);
+        const adaptiveSpeed = DUEL_MOVE_SPEED * tempo * (1 + pressure * 0.28) * (duel.tactic === 'pressure' ? 1.16 : 1);
         const targetVelocityX = direction * adaptiveSpeed;
         const velocityStep = (direction === 0 ? DUEL_MOVE_BRAKING : DUEL_MOVE_ACCELERATION) * delta;
         duel.velocityX += clamp(targetVelocityX - duel.velocityX, -velocityStep, velocityStep);
@@ -3961,7 +3980,7 @@ function updateResistanceDuel(currentTime, delta) {
             const attackOpening = playerCoolingDown
                 || playerDescending
                 || (playerApproaching && predictedDistance < distance)
-                || (duel.decisionCount % 4 === 0 && !playerMovingAway);
+                || (duel.decisionCount % (state.difficulty === 'easy' ? 3 : 2) === 0 && !playerMovingAway);
             const canBaitAttack = currentTime >= duel.nextBaitAt
                 && !playerCoolingDown
                 && !playerAttackAimedAtRubro
@@ -3980,14 +3999,14 @@ function updateResistanceDuel(currentTime, delta) {
             } else if (canBaitAttack) {
                 duel.tactic = 'retreat';
                 duel.tacticUntil = currentTime + 720;
-                duel.nextBaitAt = currentTime + 3600;
-                duel.nextDecisionAt = currentTime + 640;
+                duel.nextBaitAt = currentTime + 3600 / tempo;
+                duel.nextDecisionAt = currentTime + 440 / tempo;
                 showResistanceCallout(duel, 'Tenta me alcançar.', currentTime, 850);
             } else if (inTongueRange && safelyAligned && (playerNearGround || playerDescending) && !playerAttackAimedAtRubro && attackOpening) {
                 startResistanceDuelTongue(duel, currentTime);
             } else {
                 const alignmentDelay = playerAttackAimedAtRubro || !playerNearGround ? 260 : 420;
-                duel.nextDecisionAt = currentTime + alignmentDelay;
+                duel.nextDecisionAt = currentTime + alignmentDelay / tempo;
             }
         }
     }
@@ -4696,7 +4715,7 @@ function scheduleActors(delta) {
 
     if (state.insectCooldown <= 0) {
         if (incomingObstacleBlocksInsects()) {
-            state.insectCooldown = 0.42;
+            state.insectCooldown = 0.16;
         } else {
             spawnInsectWave();
             const [minimumGap, maximumGap] = PHASES[state.phaseIndex].insectGap;
@@ -4726,7 +4745,7 @@ function flightSpawnX(width) {
     return threatSpawnX(width + 30) + Math.random() * state.boardWidth * 0.08;
 }
 
-function spawnFlightInsect() {
+function spawnFlightInsect({ y: requestedY, xOffset = 0, waveScale = 1 } = {}) {
     const species = [
         { name: 'golden', className: 'flight-insect--golden', speed: 0.96, wave: 5, frequency: 3.2, aspect: 1.09, ability: 'burst' },
         { name: 'wave', className: 'flight-insect--wave', speed: 1.04, wave: 34, frequency: 4.1, aspect: 1.18, ability: 'wide-wave' },
@@ -4737,7 +4756,9 @@ function spawnFlightInsect() {
     const height = width / species.aspect;
     const safeTop = clamp(state.boardHeight * 0.14, 58, 96);
     const safeBottom = clamp(state.boardHeight * 0.12, 42, 76);
-    const y = safeTop + Math.random() * Math.max(1, state.boardHeight - safeTop - safeBottom - height);
+    const y = requestedY === undefined
+        ? safeTop + Math.random() * Math.max(1, state.boardHeight - safeTop - safeBottom - height)
+        : clamp(requestedY, 12, state.boardHeight - height - 12);
     const element = document.createElement('div');
     element.className = `flight-hazard flight-insect ${species.className}`;
     element.setAttribute('aria-hidden', 'true');
@@ -4748,12 +4769,12 @@ function spawnFlightInsect() {
         kind: 'insect',
         species: species.name,
         element,
-        x: flightSpawnX(width),
+        x: flightSpawnX(width) + xOffset,
         y,
         renderedY: y,
         width,
         height,
-        wave: species.wave,
+        wave: species.wave * waveScale,
         frequency: species.frequency,
         ability: species.ability,
         wavePhase: Math.random() * Math.PI * 2,
@@ -4853,6 +4874,59 @@ function spawnFlightGroundSpire() {
     });
 }
 
+function spawnFlightInsectFormation(count = 2) {
+    const laneStep = state.boardHeight / (count + 1);
+    const startIndex = Math.random() < 0.5 ? 0 : count - 1;
+    for (let index = 0; index < count; index += 1) {
+        const lane = (startIndex + index) % count;
+        spawnFlightInsect({
+            y: laneStep * (lane + 1) - 22,
+            xOffset: index * clamp(state.boardWidth * 0.08, 52, 100),
+            waveScale: 0.7,
+        });
+    }
+}
+
+function spawnFlightTornado() {
+    const height = Math.min(state.boardHeight * 0.76, clamp(state.boardHeight * 0.62, 190, 410));
+    const width = height * 0.78;
+    const runnerBox = runnerBounds();
+    const y = clamp(runnerBox.top + runnerBox.height * 0.5 - height * 0.5, 20, Math.max(20, state.boardHeight - height - 20));
+    const element = document.createElement('div');
+    element.className = 'flight-hazard flight-tornado';
+    element.setAttribute('aria-hidden', 'true');
+    element.style.width = `${width}px`;
+    element.style.height = `${height}px`;
+    obstacleLayer.append(element);
+    state.flightHazards.push({
+        kind: 'tornado', element, width, height,
+        x: flightSpawnX(width), y, renderedY: y,
+        speedScale: 0.56, scored: false,
+    });
+    // This encounter reserves room for its escorts before it is scheduled.
+    spawnFlightInsectFormation(2);
+    state.flightInsectCooldown = 0.85;
+    setStatus('Redemoinho chegando · o vento puxa o pássaro · insetos na rota!');
+}
+
+function sampleFlightWind() {
+    const box = runnerBounds();
+    const centerX = box.left + box.width * 0.5;
+    const centerY = box.top + box.height * 0.5;
+    let strongest = { strength: 0, x: 0, y: 0 };
+    for (const hazard of state.flightHazards) {
+        if (hazard.kind !== 'tornado') continue;
+        const dx = (centerX - hazard.x - hazard.width * 0.5) / (hazard.width * 0.72 + box.width * 0.2);
+        const dy = (centerY - hazard.y - hazard.height * 0.5) / (hazard.height * 0.6 + box.height * 0.2);
+        const strength = clamp(1 - Math.hypot(dx, dy), 0, 1);
+        if (strength <= strongest.strength) continue;
+        const gust = Math.sin(state.elapsedTime * 5.2) * 0.6 + Math.sin(state.elapsedTime * 2.1) * 0.4;
+        const scale = clamp(state.boardHeight / 600, 0.6, 1.15);
+        strongest = { strength, x: (-dx * 150 - 35) * strength * scale, y: (gust * 185 - dy * 90) * strength * scale };
+    }
+    return strongest;
+}
+
 function spawnFriendlyFlightCloud() {
     const width = clamp(state.boardWidth * (0.11 + Math.random() * 0.07), 105, 210);
     const height = width * 0.5;
@@ -4895,6 +4969,7 @@ function spawnStormFlightCloud() {
 }
 
 function flightHazardHitsRunner(hazard) {
+    if (hazard.kind === 'tornado') return false;
     const box = runnerBounds();
     const runnerLeft = box.left + box.width * 0.22;
     const runnerRight = box.right - box.width * 0.2;
@@ -5072,9 +5147,9 @@ function updateFlightActors(delta, speed) {
         }
         if (!hazard.scored && hazard.x + hazard.width < state.runnerX) {
             hazard.scored = true;
-            const reward = hazard.kind === 'hawk' ? 60 : hazard.kind === 'vulture' ? 55 : hazard.kind === 'storm' ? 45 : hazard.kind === 'insect' ? 30 : 25;
+            const reward = hazard.kind === 'tornado' ? 65 : hazard.kind === 'hawk' ? 60 : hazard.kind === 'vulture' ? 55 : hazard.kind === 'storm' ? 45 : hazard.kind === 'insect' ? 30 : 25;
             state.score += reward;
-            setStatus(hazard.kind === 'hawk'
+            setStatus(hazard.kind === 'tornado' ? 'Travessia do redemoinho · +65' : hazard.kind === 'hawk'
                 ? 'Investida do gavião evitada · +60'
                 : hazard.kind === 'vulture'
                     ? 'Mergulho do urubu evitado · +55'
@@ -5096,26 +5171,33 @@ function updateFlightActors(delta, speed) {
 }
 
 function flightMaximumConcurrentHazards(progress) {
-    const difficultyPressure = state.difficulty === 'hard' ? 0.08 : state.difficulty === 'easy' ? -0.08 : 0;
-    const adjustedProgress = clamp(progress + difficultyPressure, 0, 1);
-    if (adjustedProgress < 0.15) return 1;
-    if (adjustedProgress < 0.47) return 2;
-    return 3;
+    const base = state.difficulty === 'hard' ? 5 : state.difficulty === 'easy' ? 3 : 4;
+    return base + (progress >= 0.25 ? 1 : 0) + (progress >= 0.6 ? 1 : 0);
+}
+
+function flightHazardCapacity(progress) {
+    const active = state.flightHazards.filter((hazard) => hazard.kind !== 'tornado' && hazard.x + hazard.width > state.runnerX - 24).length;
+    return Math.max(0, flightMaximumConcurrentHazards(progress) - active);
 }
 
 function flightEntranceIsClear(progress) {
-    const activeHazards = state.flightHazards.filter((hazard) => hazard.x + hazard.width > state.runnerX - 24);
-    if (activeHazards.length >= flightMaximumConcurrentHazards(progress)) return false;
-    const entranceLimit = state.boardWidth * (0.72 + progress * 0.1);
-    return !activeHazards.some((hazard) => hazard.x > entranceLimit);
+    return state.elapsedTime >= state.flightNextSpawnAt && flightHazardCapacity(progress) > 0;
 }
 
 function updateFlightStage(delta) {
+    const wind = sampleFlightWind();
+    const wasInWind = state.flightWindStrength > 0.08;
+    state.flightWindStrength = wind.strength;
+    if (wasInWind !== (wind.strength > 0.08)) board.classList.toggle('is-in-wind', wind.strength > 0.08);
     const verticalDirection = Number(state.flightClimbing) - Number(state.isCrouching);
-    const targetVelocity = verticalDirection * FLIGHT_VERTICAL_SPEED;
-    const response = 1 - Math.exp(-(verticalDirection === 0 ? 6 : 11) * delta);
+    const targetVelocity = verticalDirection * FLIGHT_VERTICAL_SPEED * (1 - wind.strength * 0.34) + wind.y;
+    const response = 1 - Math.exp(-(verticalDirection === 0 ? 6 : 11) * (1 - wind.strength * 0.5) * delta);
     state.velocityY += (targetVelocity - state.velocityY) * response;
     state.runnerY += state.velocityY * delta;
+    const bounds = runnerHorizontalBounds();
+    const horizontalDirection = Number(state.moveRight) - Number(state.moveLeft);
+    const controlDrag = horizontalDirection * clamp(state.boardWidth * 0.34, HORIZONTAL_SPEED_MIN, HORIZONTAL_SPEED_MAX) * wind.strength * 0.32;
+    state.runnerX = clamp(state.runnerX + (wind.x - controlDrag) * delta, bounds.minimum, bounds.maximum);
     const runnerSize = Math.max(1, state.runnerWidth || runnerLayer.offsetWidth);
     const maximumY = Math.max(0, state.boardHeight - runnerSize);
     state.runnerY = clamp(state.runnerY, 0, maximumY);
@@ -5135,11 +5217,17 @@ function updateFlightStage(delta) {
     state.flightVultureCooldown -= delta;
     state.flightHawkCooldown -= delta;
     state.flightGroundSpireCooldown -= delta;
+    state.flightTornadoCooldown -= delta;
     if (flightEntranceIsClear(progress)) {
+        const capacity = flightHazardCapacity(progress);
         const hasLargePredator = state.flightHazards.some((hazard) => hazard.kind === 'hawk' || hazard.kind === 'vulture');
-        if (state.flightGroundSpireCooldown <= 0) {
+        const hasTornado = state.flightHazards.some((hazard) => hazard.kind === 'tornado');
+        if (state.flightTornadoCooldown <= 0 && !hasTornado && capacity >= 2) {
+            spawnFlightTornado();
+            state.flightTornadoCooldown = (10.2 - progress * 2.2) * difficultyScale;
+        } else if (state.flightGroundSpireCooldown <= 0) {
             spawnFlightGroundSpire();
-            state.flightGroundSpireCooldown = Math.max(2.7, (4.9 - progress * 1.45) * difficultyScale);
+            state.flightGroundSpireCooldown = Math.max(2, (3.9 - progress * 1.25) * difficultyScale);
         } else if (state.flightHawkCooldown <= 0 && !hasLargePredator) {
             spawnFlightHawk();
             state.flightHawkCooldown = Math.max(5.1, (7.8 - progress * 1.65) * difficultyScale);
@@ -5148,11 +5236,12 @@ function updateFlightStage(delta) {
             state.flightVultureCooldown = Math.max(5.5, (8.2 - progress * 1.6) * difficultyScale);
         } else if (state.flightStormCooldown <= 0) {
             spawnStormFlightCloud();
-            state.flightStormCooldown = Math.max(3.4, (5.4 - progress * 1.1) * difficultyScale);
+            state.flightStormCooldown = Math.max(2.6, (4.6 - progress * 1.1) * difficultyScale);
         } else if (state.flightInsectCooldown <= 0) {
-            spawnFlightInsect();
-            state.flightInsectCooldown = Math.max(0.72, (1.42 - progress * 0.42) * difficultyScale);
+            spawnFlightInsectFormation(Math.min(capacity, progress > 0.4 ? 3 : 2));
+            state.flightInsectCooldown = Math.max(0.55, (1.12 - progress * 0.4) * difficultyScale);
         }
+        state.flightNextSpawnAt = state.elapsedTime + Math.max(0.52, (1.04 - progress * 0.38) * difficultyScale);
     }
     if (state.flightCloudCooldown <= 0) {
         spawnFriendlyFlightCloud();

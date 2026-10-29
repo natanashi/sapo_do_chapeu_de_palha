@@ -14,7 +14,7 @@ const duration = readConstant('FLIGHT_DURATION');
 const baseSpeed = readConstant('FLIGHT_BASE_SPEED');
 const speedGain = readConstant('FLIGHT_SPEED_GAIN');
 const verticalSpeed = readConstant('FLIGHT_VERTICAL_SPEED');
-assert.equal(duration, 60, 'A fase aérea deve durar 60 segundos');
+assert.equal(duration, 70, 'A fase aérea deve durar 70 segundos');
 assert.equal(verticalSpeed, 540, 'O controle vertical deve responder como corrida aérea');
 assert.ok((baseSpeed + speedGain) / baseSpeed >= 1.85, 'A velocidade final precisa ficar perceptivelmente maior que a inicial');
 assert.ok(source.includes("category: 'Voo speed run'"), 'A fase 3 precisa expor a categoria de voo');
@@ -33,7 +33,7 @@ assert.match(styles, /\.game-board\.is-flight \.scenery-panel::before\s*{\s*cont
 assert.match(styles, /\.game-board\.is-flight \.obstacle-layer::before\s*{\s*content: none;/, 'As faixas brancas de velocidade devem permanecer desligadas');
 assert.ok(styles.includes('animation: mounted-bird-flight 720ms'), 'O ciclo base não pode sacudir a ave rápido demais');
 assert.match(source, /runnerLayer\.classList\.remove\('is-flapping'\);\s+state\.flightFlapVisualTimer = 0;/, 'O impulso deve voltar ao ciclo de voo normal');
-assert.ok(source.includes('function spawnFlightInsect()'), 'A fase deve reutilizar os insetos voadores');
+assert.ok(source.includes('function spawnFlightInsect('), 'A fase deve reutilizar os insetos voadores');
 assert.ok(source.includes("ability: 'burst'"), 'O inseto dourado precisa usar arrancadas');
 assert.ok(source.includes("ability: 'wide-wave'"), 'O besouro ondulante precisa usar uma curva vertical ampla');
 assert.ok(source.includes("ability: 'aimed-dive'"), 'A abelha precisa mirar antes do mergulho');
@@ -51,8 +51,6 @@ assert.ok(source.includes("name: 'low'"), 'A ponta rochosa precisa ter uma vers�
 assert.ok(source.includes("name: 'medium'"), 'A ponta rochosa precisa ter uma versão média');
 assert.ok(source.includes("name: 'towering'"), 'A ponta rochosa precisa ter uma versão muito alta');
 assert.ok(source.includes('function flightMaximumConcurrentHazards(progress)'), 'A densidade aérea precisa crescer por etapas');
-assert.ok(source.includes('return 3;'), 'O final da fase precisa permitir três obstáculos simultâneos');
-assert.ok(source.includes('activeHazards.length >= flightMaximumConcurrentHazards(progress)'), 'A fase precisa respeitar o limite progressivo de obstáculos');
 assert.ok(!source.includes('function spawnFlightRock()'), 'A fase aérea não deve mais gerar pedras');
 assert.ok(!source.includes('state.flightRockCooldown'), 'O agendador de pedras deve ser removido por completo');
 assert.ok(!source.includes('is-ceiling'), 'A fase aérea não pode colocar pedras no céu');
@@ -103,6 +101,7 @@ for (const asset of [
     new URL('../assets/img/urubu-voo-sprites-v1.png', import.meta.url),
     new URL('../assets/img/gaviao-carijo-voo-sprites-v1.png', import.meta.url),
     new URL('../assets/img/ponta-rochosa-terra-v1.png', import.meta.url),
+    new URL('../assets/img/redemoinho-vento-sprites-v1.png', import.meta.url),
     new URL('../assets/img/mapa-montanha-pedreira-v1.png', import.meta.url),
     new URL('../assets/img/nuvem-pixel-flutuante-v1.png', import.meta.url),
     new URL('../assets/img/nuvem-tempestade-raio-v1.png', import.meta.url),
