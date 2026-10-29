@@ -433,7 +433,7 @@ const JOURNEY_DURATION = 120;
 const FLIGHT_DURATION = 60;
 const FLIGHT_VERTICAL_SPEED = 540;
 const FLIGHT_BASE_SPEED = 255;
-const FLIGHT_SPEED_GAIN = 165;
+const FLIGHT_SPEED_GAIN = 225;
 const BOSS_START_TIME = 88;
 const BOSS_MAX_HEALTH = 5;
 const BOSS_ATTACK_STAGE_MS = 3600;
@@ -4824,11 +4824,17 @@ function spawnFlightHawk() {
 }
 
 function spawnFlightGroundSpire() {
-    const height = clamp(state.boardHeight * (0.24 + Math.random() * 0.1), 118, 224);
+    const sizeRoll = Math.random();
+    const sizeProfile = sizeRoll < 0.34
+        ? { name: 'low', ratio: 0.15 + Math.random() * 0.06 }
+        : sizeRoll < 0.7
+            ? { name: 'medium', ratio: 0.25 + Math.random() * 0.09 }
+            : { name: 'towering', ratio: 0.39 + Math.random() * 0.09 };
+    const height = clamp(state.boardHeight * sizeProfile.ratio, 84, 340);
     const width = height * (272 / 485);
     const y = state.boardHeight - height;
     const element = document.createElement('div');
-    element.className = 'flight-hazard flight-ground-spire';
+    element.className = `flight-hazard flight-ground-spire flight-ground-spire--${sizeProfile.name}`;
     element.setAttribute('aria-hidden', 'true');
     element.style.width = `${width}px`;
     element.style.height = `${height}px`;
@@ -4841,6 +4847,7 @@ function spawnFlightGroundSpire() {
         renderedY: y,
         width,
         height,
+        sizeProfile: sizeProfile.name,
         speedScale: 1,
         scored: false,
     });
@@ -5088,8 +5095,19 @@ function updateFlightActors(delta, speed) {
     return collision?.kind || '';
 }
 
-function flightEntranceIsClear() {
-    return !state.flightHazards.some((hazard) => hazard.x > state.boardWidth * 0.74);
+function flightMaximumConcurrentHazards(progress) {
+    const difficultyPressure = state.difficulty === 'hard' ? 0.08 : state.difficulty === 'easy' ? -0.08 : 0;
+    const adjustedProgress = clamp(progress + difficultyPressure, 0, 1);
+    if (adjustedProgress < 0.15) return 1;
+    if (adjustedProgress < 0.47) return 2;
+    return 3;
+}
+
+function flightEntranceIsClear(progress) {
+    const activeHazards = state.flightHazards.filter((hazard) => hazard.x + hazard.width > state.runnerX - 24);
+    if (activeHazards.length >= flightMaximumConcurrentHazards(progress)) return false;
+    const entranceLimit = state.boardWidth * (0.72 + progress * 0.1);
+    return !activeHazards.some((hazard) => hazard.x > entranceLimit);
 }
 
 function updateFlightStage(delta) {
@@ -5117,22 +5135,23 @@ function updateFlightStage(delta) {
     state.flightVultureCooldown -= delta;
     state.flightHawkCooldown -= delta;
     state.flightGroundSpireCooldown -= delta;
-    if (flightEntranceIsClear()) {
+    if (flightEntranceIsClear(progress)) {
+        const hasLargePredator = state.flightHazards.some((hazard) => hazard.kind === 'hawk' || hazard.kind === 'vulture');
         if (state.flightGroundSpireCooldown <= 0) {
             spawnFlightGroundSpire();
-            state.flightGroundSpireCooldown = Math.max(4.8, (7.2 - progress * 1.15) * difficultyScale);
-        } else if (state.flightHawkCooldown <= 0) {
+            state.flightGroundSpireCooldown = Math.max(2.7, (4.9 - progress * 1.45) * difficultyScale);
+        } else if (state.flightHawkCooldown <= 0 && !hasLargePredator) {
             spawnFlightHawk();
-            state.flightHawkCooldown = Math.max(7.1, (10.2 - progress * 1.7) * difficultyScale);
-        } else if (state.flightVultureCooldown <= 0) {
+            state.flightHawkCooldown = Math.max(5.1, (7.8 - progress * 1.65) * difficultyScale);
+        } else if (state.flightVultureCooldown <= 0 && !hasLargePredator) {
             spawnFlightVulture();
-            state.flightVultureCooldown = Math.max(7.6, (10.6 - progress * 1.8) * difficultyScale);
+            state.flightVultureCooldown = Math.max(5.5, (8.2 - progress * 1.6) * difficultyScale);
         } else if (state.flightStormCooldown <= 0) {
             spawnStormFlightCloud();
-            state.flightStormCooldown = Math.max(4.7, (6.4 - progress * 0.8) * difficultyScale);
+            state.flightStormCooldown = Math.max(3.4, (5.4 - progress * 1.1) * difficultyScale);
         } else if (state.flightInsectCooldown <= 0) {
             spawnFlightInsect();
-            state.flightInsectCooldown = Math.max(1.02, (1.72 - progress * 0.26) * difficultyScale);
+            state.flightInsectCooldown = Math.max(0.72, (1.42 - progress * 0.42) * difficultyScale);
         }
     }
     if (state.flightCloudCooldown <= 0) {
