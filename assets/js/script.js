@@ -3482,6 +3482,7 @@ function stageAssets(kind, testArea = false) {
     if (kind === 'flight') return [
         ...AMBIENT_ASSET_URLS,
         'assets/img/passaro-voo-sprites-v1.png',
+        'assets/img/cenario-voo-pedreira-v1.png',
         'assets/img/pedras-musgo.png',
         'assets/img/nuvem-pixel-flutuante-v1.png',
         'assets/img/nuvem-tempestade-raio-v1.png',

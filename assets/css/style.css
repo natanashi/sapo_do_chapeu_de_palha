@@ -1102,6 +1102,7 @@ button { cursor: pointer; }
 
 .game-board.is-flight .scenery-panel::before {
     inset: 28% 0 0;
+    background-image: url("../img/cenario-voo-pedreira-v1.png");
     background-position: center bottom;
     background-size: 100% auto;
     opacity: 0.76;
@@ -1132,16 +1133,7 @@ button { cursor: pointer; }
 .game-board.is-flight .runner-layer.is-flapping .runner { animation-duration: 430ms; }
 
 .game-board.is-flight .obstacle-layer::before {
-    content: "";
-    position: absolute;
-    z-index: 0;
-    inset: 9% -18% 12%;
-    background-image: linear-gradient(90deg, transparent 0 8%, rgba(239, 252, 226, 0.34) 10% 63%, transparent 66% 100%);
-    background-size: 220px 54px;
-    opacity: 0.46;
-    pointer-events: none;
-    animation: flight-speed-streaks 540ms linear infinite;
-    will-change: background-position;
+    content: none;
 }
 
 .flight-hazard {
@@ -3920,11 +3912,6 @@ body.reduce-game-motion .resistance-duelist.faces-right .resistance-duelist__ton
     50%, 65.99% { background-position: 60% 0; }
     66%, 82.99% { background-position: 80% 0; }
     83%, 100% { background-position: 100% 0; }
-}
-
-@keyframes flight-speed-streaks {
-    from { background-position: 0 0; }
-    to { background-position: -220px 0; }
 }
 
 @keyframes storm-cloud-warning {
