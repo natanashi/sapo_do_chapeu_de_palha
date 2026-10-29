@@ -8,8 +8,8 @@
     <meta name="description" content="Ajude o Sapo do Chapéu de Palha a atravessar quatro regiões da manhã, saltar obstáculos e capturar besouros e abelhas antes que eles se aproximem.">
     <link rel="icon" type="image/png" href="assets/img/sapo-capa.png">
     <link rel="preload" as="image" href="assets/img/menu-floresta-amanhecer-v1.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=142">
-    <script src="assets/js/script.js?v=142" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=143">
+    <script src="assets/js/script.js?v=143" defer></script>
     <title>Sapo do Chapéu de Palha — Beta</title>
 </head>
 <body class="is-app-loading has-indie-intro">
@@ -65,6 +65,19 @@
         <section class="game-board" id="game-board" aria-label="Área do jogo" tabindex="0">
             <div class="scenery-layer scenery-layer--a is-active" id="scenery-a" aria-hidden="true"></div>
             <div class="scenery-layer scenery-layer--b" id="scenery-b" aria-hidden="true"></div>
+
+            <div class="flight-atmosphere" id="flight-atmosphere" aria-hidden="true">
+                <div class="flight-mist-track flight-mist-track--far"></div>
+                <div class="flight-canopy-field">
+                    <i class="flight-canopy flight-canopy--one"></i>
+                    <i class="flight-canopy flight-canopy--two"></i>
+                    <i class="flight-canopy flight-canopy--three"></i>
+                    <i class="flight-canopy flight-canopy--four"></i>
+                    <i class="flight-canopy flight-canopy--five"></i>
+                    <i class="flight-canopy flight-canopy--six"></i>
+                </div>
+                <div class="flight-mist-track flight-mist-track--near"></div>
+            </div>
 
             <div class="sun-haze" aria-hidden="true"></div>
 

@@ -153,6 +153,7 @@ const routeTimeDisplay = document.querySelector('#route-time');
 const routeMapStops = [...document.querySelectorAll('[data-route-stop]')];
 const routeMapStopLabels = routeMapStops.map((stop) => stop.querySelector('span'));
 const sceneLayers = [document.querySelector('#scenery-a'), document.querySelector('#scenery-b')];
+const flightAtmosphere = document.querySelector('#flight-atmosphere');
 const orientationGuard = document.querySelector('#orientation-guard');
 
 const jumpAudio = new Audio('assets/aud/pulo.mp3');
@@ -391,6 +392,7 @@ const state = {
     renderedRunCycle: Number.NaN,
     renderedSceneX: Number.NaN,
     renderedGroundX: Number.NaN,
+    renderedEnvironmentX: Number.NaN,
     moveLeft: false,
     moveRight: false,
     isCrouching: false,
@@ -1701,6 +1703,7 @@ function resetRun() {
     state.renderedRunCycle = Number.NaN;
     state.renderedSceneX = Number.NaN;
     state.renderedGroundX = Number.NaN;
+    state.renderedEnvironmentX = Number.NaN;
     renderedTongueCooldownKey = '';
     invalidateHudRenderCache();
     state.boss = null;
@@ -3484,6 +3487,7 @@ function stageAssets(kind, testArea = false) {
         'assets/img/passaro-voo-sprites-v1.png',
         'assets/img/cenario-voo-vale-altitude-track-v3.png',
         'assets/img/cenario-voo-mar-nuvens-track-v1.png',
+        'assets/img/copa-arvores-vento-sprites-v1.png',
         'assets/img/urubu-voo-sprites-v1.png',
         'assets/img/nuvem-pixel-flutuante-v1.png',
         'assets/img/nuvem-tempestade-raio-v1.png',
@@ -4420,6 +4424,7 @@ function updateWorldMotion() {
     const cycle = width * 2;
     const sceneX = Math.round(-(state.sceneTravel % cycle));
     const groundX = Math.round(-(state.groundTravel % cycle));
+    const environmentX = Math.round(-((state.sceneTravel * 0.76) % cycle));
     if (sceneX !== state.renderedSceneX) {
         state.renderedSceneX = sceneX;
         sceneLayers.forEach((layer) => layer.style.setProperty('--scene-x', `${sceneX}px`));
@@ -4427,6 +4432,10 @@ function updateWorldMotion() {
     if (groundX !== state.renderedGroundX) {
         state.renderedGroundX = groundX;
         groundTrack.style.setProperty('--ground-x', `${groundX}px`);
+    }
+    if (environmentX !== state.renderedEnvironmentX) {
+        state.renderedEnvironmentX = environmentX;
+        flightAtmosphere.style.setProperty('--environment-x', `${environmentX}px`);
     }
 }
 
@@ -5431,6 +5440,7 @@ function syncBoardSize(width, height) {
     state.renderedRunnerY = Number.NaN;
     state.renderedSceneX = Number.NaN;
     state.renderedGroundX = Number.NaN;
+    state.renderedEnvironmentX = Number.NaN;
     if (previousWidth === 0 || previousHeight === 0 || state.runnerX === 0) state.runnerX = initialRunnerX(width);
     const bounds = runnerHorizontalBounds();
     state.runnerX = clamp(state.runnerX, bounds.minimum, bounds.maximum);
