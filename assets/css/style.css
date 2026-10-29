@@ -1138,7 +1138,7 @@ button { cursor: pointer; }
 .game-board.is-flight .runner-layer {
     z-index: 9;
     bottom: 0;
-    width: calc(var(--runner-size) * 1.55);
+    width: calc(var(--runner-size) * 1.35);
     transform: translate3d(var(--runner-x, 8vw), calc(var(--jump-y, 0) * -1px), 0) rotate(var(--flight-tilt, 0deg));
     transform-origin: 48% 55%;
 }

@@ -4754,7 +4754,7 @@ function spawnFlightInsect() {
 }
 
 function spawnFlightVulture() {
-    const width = clamp(state.runnerWidth * 0.62, 92, 138);
+    const width = clamp(state.runnerWidth * 1.16, 148, 248);
     const height = width;
     const safeTop = clamp(state.boardHeight * 0.1, 42, 76);
     const safeBottom = clamp(state.boardHeight * 0.14, 52, 88);
@@ -4839,6 +4839,11 @@ function flightHazardHitsRunner(hazard) {
         hazardRight = hazard.x + hazard.width * 0.59;
         hazardTop = hazard.renderedY + hazard.height * 0.5;
         hazardBottom = hazard.renderedY + hazard.height;
+    } else if (hazard.kind === 'vulture') {
+        hazardLeft = hazard.x + hazard.width * 0.25;
+        hazardRight = hazard.x + hazard.width * 0.75;
+        hazardTop = hazard.renderedY + hazard.height * 0.24;
+        hazardBottom = hazard.renderedY + hazard.height * 0.76;
     }
     return runnerRight > hazardLeft
         && runnerLeft < hazardRight
