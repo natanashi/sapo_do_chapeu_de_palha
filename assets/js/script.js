@@ -4745,6 +4745,11 @@ function flightSpawnX(width) {
     return threatSpawnX(width + 30) + Math.random() * state.boardWidth * 0.08;
 }
 
+function flightActorReferenceSize() {
+    // Keep existing enemy sizes independent from the smaller playable bird.
+    return state.runnerWidth * (1.35 / 1.08);
+}
+
 function spawnFlightInsect({ y: requestedY, xOffset = 0, waveScale = 1 } = {}) {
     const species = [
         { name: 'golden', className: 'flight-insect--golden', speed: 0.96, wave: 5, frequency: 3.2, aspect: 1.09, ability: 'burst' },
@@ -4752,7 +4757,7 @@ function spawnFlightInsect({ y: requestedY, xOffset = 0, waveScale = 1 } = {}) {
         { name: 'bee', className: 'flight-insect--bee', speed: 0.9, wave: 22, frequency: 5.2, aspect: 1.22, ability: 'aimed-dive' },
     ][state.flightInsectSequence % 3];
     state.flightInsectSequence += 1;
-    const width = clamp(state.runnerWidth * 0.25, 34, 58);
+    const width = clamp(flightActorReferenceSize() * 0.25, 34, 58);
     const height = width / species.aspect;
     const safeTop = clamp(state.boardHeight * 0.14, 58, 96);
     const safeBottom = clamp(state.boardHeight * 0.12, 42, 76);
@@ -4787,7 +4792,7 @@ function spawnFlightInsect({ y: requestedY, xOffset = 0, waveScale = 1 } = {}) {
 }
 
 function spawnFlightVulture() {
-    const width = clamp(state.runnerWidth * 1.16, 148, 248);
+    const width = clamp(flightActorReferenceSize() * 1.16, 148, 248);
     const height = width;
     const safeTop = clamp(state.boardHeight * 0.1, 42, 76);
     const safeBottom = clamp(state.boardHeight * 0.14, 52, 88);
@@ -4816,7 +4821,7 @@ function spawnFlightVulture() {
 }
 
 function spawnFlightHawk() {
-    const width = clamp(state.runnerWidth * 0.78, 104, 172);
+    const width = clamp(flightActorReferenceSize() * 1.18, 148, 256);
     const height = width;
     const safeTop = clamp(state.boardHeight * 0.08, 34, 66);
     const safeBottom = clamp(state.boardHeight * 0.12, 46, 78);

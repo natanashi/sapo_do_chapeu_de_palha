@@ -21,7 +21,7 @@ assert.ok(source.includes("category: 'Voo speed run'"), 'A fase 3 precisa expor 
 assert.ok(source.includes('storyProgress.completedPhases[2] = true'), 'A vitória precisa persistir a fase 3');
 assert.ok(source.includes("else if (worldMapState.nearestLevel === 2) startFlightStage()"), 'O selo 3 precisa abrir a fase aérea');
 assert.ok(styles.includes('passaro-voo-sprites-v1.png'), 'O voo deve usar o pássaro solo, ampliado e estabilizado');
-assert.ok(styles.includes('width: calc(var(--runner-size) * 1.35)'), 'O pássaro controlado deve manter o tamanho compacto');
+assert.ok(styles.includes('width: calc(var(--runner-size) * 1.08)'), 'O pássaro controlado deve manter o tamanho compacto');
 assert.ok(styles.includes('cenario-voo-vale-altitude-track-v3.png'), 'A fase aérea deve usar um panorama contínuo de alta altitude');
 assert.ok(styles.includes('cenario-voo-mar-nuvens-track-v1.png'), 'O chão da fase aérea deve ser substituído por um mar de nuvens');
 assert.ok(markup.includes('id="flight-atmosphere"'), 'A fase aérea precisa de uma camada ambiental independente');
@@ -38,7 +38,7 @@ assert.ok(source.includes("ability: 'burst'"), 'O inseto dourado precisa usar ar
 assert.ok(source.includes("ability: 'wide-wave'"), 'O besouro ondulante precisa usar uma curva vertical ampla');
 assert.ok(source.includes("ability: 'aimed-dive'"), 'A abelha precisa mirar antes do mergulho');
 assert.ok(source.includes('function spawnFlightVulture()'), 'A fase deve incluir o urubu como obstáculo aéreo');
-assert.ok(source.includes('clamp(state.runnerWidth * 1.16, 148, 248)'), 'O urubu deve ser visualmente maior que o pássaro controlado');
+assert.ok(source.includes('clamp(flightActorReferenceSize() * 1.16, 148, 248)'), 'O urubu deve ser visualmente maior que o pássaro controlado');
 assert.ok(source.includes("hazard.kind === 'vulture'"), 'O urubu ampliado precisa de colisão ajustada');
 assert.ok(source.includes('state.flightVultureCooldown'), 'O urubu precisa ter intervalo próprio de surgimento');
 assert.ok(source.includes('function spawnFlightHawk()'), 'A fase precisa incluir o gavião-carijó como novo obstáculo');
@@ -80,12 +80,13 @@ for (const { width, height } of [
     { width: 1600, height: 900 },
 ]) {
     const scale = Math.min(1, Math.max(0.48, height / 745));
-    const riderSize = 158 * scale * 1.35;
+    const riderSize = 158 * scale * 1.08;
+    const actorReference = riderSize * (1.35 / 1.08);
     const maximumRunnerX = width - riderSize;
     assert.ok(maximumRunnerX > width * 0.72, `O voo horizontal ainda está limitado em ${width}x${height}`);
-    const largestHazard = Math.min(248, Math.max(148, riderSize * 1.16));
+    const largestHazard = Math.min(248, Math.max(148, actorReference * 1.16));
     assert.ok(height - largestHazard > riderSize * 1.45, `O urubu bloqueia altura demais em ${width}x${height}`);
-    const hawkSize = Math.min(172, Math.max(104, riderSize * 0.78));
+    const hawkSize = Math.min(256, Math.max(148, actorReference * 1.18));
     assert.ok(height - hawkSize > riderSize * 1.45, `O gavião bloqueia altura demais em ${width}x${height}`);
     const tallestSpire = Math.min(340, Math.max(84, height * 0.48));
     assert.ok(height - tallestSpire > riderSize * 1.35, `A ponta rochosa não deixa passagem suficiente em ${width}x${height}`);

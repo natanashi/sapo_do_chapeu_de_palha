@@ -16,7 +16,7 @@ function runtime(difficulty, width, height, seed = 7) {
     random.random = () => ((randomState = (randomState * 1664525 + 1013904223) >>> 0) / 2 ** 32);
     const state = {
         boardWidth: width, boardHeight: height,
-        runnerWidth: 158 * Math.min(1, Math.max(0.48, height / 745)) * 1.35,
+        runnerWidth: 158 * Math.min(1, Math.max(0.48, height / 745)) * 1.08,
         runnerX: width * 0.12, runnerY: height * 0.42, velocityY: 0,
         difficulty, elapsedTime: 0, score: 0, sceneTravel: 0, groundTravel: 0,
         flightClimbing: false, isCrouching: false, moveLeft: false, moveRight: false,
