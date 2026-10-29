@@ -1,6 +1,6 @@
-# Sapo do Chapéu de Palha
+# CroakFall
 
-[![Capa do jogo Sapo do Chapéu de Palha](./assets/social-preview.jpg)](https://natanashi.github.io/sapo_do_chapeu_de_palha/)
+[![Capa de CroakFall](./assets/croakfall-cover-v1.png)](https://natanashi.github.io/sapo_do_chapeu_de_palha/)
 
 > [!IMPORTANT]
 > Esta é uma **versão beta para navegador**. A versão oficial do jogo será lançada para **Steam** e **Play Store**.
