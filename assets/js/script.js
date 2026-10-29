@@ -409,6 +409,8 @@ const state = {
     flightCloudCooldown: 0,
     flightStormCooldown: 0,
     flightVultureCooldown: 0,
+    flightHawkCooldown: 0,
+    flightGroundSpireCooldown: 0,
     flightInsectSequence: 0,
     flightLastFlapAt: 0,
     flightFlapVisualTimer: 0,
@@ -1717,6 +1719,8 @@ function resetRun() {
     state.flightCloudCooldown = 0;
     state.flightStormCooldown = 0;
     state.flightVultureCooldown = 0;
+    state.flightHawkCooldown = 0;
+    state.flightGroundSpireCooldown = 0;
     state.flightInsectSequence = 0;
     state.flightLastFlapAt = 0;
     state.flightFlapVisualTimer = 0;
@@ -3278,6 +3282,8 @@ function startFlightNow() {
     state.flightCloudCooldown = 0.5;
     state.flightStormCooldown = 5.2;
     state.flightVultureCooldown = 7.4;
+    state.flightHawkCooldown = 5.8;
+    state.flightGroundSpireCooldown = 2.7;
     state.mode = 'playing';
     state.previousTime = performance.now();
     state.renderedRunnerX = Number.NaN;
@@ -3397,7 +3403,7 @@ const STAGE_LOADING_TIPS = [
 const FLIGHT_LOADING_TIPS = [
     'Sincronizando o ciclo de asas do pássaro...',
     'Preparando a rota aérea de velocidade...',
-    'Distribuindo insetos, tempestades e urubus com espaço para reagir...',
+    'Distribuindo insetos, aves de rapina e pontas rochosas com espaço para reagir...',
 ];
 
 const MAP_LOADING_TIPS = [
@@ -3485,6 +3491,8 @@ function stageAssets(kind, testArea = false) {
         'assets/img/cenario-voo-vale-altitude-track-v3.png',
         'assets/img/cenario-voo-mar-nuvens-track-v1.png',
         'assets/img/urubu-voo-sprites-v1.png',
+        'assets/img/gaviao-carijo-voo-sprites-v1.png',
+        'assets/img/ponta-rochosa-terra-v1.png',
         'assets/img/nuvem-pixel-flutuante-v1.png',
         'assets/img/nuvem-tempestade-raio-v1.png',
         'assets/img/inseto-voando-sprites.png',
@@ -4270,9 +4278,13 @@ function endGame(hazard = 'obstacle') {
             ? 'O raio da nuvem de tempestade atingiu o pássaro. Observe o clarão de aviso e troque de linha antes da descarga.'
             : hazard === 'flight-vulture'
                 ? 'O urubu alinhou o mergulho e interceptou o pássaro. Mude de altura durante a mira e saia da trajetória antes da investida.'
-                : hazard === 'flight-insect'
-                    ? 'Um inseto voador acertou o pássaro. Cada espécie usa uma trajetória diferente, então observe o movimento antes de atravessar.'
-                    : 'O pássaro foi interceptado durante a travessia. Ajuste a altura e observe o movimento do próximo perigo.';
+                : hazard === 'flight-hawk'
+                    ? 'O gavião-carijó travou a altura e cruzou a rota em alta velocidade. Troque de linha assim que ele começar a mirar.'
+                    : hazard === 'flight-ground-spire'
+                        ? 'A ponta rochosa subiu pela rota baixa. Ganhe altura antes de chegar à formação vertical.'
+                        : hazard === 'flight-insect'
+                            ? 'Um inseto voador acertou o pássaro. Cada espécie usa uma trajetória diferente, então observe o movimento antes de atravessar.'
+                            : 'O pássaro foi interceptado durante a travessia. Ajuste a altura e observe o movimento do próximo perigo.';
         playLabel.textContent = 'Tentar o voo novamente';
         resultMenuButton.textContent = 'Voltar ao mapa';
         showResultOverlay();
@@ -4782,6 +4794,58 @@ function spawnFlightVulture() {
     });
 }
 
+function spawnFlightHawk() {
+    const width = clamp(state.runnerWidth * 0.78, 104, 172);
+    const height = width;
+    const safeTop = clamp(state.boardHeight * 0.08, 34, 66);
+    const safeBottom = clamp(state.boardHeight * 0.12, 46, 78);
+    const y = safeTop + Math.random() * Math.max(1, state.boardHeight - safeTop - safeBottom - height);
+    const element = document.createElement('div');
+    element.className = 'flight-hazard flight-hawk';
+    element.setAttribute('aria-hidden', 'true');
+    element.style.width = `${width}px`;
+    element.style.height = `${height}px`;
+    obstacleLayer.append(element);
+    state.flightHazards.push({
+        kind: 'hawk',
+        element,
+        x: flightSpawnX(width) + state.boardWidth * 0.12,
+        y,
+        renderedY: y,
+        width,
+        height,
+        speedScale: 0.88,
+        flightStage: 'approach',
+        stageStartedAt: state.elapsedTime,
+        targetY: y,
+        wavePhase: Math.random() * Math.PI * 2,
+        scored: false,
+    });
+}
+
+function spawnFlightGroundSpire() {
+    const height = clamp(state.boardHeight * (0.24 + Math.random() * 0.1), 118, 224);
+    const width = height * (272 / 485);
+    const y = state.boardHeight - height;
+    const element = document.createElement('div');
+    element.className = 'flight-hazard flight-ground-spire';
+    element.setAttribute('aria-hidden', 'true');
+    element.style.width = `${width}px`;
+    element.style.height = `${height}px`;
+    obstacleLayer.append(element);
+    state.flightHazards.push({
+        kind: 'ground-spire',
+        element,
+        x: flightSpawnX(width),
+        y,
+        renderedY: y,
+        width,
+        height,
+        speedScale: 1,
+        scored: false,
+    });
+}
+
 function spawnFriendlyFlightCloud() {
     const width = clamp(state.boardWidth * (0.11 + Math.random() * 0.07), 105, 210);
     const height = width * 0.5;
@@ -4844,6 +4908,16 @@ function flightHazardHitsRunner(hazard) {
         hazardRight = hazard.x + hazard.width * 0.75;
         hazardTop = hazard.renderedY + hazard.height * 0.24;
         hazardBottom = hazard.renderedY + hazard.height * 0.76;
+    } else if (hazard.kind === 'hawk') {
+        hazardLeft = hazard.x + hazard.width * 0.2;
+        hazardRight = hazard.x + hazard.width * 0.82;
+        hazardTop = hazard.renderedY + hazard.height * 0.2;
+        hazardBottom = hazard.renderedY + hazard.height * 0.8;
+    } else if (hazard.kind === 'ground-spire') {
+        hazardLeft = hazard.x + hazard.width * 0.14;
+        hazardRight = hazard.x + hazard.width * 0.86;
+        hazardTop = hazard.renderedY + hazard.height * 0.03;
+        hazardBottom = hazard.renderedY + hazard.height;
     }
     return runnerRight > hazardLeft
         && runnerLeft < hazardRight
@@ -4945,6 +5019,40 @@ function updateFlightActors(delta, speed) {
             hazard.renderedY = clamp(hazard.renderedY, 0, state.boardHeight - hazard.height);
             hazard.element.classList.toggle('is-tracking', hazard.flightStage === 'tracking' || hazard.flightStage === 'swoop');
             hazard.element.style.transform = `translate3d(${hazard.x.toFixed(2)}px, ${hazard.renderedY.toFixed(2)}px, 0) rotate(${tilt.toFixed(1)}deg)`;
+        } else if (hazard.kind === 'hawk') {
+            const runnerBox = runnerBounds();
+            let tilt = 0;
+            if (hazard.flightStage === 'approach') {
+                hazard.renderedY = hazard.y + Math.sin(state.elapsedTime * 3.2 + hazard.wavePhase) * 5;
+                if (hazard.x <= state.boardWidth * 0.84) {
+                    hazard.flightStage = 'locking';
+                    hazard.stageStartedAt = state.elapsedTime;
+                }
+            } else if (hazard.flightStage === 'locking') {
+                hazard.x += speed * 0.56 * delta;
+                hazard.targetY = clamp(runnerBox.top + runnerBox.height * 0.48 - hazard.height * 0.5, 0, state.boardHeight - hazard.height);
+                hazard.renderedY += (hazard.targetY - hazard.renderedY) * Math.min(1, delta * 4.9);
+                if (state.elapsedTime - hazard.stageStartedAt >= 0.5) {
+                    hazard.flightStage = 'strike';
+                    hazard.stageStartedAt = state.elapsedTime;
+                }
+            } else if (hazard.flightStage === 'strike') {
+                const verticalStep = speed * 1.42 * delta;
+                hazard.renderedY += clamp(hazard.targetY - hazard.renderedY, -verticalStep, verticalStep);
+                hazard.x -= speed * 1.08 * delta;
+                tilt = clamp((hazard.targetY - hazard.renderedY) * 0.12, -11, 11);
+                if (hazard.x <= state.boardWidth * 0.2 || state.elapsedTime - hazard.stageStartedAt >= 0.92) {
+                    hazard.flightStage = 'escape';
+                    hazard.stageStartedAt = state.elapsedTime;
+                }
+            } else {
+                hazard.renderedY -= speed * 0.28 * delta;
+                hazard.x -= speed * 0.3 * delta;
+                tilt = -8;
+            }
+            hazard.renderedY = clamp(hazard.renderedY, 0, state.boardHeight - hazard.height);
+            hazard.element.classList.toggle('is-locking', hazard.flightStage === 'locking' || hazard.flightStage === 'strike');
+            hazard.element.style.transform = `translate3d(${hazard.x.toFixed(2)}px, ${hazard.renderedY.toFixed(2)}px, 0) rotate(${tilt.toFixed(1)}deg)`;
         } else if (hazard.kind === 'storm') {
             const cycle = (state.elapsedTime - hazard.spawnedAt) % 2.4;
             const charging = cycle >= 0.82 && cycle < 1.25;
@@ -4957,9 +5065,17 @@ function updateFlightActors(delta, speed) {
         }
         if (!hazard.scored && hazard.x + hazard.width < state.runnerX) {
             hazard.scored = true;
-            const reward = hazard.kind === 'vulture' ? 55 : hazard.kind === 'storm' ? 45 : hazard.kind === 'insect' ? 30 : 25;
+            const reward = hazard.kind === 'hawk' ? 60 : hazard.kind === 'vulture' ? 55 : hazard.kind === 'storm' ? 45 : hazard.kind === 'insect' ? 30 : 25;
             state.score += reward;
-            setStatus(hazard.kind === 'vulture' ? 'Mergulho do urubu evitado · +55' : hazard.kind === 'storm' ? 'Tempestade evitada · +45' : hazard.kind === 'insect' ? 'Inseto evitado · +30' : 'Pedra evitada · +25');
+            setStatus(hazard.kind === 'hawk'
+                ? 'Investida do gavião evitada · +60'
+                : hazard.kind === 'vulture'
+                    ? 'Mergulho do urubu evitado · +55'
+                    : hazard.kind === 'storm'
+                        ? 'Tempestade evitada · +45'
+                        : hazard.kind === 'insect'
+                            ? 'Inseto evitado · +30'
+                            : 'Ponta rochosa superada · +25');
         }
     });
 
@@ -4999,8 +5115,16 @@ function updateFlightStage(delta) {
     state.flightCloudCooldown -= delta;
     state.flightStormCooldown -= delta;
     state.flightVultureCooldown -= delta;
+    state.flightHawkCooldown -= delta;
+    state.flightGroundSpireCooldown -= delta;
     if (flightEntranceIsClear()) {
-        if (state.flightVultureCooldown <= 0) {
+        if (state.flightGroundSpireCooldown <= 0) {
+            spawnFlightGroundSpire();
+            state.flightGroundSpireCooldown = Math.max(4.8, (7.2 - progress * 1.15) * difficultyScale);
+        } else if (state.flightHawkCooldown <= 0) {
+            spawnFlightHawk();
+            state.flightHawkCooldown = Math.max(7.1, (10.2 - progress * 1.7) * difficultyScale);
+        } else if (state.flightVultureCooldown <= 0) {
             spawnFlightVulture();
             state.flightVultureCooldown = Math.max(7.6, (10.6 - progress * 1.8) * difficultyScale);
         } else if (state.flightStormCooldown <= 0) {

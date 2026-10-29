@@ -40,12 +40,18 @@ assert.ok(source.includes('function spawnFlightVulture()'), 'A fase deve incluir
 assert.ok(source.includes('clamp(state.runnerWidth * 1.16, 148, 248)'), 'O urubu deve ser visualmente maior que o pássaro controlado');
 assert.ok(source.includes("hazard.kind === 'vulture'"), 'O urubu ampliado precisa de colisão ajustada');
 assert.ok(source.includes('state.flightVultureCooldown'), 'O urubu precisa ter intervalo próprio de surgimento');
+assert.ok(source.includes('function spawnFlightHawk()'), 'A fase precisa incluir o gavião-carijó como novo obstáculo');
+assert.ok(source.includes("kind: 'hawk'"), 'O gavião precisa de comportamento e colisão próprios');
+assert.ok(source.includes('state.flightHawkCooldown'), 'O gavião precisa ter intervalo próprio de surgimento');
+assert.ok(source.includes('function spawnFlightGroundSpire()'), 'A rota baixa precisa receber pontas rochosas verticais');
+assert.ok(source.includes("kind: 'ground-spire'"), 'A ponta rochosa precisa permanecer conectada ao chão');
+assert.ok(source.includes('state.flightGroundSpireCooldown'), 'As pontas rochosas precisam ter intervalo justo');
 assert.ok(!source.includes('function spawnFlightRock()'), 'A fase aérea não deve mais gerar pedras');
 assert.ok(!source.includes('state.flightRockCooldown'), 'O agendador de pedras deve ser removido por completo');
 assert.ok(!source.includes('is-ceiling'), 'A fase aérea não pode colocar pedras no céu');
 assert.ok(source.includes('function spawnFriendlyFlightCloud()'), 'A fase deve ter nuvens claras decorativas');
 assert.ok(source.includes('function spawnStormFlightCloud()'), 'A fase deve ter nuvens de tempestade');
-assert.ok(source.includes("return collision?.kind || ''"), 'A colisão precisa identificar inseto, urubu ou tempestade');
+assert.ok(source.includes("return collision?.kind || ''"), 'A colisão precisa identificar cada obstáculo aéreo ou terrestre');
 assert.ok(!source.includes('spawnFlightGate'), 'As colunas no estilo Flappy Bird não podem permanecer');
 assert.ok(!source.includes('flight-boundary'), 'Encostar na borda não pode matar o jogador');
 assert.ok(styles.includes('.flight-hazard'), 'Os perigos aéreos precisam de apresentação própria');
@@ -54,6 +60,10 @@ assert.ok(styles.includes('.flight-insect--golden'), 'O besouro dourado precisa 
 assert.ok(styles.includes('.flight-insect--wave'), 'O besouro ondulante precisa aparecer na corrida aérea');
 assert.ok(styles.includes('.flight-insect--bee'), 'A abelha precisa aparecer na corrida aérea');
 assert.ok(styles.includes('.flight-vulture'), 'O urubu precisa ter apresentação e animação próprias');
+assert.ok(styles.includes('.flight-hawk'), 'O gavião-carijó precisa ter apresentação e animação próprias');
+assert.ok(styles.includes('gaviao-carijo-voo-sprites-v1.png'), 'O gavião precisa usar o novo sprite normalizado');
+assert.ok(styles.includes('.flight-ground-spire'), 'A ponta rochosa precisa surgir da borda inferior');
+assert.ok(styles.includes('ponta-rochosa-terra-v1.png'), 'A ponta rochosa precisa usar o novo asset vertical');
 assert.ok(styles.includes('.flight-storm-cloud.is-striking'), 'O raio precisa ter um estado de ataque explícito');
 assert.ok(!styles.includes('.flight-gate'), 'O visual das colunas antigas deve ser removido');
 assert.ok(styles.includes('width: clamp(320px, 25%, 620px)'), 'A montanha do mapa deve ter presença maior');
@@ -70,6 +80,10 @@ for (const { width, height } of [
     assert.ok(maximumRunnerX > width * 0.72, `O voo horizontal ainda está limitado em ${width}x${height}`);
     const largestHazard = Math.min(248, Math.max(148, riderSize * 1.16));
     assert.ok(height - largestHazard > riderSize * 1.45, `O urubu bloqueia altura demais em ${width}x${height}`);
+    const hawkSize = Math.min(172, Math.max(104, riderSize * 0.78));
+    assert.ok(height - hawkSize > riderSize * 1.45, `O gavião bloqueia altura demais em ${width}x${height}`);
+    const tallestSpire = Math.min(224, Math.max(118, height * 0.34));
+    assert.ok(height - tallestSpire > riderSize * 1.35, `A ponta rochosa não deixa passagem suficiente em ${width}x${height}`);
     const finalHardSpeed = (baseSpeed + speedGain) * 1.1 * Math.min(1.24, Math.max(0.82, width / 1100));
     const minimumSpacing = finalHardSpeed * 0.92;
     assert.ok(minimumSpacing >= 58 * 2.2, `Pouco tempo de reação em ${width}x${height}`);
@@ -80,6 +94,8 @@ for (const asset of [
     new URL('../assets/img/cenario-voo-vale-altitude-track-v3.png', import.meta.url),
     new URL('../assets/img/cenario-voo-mar-nuvens-track-v1.png', import.meta.url),
     new URL('../assets/img/urubu-voo-sprites-v1.png', import.meta.url),
+    new URL('../assets/img/gaviao-carijo-voo-sprites-v1.png', import.meta.url),
+    new URL('../assets/img/ponta-rochosa-terra-v1.png', import.meta.url),
     new URL('../assets/img/mapa-montanha-pedreira-v1.png', import.meta.url),
     new URL('../assets/img/nuvem-pixel-flutuante-v1.png', import.meta.url),
     new URL('../assets/img/nuvem-tempestade-raio-v1.png', import.meta.url),
@@ -90,4 +106,4 @@ for (const asset of [
     assert.ok(existsSync(asset), `Asset ausente: ${asset.pathname}`);
 }
 
-console.log('Flight ecosystem checks passed for drifting mist, static forest scenery, compact player bird, enlarged vulture, species abilities, and storms in 4 landscape sizes.');
+console.log('Flight ecosystem checks passed for hawk strikes, grounded rock spires, drifting mist, static forest scenery, compact player bird, vulture, insects, and storms in 4 landscape sizes.');

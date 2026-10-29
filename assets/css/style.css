@@ -1244,6 +1244,26 @@ button { cursor: pointer; }
     animation-duration: 540ms;
 }
 
+.flight-hawk {
+    z-index: 3;
+    background: url("../img/gaviao-carijo-voo-sprites-v1.png") 0 0 / 600% 100% no-repeat;
+    filter: drop-shadow(3px 5px 0 rgba(32, 28, 19, 0.32));
+    transform-origin: 48% 52%;
+    animation: mounted-bird-flight 620ms steps(1, end) infinite;
+}
+
+.flight-hawk.is-locking {
+    filter: brightness(1.1) saturate(1.18) drop-shadow(3px 5px 0 rgba(32, 28, 19, 0.34));
+    animation-duration: 420ms;
+}
+
+.flight-ground-spire {
+    z-index: 2;
+    background: url("../img/ponta-rochosa-terra-v1.png") center bottom / contain no-repeat;
+    filter: drop-shadow(4px 0 0 rgba(40, 31, 24, 0.2));
+    transform-origin: 50% 100%;
+}
+
 .flight-good-cloud {
     position: absolute;
     z-index: 0;
@@ -3469,6 +3489,7 @@ body.reduce-game-motion .world-landmark,
 body.reduce-game-motion .world-rock-mountain,
 body.reduce-game-motion .obstacle--ground-beetle,
 body.reduce-game-motion .obstacle--leaping-beetle,
+body.reduce-game-motion .flight-hawk,
 body.reduce-game-motion .flight-mist-track { animation: none !important; }
 body.reduce-game-motion .scenery-layer,
 body.reduce-game-motion .game-overlay,
@@ -4645,7 +4666,9 @@ body.performance-lite .obstacle,
 body.performance-lite .boss-bee,
 body.performance-lite .resistance-duelist__sprite,
 body.performance-lite .world-map-frog,
-body.performance-lite .world-resistance-npc__sprite {
+body.performance-lite .world-resistance-npc__sprite,
+body.performance-lite .flight-hawk,
+body.performance-lite .flight-ground-spire {
     filter: none !important;
 }
 body.performance-lite .resistance-duelist::before,
