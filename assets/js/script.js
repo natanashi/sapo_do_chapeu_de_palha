@@ -3485,7 +3485,8 @@ function stageAssets(kind, testArea = false) {
     if (kind === 'flight') return [
         ...AMBIENT_ASSET_URLS,
         'assets/img/passaro-voo-sprites-v1.png',
-        'assets/img/cenario-voo-altitude-track-v2.png',
+        'assets/img/cenario-voo-vale-altitude-track-v3.png',
+        'assets/img/cenario-voo-mar-nuvens-track-v1.png',
         'assets/img/urubu-voo-sprites-v1.png',
         'assets/img/pedras-musgo.png',
         'assets/img/nuvem-pixel-flutuante-v1.png',
@@ -5045,7 +5046,10 @@ function updateFlightStage(delta) {
     const collision = updateFlightActors(delta, speed);
     if (collision) return `flight-${collision}`;
 
-    if (!shouldReduceMotion()) state.sceneTravel += speed * 0.1 * delta;
+    if (!shouldReduceMotion()) {
+        state.sceneTravel += speed * 0.1 * delta;
+        state.groundTravel += speed * 0.24 * delta;
+    }
     updateWorldMotion();
     return '';
 }

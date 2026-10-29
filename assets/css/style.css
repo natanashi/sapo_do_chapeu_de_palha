@@ -1090,10 +1090,11 @@ button { cursor: pointer; }
 .runner-layer.is-hit .runner { filter: grayscale(0.35) drop-shadow(0 7px 3px rgba(17, 35, 18, 0.22)); }
 
 .game-board.is-flight {
-    background: linear-gradient(180deg, #82c7df 0%, #c8e3d1 72%, #dce7c5 100%);
+    background:
+        linear-gradient(180deg, rgba(255, 247, 203, 0.12), transparent 34%),
+        linear-gradient(180deg, #79bed8 0%, #a9d5dd 52%, #dce9df 100%);
 }
 
-.game-board.is-flight .ground,
 .game-board.is-flight .platform-layer,
 .game-board.is-flight .collectible-layer,
 .game-board.is-flight .boss-layer,
@@ -1101,7 +1102,7 @@ button { cursor: pointer; }
 .game-board.is-flight .action-button--tongue { display: none; }
 
 .game-board.is-flight .scenery-layer {
-    background-image: url("../img/cenario-voo-altitude-track-v2.png");
+    background-image: url("../img/cenario-voo-vale-altitude-track-v3.png");
     background-position: center bottom;
     background-repeat: no-repeat;
     background-size: 100% auto;
@@ -1110,8 +1111,26 @@ button { cursor: pointer; }
 
 .game-board.is-flight .scenery-panel::before { content: none; }
 
+.game-board.is-flight .ground {
+    z-index: 5;
+    display: block;
+    height: clamp(72px, 17%, 138px);
+    overflow: hidden;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    opacity: 0.86;
+}
+
+.game-board.is-flight .ground-track {
+    background: url("../img/cenario-voo-mar-nuvens-track-v1.png") center top / 100% 100% no-repeat;
+}
+
+.game-board.is-flight .ground-panel { background: none; }
+.game-board.is-flight .ground-panel--mirror { transform: none; }
+
 .game-board.is-flight .sun-haze {
-    background: linear-gradient(180deg, rgba(255, 246, 198, 0.08), rgba(74, 145, 119, 0.12));
+    background: linear-gradient(180deg, rgba(255, 246, 198, 0.08), rgba(89, 153, 153, 0.07));
 }
 
 .game-board.is-flight .sky-clouds { inset: 0; opacity: 0.78; }

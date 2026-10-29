@@ -19,7 +19,9 @@ assert.ok(source.includes("category: 'Voo speed run'"), 'A fase 3 precisa expor 
 assert.ok(source.includes('storyProgress.completedPhases[2] = true'), 'A vitória precisa persistir a fase 3');
 assert.ok(source.includes("else if (worldMapState.nearestLevel === 2) startFlightStage()"), 'O selo 3 precisa abrir a fase aérea');
 assert.ok(styles.includes('passaro-voo-sprites-v1.png'), 'O voo deve usar o pássaro solo, ampliado e estabilizado');
-assert.ok(styles.includes('cenario-voo-altitude-track-v2.png'), 'A fase aérea deve usar um panorama contínuo de alta altitude');
+assert.ok(styles.includes('cenario-voo-vale-altitude-track-v3.png'), 'A fase aérea deve usar um panorama contínuo de alta altitude');
+assert.ok(styles.includes('cenario-voo-mar-nuvens-track-v1.png'), 'O chão da fase aérea deve ser substituído por um mar de nuvens');
+assert.match(styles, /\.game-board\.is-flight \.ground\s*{[\s\S]*?display: block;/, 'A faixa de nuvens deve permanecer visível durante o voo');
 assert.match(styles, /\.game-board\.is-flight \.scenery-panel::before\s*{\s*content: none;/, 'Os painéis espelhados não podem criar costuras na fase aérea');
 assert.match(styles, /\.game-board\.is-flight \.obstacle-layer::before\s*{\s*content: none;/, 'As faixas brancas de velocidade devem permanecer desligadas');
 assert.ok(styles.includes('animation: mounted-bird-flight 720ms'), 'O ciclo base não pode sacudir a ave rápido demais');
@@ -66,7 +68,8 @@ for (const { width, height } of [
 
 for (const asset of [
     new URL('../assets/img/passaro-voo-sprites-v1.png', import.meta.url),
-    new URL('../assets/img/cenario-voo-altitude-track-v2.png', import.meta.url),
+    new URL('../assets/img/cenario-voo-vale-altitude-track-v3.png', import.meta.url),
+    new URL('../assets/img/cenario-voo-mar-nuvens-track-v1.png', import.meta.url),
     new URL('../assets/img/urubu-voo-sprites-v1.png', import.meta.url),
     new URL('../assets/img/mapa-montanha-pedreira-v1.png', import.meta.url),
     new URL('../assets/img/pedras-musgo.png', import.meta.url),
