@@ -409,6 +409,7 @@ const state = {
     flightRockCooldown: 0,
     flightCloudCooldown: 0,
     flightStormCooldown: 0,
+    flightVultureCooldown: 0,
     flightInsectSequence: 0,
     flightLastFlapAt: 0,
     flightFlapVisualTimer: 0,
@@ -1717,6 +1718,7 @@ function resetRun() {
     state.flightRockCooldown = 0;
     state.flightCloudCooldown = 0;
     state.flightStormCooldown = 0;
+    state.flightVultureCooldown = 0;
     state.flightInsectSequence = 0;
     state.flightLastFlapAt = 0;
     state.flightFlapVisualTimer = 0;
@@ -3278,6 +3280,7 @@ function startFlightNow() {
     state.flightRockCooldown = 2.8;
     state.flightCloudCooldown = 0.5;
     state.flightStormCooldown = 5.2;
+    state.flightVultureCooldown = 7.4;
     state.mode = 'playing';
     state.previousTime = performance.now();
     state.renderedRunnerX = Number.NaN;
@@ -3395,9 +3398,9 @@ const STAGE_LOADING_TIPS = [
 ];
 
 const FLIGHT_LOADING_TIPS = [
-    'Sincronizando o sapinho com as asas...',
+    'Sincronizando o ciclo de asas do pássaro...',
     'Preparando a rota aérea de velocidade...',
-    'Distribuindo rochas soltas com espaço para desviar...',
+    'Distribuindo insetos, tempestades e urubus com espaço para reagir...',
 ];
 
 const MAP_LOADING_TIPS = [
@@ -3482,7 +3485,8 @@ function stageAssets(kind, testArea = false) {
     if (kind === 'flight') return [
         ...AMBIENT_ASSET_URLS,
         'assets/img/passaro-voo-sprites-v1.png',
-        'assets/img/cenario-voo-pedreira-v1.png',
+        'assets/img/cenario-voo-altitude-track-v2.png',
+        'assets/img/urubu-voo-sprites-v1.png',
         'assets/img/pedras-musgo.png',
         'assets/img/nuvem-pixel-flutuante-v1.png',
         'assets/img/nuvem-tempestade-raio-v1.png',
@@ -4266,10 +4270,12 @@ function endGame(hazard = 'obstacle') {
         updateScore();
         overlayTitle.textContent = `${formatScore(finalScore)} pontos`;
         overlayMessage.textContent = hazard === 'flight-storm'
-            ? 'O raio da nuvem de tempestade atingiu a dupla. Observe o clarão de aviso e troque de linha antes da descarga.'
-            : hazard === 'flight-insect'
-                ? 'Um dos insetos voadores acertou a dupla. Eles são menores nesta rota, mas mudam de altura enquanto avançam.'
-                : 'A dupla encostou numa formação de pedra no chão. Ganhe altura antes de alcançar a próxima.';
+            ? 'O raio da nuvem de tempestade atingiu o pássaro. Observe o clarão de aviso e troque de linha antes da descarga.'
+            : hazard === 'flight-vulture'
+                ? 'O urubu alinhou o mergulho e interceptou o pássaro. Mude de altura durante a mira e saia da trajetória antes da investida.'
+                : hazard === 'flight-insect'
+                    ? 'Um inseto voador acertou o pássaro. Cada espécie usa uma trajetória diferente, então observe o movimento antes de atravessar.'
+                    : 'O pássaro encostou numa formação de pedra no chão. Ganhe altura antes de alcançar a próxima.';
         playLabel.textContent = 'Tentar o voo novamente';
         resultMenuButton.textContent = 'Voltar ao mapa';
         showResultOverlay();
@@ -4713,9 +4719,9 @@ function flightSpawnX(width) {
 
 function spawnFlightInsect() {
     const species = [
-        { name: 'golden', className: 'flight-insect--golden', speed: 1.03, wave: 5, aspect: 1.09 },
-        { name: 'wave', className: 'flight-insect--wave', speed: 1.09, wave: 18, aspect: 1.18 },
-        { name: 'bee', className: 'flight-insect--bee', speed: 1.16, wave: 25, aspect: 1.22 },
+        { name: 'golden', className: 'flight-insect--golden', speed: 0.96, wave: 5, frequency: 3.2, aspect: 1.09, ability: 'burst' },
+        { name: 'wave', className: 'flight-insect--wave', speed: 1.04, wave: 34, frequency: 4.1, aspect: 1.18, ability: 'wide-wave' },
+        { name: 'bee', className: 'flight-insect--bee', speed: 0.9, wave: 22, frequency: 5.2, aspect: 1.22, ability: 'aimed-dive' },
     ][state.flightInsectSequence % 3];
     state.flightInsectSequence += 1;
     const width = clamp(state.runnerWidth * 0.25, 34, 58);
@@ -4739,8 +4745,42 @@ function spawnFlightInsect() {
         width,
         height,
         wave: species.wave,
+        frequency: species.frequency,
+        ability: species.ability,
         wavePhase: Math.random() * Math.PI * 2,
         speedScale: species.speed,
+        flightStage: species.name === 'bee' ? 'zigzag' : 'cruise',
+        stageStartedAt: state.elapsedTime,
+        targetY: y,
+        scored: false,
+    });
+}
+
+function spawnFlightVulture() {
+    const width = clamp(state.runnerWidth * 0.62, 92, 138);
+    const height = width;
+    const safeTop = clamp(state.boardHeight * 0.1, 42, 76);
+    const safeBottom = clamp(state.boardHeight * 0.14, 52, 88);
+    const y = safeTop + Math.random() * Math.max(1, state.boardHeight - safeTop - safeBottom - height);
+    const element = document.createElement('div');
+    element.className = 'flight-hazard flight-vulture';
+    element.setAttribute('aria-hidden', 'true');
+    element.style.width = `${width}px`;
+    element.style.height = `${height}px`;
+    obstacleLayer.append(element);
+    state.flightHazards.push({
+        kind: 'vulture',
+        element,
+        x: flightSpawnX(width) + state.boardWidth * 0.08,
+        y,
+        renderedY: y,
+        width,
+        height,
+        speedScale: 0.76,
+        flightStage: 'glide',
+        stageStartedAt: state.elapsedTime,
+        targetY: y,
+        wavePhase: Math.random() * Math.PI * 2,
         scored: false,
     });
 }
@@ -4848,12 +4888,85 @@ function updateFlightActors(delta, speed) {
     state.flightHazards.forEach((hazard) => {
         hazard.x -= speed * hazard.speedScale * delta;
         if (hazard.kind === 'insect') {
-            hazard.renderedY = clamp(
-                hazard.y + Math.sin(state.elapsedTime * (hazard.species === 'bee' ? 5.2 : 3.3) + hazard.wavePhase) * hazard.wave,
-                0,
-                state.boardHeight - hazard.height,
-            );
-            const tilt = hazard.species === 'bee' ? Math.sin(state.elapsedTime * 7 + hazard.wavePhase) * 7 : 0;
+            let tilt = 0;
+            if (hazard.ability === 'burst') {
+                const burstCycle = (state.elapsedTime + hazard.wavePhase) % 2.15;
+                const bursting = burstCycle >= 1.48 && burstCycle < 1.9;
+                if (bursting) hazard.x -= speed * 0.72 * delta;
+                hazard.renderedY = hazard.y + Math.sin(state.elapsedTime * hazard.frequency + hazard.wavePhase) * hazard.wave;
+                hazard.element.classList.toggle('is-bursting', bursting);
+            } else if (hazard.ability === 'wide-wave') {
+                hazard.renderedY = hazard.y + Math.sin(state.elapsedTime * hazard.frequency + hazard.wavePhase) * hazard.wave;
+                tilt = Math.sin(state.elapsedTime * hazard.frequency + hazard.wavePhase) * 5;
+            } else if (hazard.flightStage === 'zigzag') {
+                hazard.renderedY = hazard.y + Math.sin(state.elapsedTime * hazard.frequency + hazard.wavePhase) * hazard.wave;
+                tilt = Math.sin(state.elapsedTime * 7 + hazard.wavePhase) * 7;
+                if (hazard.x <= state.boardWidth * 0.74) {
+                    const runnerBox = runnerBounds();
+                    hazard.flightStage = 'aiming';
+                    hazard.stageStartedAt = state.elapsedTime;
+                    hazard.targetY = clamp(runnerBox.top + runnerBox.height * 0.5 - hazard.height * 0.5, 0, state.boardHeight - hazard.height);
+                }
+            } else if (hazard.flightStage === 'aiming') {
+                const runnerBox = runnerBounds();
+                hazard.x += speed * 0.48 * delta;
+                hazard.targetY = clamp(runnerBox.top + runnerBox.height * 0.5 - hazard.height * 0.5, 0, state.boardHeight - hazard.height);
+                hazard.renderedY += (hazard.targetY - hazard.renderedY) * Math.min(1, delta * 4.6);
+                if (state.elapsedTime - hazard.stageStartedAt >= 0.48) {
+                    hazard.flightStage = 'diving';
+                    hazard.stageStartedAt = state.elapsedTime;
+                }
+            } else if (hazard.flightStage === 'diving') {
+                const verticalStep = speed * 1.28 * delta;
+                hazard.renderedY += clamp(hazard.targetY - hazard.renderedY, -verticalStep, verticalStep);
+                hazard.x -= speed * 0.88 * delta;
+                tilt = clamp((hazard.targetY - hazard.renderedY) * 0.14, -14, 14);
+                if (hazard.x <= state.boardWidth * 0.25 || state.elapsedTime - hazard.stageStartedAt >= 1.05) {
+                    hazard.flightStage = 'escape';
+                    hazard.stageStartedAt = state.elapsedTime;
+                }
+            } else {
+                hazard.renderedY -= speed * 0.22 * delta;
+                tilt = -7;
+            }
+            hazard.renderedY = clamp(hazard.renderedY, 0, state.boardHeight - hazard.height);
+            hazard.element.classList.toggle('is-aiming', hazard.species === 'bee' && hazard.flightStage === 'aiming');
+            hazard.element.style.transform = `translate3d(${hazard.x.toFixed(2)}px, ${hazard.renderedY.toFixed(2)}px, 0) rotate(${tilt.toFixed(1)}deg)`;
+        } else if (hazard.kind === 'vulture') {
+            const runnerBox = runnerBounds();
+            let tilt = 0;
+            if (hazard.flightStage === 'glide') {
+                hazard.renderedY = hazard.y + Math.sin(state.elapsedTime * 2.15 + hazard.wavePhase) * 8;
+                if (hazard.x <= state.boardWidth * 0.82) {
+                    hazard.flightStage = 'tracking';
+                    hazard.stageStartedAt = state.elapsedTime;
+                }
+            } else if (hazard.flightStage === 'tracking') {
+                hazard.x += speed * 0.42 * delta;
+                hazard.targetY = clamp(runnerBox.top + runnerBox.height * 0.5 - hazard.height * 0.5, 0, state.boardHeight - hazard.height);
+                hazard.renderedY += (hazard.targetY - hazard.renderedY) * Math.min(1, delta * 3.4);
+                if (state.elapsedTime - hazard.stageStartedAt >= 0.62) {
+                    hazard.flightStage = 'swoop';
+                    hazard.stageStartedAt = state.elapsedTime;
+                }
+            } else if (hazard.flightStage === 'swoop') {
+                const verticalStep = speed * 1.18 * delta;
+                hazard.renderedY += clamp(hazard.targetY - hazard.renderedY, -verticalStep, verticalStep);
+                hazard.x -= speed * 0.78 * delta;
+                tilt = clamp((hazard.targetY - hazard.renderedY) * 0.1, -12, 12);
+                if (hazard.x <= state.boardWidth * 0.28 || state.elapsedTime - hazard.stageStartedAt >= 1.15) {
+                    hazard.flightStage = 'recover';
+                    hazard.stageStartedAt = state.elapsedTime;
+                    hazard.targetY = clamp(state.boardHeight * 0.08, 28, 62);
+                }
+            } else {
+                const verticalStep = speed * 0.7 * delta;
+                hazard.renderedY += clamp(hazard.targetY - hazard.renderedY, -verticalStep, verticalStep);
+                hazard.x -= speed * 0.34 * delta;
+                tilt = -9;
+            }
+            hazard.renderedY = clamp(hazard.renderedY, 0, state.boardHeight - hazard.height);
+            hazard.element.classList.toggle('is-tracking', hazard.flightStage === 'tracking' || hazard.flightStage === 'swoop');
             hazard.element.style.transform = `translate3d(${hazard.x.toFixed(2)}px, ${hazard.renderedY.toFixed(2)}px, 0) rotate(${tilt.toFixed(1)}deg)`;
         } else if (hazard.kind === 'storm') {
             const cycle = (state.elapsedTime - hazard.spawnedAt) % 2.4;
@@ -4867,8 +4980,9 @@ function updateFlightActors(delta, speed) {
         }
         if (!hazard.scored && hazard.x + hazard.width < state.runnerX) {
             hazard.scored = true;
-            state.score += hazard.kind === 'storm' ? 45 : hazard.kind === 'insect' ? 30 : 25;
-            setStatus(hazard.kind === 'storm' ? 'Tempestade evitada · +45' : hazard.kind === 'insect' ? 'Inseto evitado · +30' : 'Pedra evitada · +25');
+            const reward = hazard.kind === 'vulture' ? 55 : hazard.kind === 'storm' ? 45 : hazard.kind === 'insect' ? 30 : 25;
+            state.score += reward;
+            setStatus(hazard.kind === 'vulture' ? 'Mergulho do urubu evitado · +55' : hazard.kind === 'storm' ? 'Tempestade evitada · +45' : hazard.kind === 'insect' ? 'Inseto evitado · +30' : 'Pedra evitada · +25');
         }
     });
 
@@ -4908,8 +5022,12 @@ function updateFlightStage(delta) {
     state.flightRockCooldown -= delta;
     state.flightCloudCooldown -= delta;
     state.flightStormCooldown -= delta;
+    state.flightVultureCooldown -= delta;
     if (flightEntranceIsClear()) {
-        if (state.flightStormCooldown <= 0) {
+        if (state.flightVultureCooldown <= 0) {
+            spawnFlightVulture();
+            state.flightVultureCooldown = Math.max(7.6, (10.6 - progress * 1.8) * difficultyScale);
+        } else if (state.flightStormCooldown <= 0) {
             spawnStormFlightCloud();
             state.flightStormCooldown = Math.max(4.7, (6.4 - progress * 0.8) * difficultyScale);
         } else if (state.flightRockCooldown <= 0) {

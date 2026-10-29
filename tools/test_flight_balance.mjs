@@ -19,11 +19,17 @@ assert.ok(source.includes("category: 'Voo speed run'"), 'A fase 3 precisa expor 
 assert.ok(source.includes('storyProgress.completedPhases[2] = true'), 'A vitória precisa persistir a fase 3');
 assert.ok(source.includes("else if (worldMapState.nearestLevel === 2) startFlightStage()"), 'O selo 3 precisa abrir a fase aérea');
 assert.ok(styles.includes('passaro-voo-sprites-v1.png'), 'O voo deve usar o pássaro solo, ampliado e estabilizado');
-assert.ok(styles.includes('cenario-voo-pedreira-v1.png'), 'A fase aérea deve usar um panorama próprio da pedreira');
+assert.ok(styles.includes('cenario-voo-altitude-track-v2.png'), 'A fase aérea deve usar um panorama contínuo de alta altitude');
+assert.match(styles, /\.game-board\.is-flight \.scenery-panel::before\s*{\s*content: none;/, 'Os painéis espelhados não podem criar costuras na fase aérea');
 assert.match(styles, /\.game-board\.is-flight \.obstacle-layer::before\s*{\s*content: none;/, 'As faixas brancas de velocidade devem permanecer desligadas');
 assert.ok(styles.includes('animation: mounted-bird-flight 720ms'), 'O ciclo base não pode sacudir a ave rápido demais');
 assert.match(source, /runnerLayer\.classList\.remove\('is-flapping'\);\s+state\.flightFlapVisualTimer = 0;/, 'O impulso deve voltar ao ciclo de voo normal');
 assert.ok(source.includes('function spawnFlightInsect()'), 'A fase deve reutilizar os insetos voadores');
+assert.ok(source.includes("ability: 'burst'"), 'O inseto dourado precisa usar arrancadas');
+assert.ok(source.includes("ability: 'wide-wave'"), 'O besouro ondulante precisa usar uma curva vertical ampla');
+assert.ok(source.includes("ability: 'aimed-dive'"), 'A abelha precisa mirar antes do mergulho');
+assert.ok(source.includes('function spawnFlightVulture()'), 'A fase deve incluir o urubu como obstáculo aéreo');
+assert.ok(source.includes('state.flightVultureCooldown'), 'O urubu precisa ter intervalo próprio de surgimento');
 assert.ok(source.includes('function spawnFlightRock()'), 'A fase deve manter pedras somente nas extremidades');
 assert.ok(source.includes('const y = state.boardHeight - height;'), 'As pedras da fase aérea devem ficar somente no chão');
 assert.ok(!source.includes('is-ceiling'), 'A fase aérea não pode colocar pedras no céu');
@@ -36,6 +42,7 @@ assert.ok(styles.includes('.flight-hazard'), 'As rochas individuais precisam de 
 assert.ok(styles.includes('.flight-insect--golden'), 'O besouro dourado precisa aparecer na corrida aérea');
 assert.ok(styles.includes('.flight-insect--wave'), 'O besouro ondulante precisa aparecer na corrida aérea');
 assert.ok(styles.includes('.flight-insect--bee'), 'A abelha precisa aparecer na corrida aérea');
+assert.ok(styles.includes('.flight-vulture'), 'O urubu precisa ter apresentação e animação próprias');
 assert.ok(styles.includes('.flight-storm-cloud.is-striking'), 'O raio precisa ter um estado de ataque explícito');
 assert.ok(!styles.includes('.flight-gate'), 'O visual das colunas antigas deve ser removido');
 assert.ok(styles.includes('width: clamp(320px, 25%, 620px)'), 'A montanha do mapa deve ter presença maior');
@@ -59,7 +66,8 @@ for (const { width, height } of [
 
 for (const asset of [
     new URL('../assets/img/passaro-voo-sprites-v1.png', import.meta.url),
-    new URL('../assets/img/cenario-voo-pedreira-v1.png', import.meta.url),
+    new URL('../assets/img/cenario-voo-altitude-track-v2.png', import.meta.url),
+    new URL('../assets/img/urubu-voo-sprites-v1.png', import.meta.url),
     new URL('../assets/img/mapa-montanha-pedreira-v1.png', import.meta.url),
     new URL('../assets/img/pedras-musgo.png', import.meta.url),
     new URL('../assets/img/nuvem-pixel-flutuante-v1.png', import.meta.url),
@@ -71,4 +79,4 @@ for (const asset of [
     assert.ok(existsSync(asset), `Asset ausente: ${asset.pathname}`);
 }
 
-console.log('Flight ecosystem checks passed for free movement, insects, edge rocks, and storm clouds in 4 landscape sizes.');
+console.log('Flight ecosystem checks passed for continuous altitude scenery, species abilities, vultures, edge rocks, and storms in 4 landscape sizes.');
