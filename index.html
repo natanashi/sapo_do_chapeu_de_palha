@@ -12,8 +12,8 @@
     <meta property="og:image" content="https://natanashi.github.io/sapo_do_chapeu_de_palha/assets/croakfall-cover-v1.png">
     <link rel="icon" type="image/png" href="assets/img/sapo-capa.png">
     <link rel="preload" as="image" href="assets/img/menu-floresta-amanhecer-v1.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=150">
-    <script src="assets/js/script.js?v=150" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=151">
+    <script src="assets/js/script.js?v=151" defer></script>
     <title>CroakFall — Beta</title>
 </head>
 <body class="is-app-loading has-indie-intro">
@@ -301,15 +301,27 @@
                             <div class="menu-section-heading character-heading">
                                 <span>Novo diário</span>
                                 <h2 id="character-creator-title">Crie seu viajante</h2>
-                                <p>Dê um nome ao sapinho e escolha as cores do corpo e da língua.</p>
+                                <p>Escolha o nome, as cores e o tipo de desafio do seu personagem.</p>
                             </div>
                             <form class="character-creator" id="character-creator-form" novalidate>
-                                <div class="skin-preview character-preview" aria-label="Prévia do personagem">
-                                    <div class="skin-preview__stage">
-                                        <img id="skin-preview-frog" src="assets/img/sapo-capa.png" alt="Prévia do sapinho">
-                                        <img id="skin-preview-tongue" src="assets/img/sapo-lingua-padrao-v4.png" alt="Prévia da língua">
+                                <div class="character-appearance">
+                                    <div class="skin-preview character-preview" aria-label="Prévia do personagem">
+                                        <div class="skin-preview__stage">
+                                            <img id="skin-preview-frog" src="assets/img/sapo-capa.png" alt="Prévia do sapinho">
+                                            <img id="skin-preview-tongue" src="assets/img/sapo-lingua-padrao-v4.png" alt="Prévia da língua">
+                                        </div>
+                                        <strong id="character-preview-name">Novo viajante</strong>
                                     </div>
-                                    <strong id="character-preview-name">Novo viajante</strong>
+                                    <fieldset class="character-mode-picker" aria-describedby="character-mode-help">
+                                        <legend>Modo do personagem</legend>
+                                        <div class="character-mode-options">
+                                            <label><input type="radio" name="character-mode" value="fun" checked><span><strong>Diversão</strong><small>Fácil, médio e difícil</small></span></label>
+                                            <label><input type="radio" name="character-mode" value="apprentice"><span><strong>Aprendiz</strong><small>Médio e difícil</small></span></label>
+                                            <label><input type="radio" name="character-mode" value="skilled"><span><strong>Habilidoso</strong><small>Somente difícil</small></span></label>
+                                            <label class="character-mode--master"><input type="radio" name="character-mode" value="master"><span><strong>Mestre</strong><small>Somente impossível</small></span></label>
+                                        </div>
+                                        <p id="character-mode-help">O modo fica salvo neste personagem e define as dificuldades das fases.</p>
+                                    </fieldset>
                                 </div>
                                 <div class="skin-controls character-controls">
                                     <label class="character-name-control" for="character-name">
@@ -469,6 +481,10 @@
                                             <input type="radio" name="stage-difficulty" value="hard">
                                             <span>Difícil</span>
                                         </label>
+                                        <label hidden>
+                                            <input type="radio" name="stage-difficulty" value="impossible" disabled>
+                                            <span>Impossível</span>
+                                        </label>
                                     </fieldset>
                                     <button id="story-map-button" type="button" disabled><span aria-hidden="true">▶</span> Entrar na fase</button>
                                     <em id="story-map-status">Preparando o mapa...</em>
@@ -561,6 +577,7 @@
                                         <small>Diário do viajante</small>
                                         <h2 id="world-inventory-title">Inventário e status</h2>
                                         <strong id="world-inventory-name">Sapinho</strong>
+                                        <p class="world-inventory-mode" id="world-inventory-mode">Modo Diversão</p>
                                     </div>
                                     <button class="world-inventory-dialog__close" id="world-inventory-close" type="button" aria-label="Fechar inventário">×</button>
                                 </header>

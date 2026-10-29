@@ -182,6 +182,12 @@ const STORY_PROGRESS_STORAGE_KEY = 'sapo-story-progress';
 const CHARACTER_SLOTS_STORAGE_KEY = 'sapo-character-slots-v1';
 const ACTIVE_CHARACTER_SLOT_KEY = 'sapo-active-character-slot';
 const CHARACTER_SLOTS_MIGRATED_KEY = 'sapo-character-slots-migrated-v1';
+const CHARACTER_MODES = Object.freeze({
+    fun: { label: 'Diversão', difficulties: ['easy', 'medium', 'hard'], defaultDifficulty: 'medium' },
+    apprentice: { label: 'Aprendiz', difficulties: ['medium', 'hard'], defaultDifficulty: 'medium' },
+    skilled: { label: 'Habilidoso', difficulties: ['hard'], defaultDifficulty: 'hard' },
+    master: { label: 'Mestre', difficulties: ['impossible'], defaultDifficulty: 'impossible' },
+});
 const ADMIN_SESSION_KEY = 'sapo-admin-session-v1';
 const ADMIN_USERNAME = 'admin123';
 const ADMIN_PASSWORD = 'admin123';
@@ -227,8 +233,39 @@ const DIFFICULTIES = {
         minimumInsectGap: 1.5,
         duelTempo: 1.3,
     },
+    impossible: {
+        label: 'Impossível',
+        speedScale: 1.4,
+        spawnGapScale: 0.5,
+        minimumObstacleGap: 0.9,
+        minimumInsectGap: 1.15,
+        duelTempo: 1.6,
+    },
 };
 let selectedDifficulty = 'medium';
+
+function characterMode(slot = activeCharacterSlot()) {
+    return Object.hasOwn(CHARACTER_MODES, slot?.mode) ? CHARACTER_MODES[slot.mode] : CHARACTER_MODES.fun;
+}
+
+function resolveCharacterDifficulty(requested, slot = activeCharacterSlot()) {
+    const mode = characterMode(slot);
+    return mode.difficulties.includes(requested) ? requested : mode.defaultDifficulty;
+}
+
+function syncCharacterDifficulty(requested = activeCharacterSlot()?.difficulty || selectedDifficulty) {
+    const mode = characterMode();
+    selectedDifficulty = resolveCharacterDifficulty(requested);
+    difficultyPicker.style.setProperty('--difficulty-options', String(mode.difficulties.length));
+    difficultyPicker.querySelector('legend').textContent = `Modo ${mode.label} · dificuldade`;
+    difficultyInputs.forEach((input) => {
+        const allowed = mode.difficulties.includes(input.value);
+        input.disabled = !allowed;
+        input.closest('label').hidden = !allowed;
+        input.checked = allowed && input.value === selectedDifficulty;
+    });
+    return selectedDifficulty;
+}
 
 const PHASES = [
     {
@@ -571,8 +608,11 @@ function normalizeCharacterSlot(slot) {
     const name = String(slot.name || '').trim().replace(/\s+/g, ' ').slice(0, 16);
     if (name.length < 2) return null;
     const validColor = (value, fallback) => /^#[0-9a-f]{6}$/i.test(value || '') ? value : fallback;
+    const mode = Object.hasOwn(CHARACTER_MODES, slot.mode) ? slot.mode : 'fun';
     return {
         name,
+        mode,
+        difficulty: resolveCharacterDifficulty(slot.difficulty, { mode }),
         frog: validColor(slot.frog, '#69b83f'),
         tongue: validColor(slot.tongue, '#e75f86'),
         best: Math.max(0, Number.parseInt(slot.best || '0', 10) || 0),
@@ -1311,7 +1351,7 @@ function updateBoss(currentTime) {
     } else if (boss.stage === 'attacking') {
         if (currentTime >= boss.nextSpawnAt) {
             spawnBossBee(currentTime);
-            const swarmGap = state.difficulty === 'hard' ? 720 : state.difficulty === 'easy' ? 1150 : 900;
+            const swarmGap = state.difficulty === 'impossible' ? 520 : state.difficulty === 'hard' ? 720 : state.difficulty === 'easy' ? 1150 : 900;
             boss.nextSpawnAt = currentTime + swarmGap + Math.random() * 350;
         }
         if (currentTime >= boss.nextStageAt) {
@@ -1467,8 +1507,9 @@ function spawnInsectWave() {
     sample.remove();
 
     const tripleWaveChance = 0.6 + pressure * 0.25;
-    const pairedSpecialists = pressure > 0.3 && state.difficulty !== 'easy' && Math.random() < 0.45;
-    const count = isBee || isWaveSpecies ? (pairedSpecialists ? 2 : 1) : (Math.random() < tripleWaveChance ? 3 : 2);
+    const isImpossible = state.difficulty === 'impossible';
+    const pairedSpecialists = pressure > (isImpossible ? 0.15 : 0.3) && state.difficulty !== 'easy' && Math.random() < (isImpossible ? 0.7 : 0.45);
+    const count = isBee || isWaveSpecies ? (pairedSpecialists ? 2 : 1) : (isImpossible ? 4 : Math.random() < tripleWaveChance ? 3 : 2);
     const useGroundLane = !isBee && !isWaveSpecies && Math.random() < 0.12 && groundInsectLaneIsSafe();
     const mouthY = runnerBox.top + runnerBox.height * 0.46;
     const flightCeiling = boardBox.height * 0.36;
@@ -1489,7 +1530,7 @@ function spawnInsectWave() {
         : Math.max(58, insectBox.width * 0.82);
     const waveStartX = threatSpawnX(Math.max(48, boardBox.width * 0.05));
     const waveSpeed = isBee ? 0.8 : isWaveSpecies ? 0.98 + Math.random() * 0.08 : 0.86 + Math.random() * 0.12;
-    const yOffsets = count === 1 ? [0] : count === 2 ? [-7, 7] : [0, -14, 10];
+    const yOffsets = count === 1 ? [0] : count === 2 ? [-7, 7] : [0, -14, 10, -6];
     const spawnTime = performance.now();
 
     for (let index = 0; index < count; index += 1) {
@@ -2176,6 +2217,7 @@ function updateWorldMapProximity() {
         level.unlocked,
         level.playable,
         selectedDifficulty,
+        activeCharacterSlot()?.mode || 'fun',
     ].join(':');
     if (proximitySignature === worldMapState.proximitySignature) return;
     worldMapState.proximitySignature = proximitySignature;
@@ -2625,6 +2667,8 @@ function initializeCharacterSlots() {
         const legacyName = (readPlayerName() || 'Viajante').slice(0, 16);
         characterSlots[0] = {
             name: legacyName,
+            mode: 'fun',
+            difficulty: 'medium',
             frog: legacySkin.frog,
             tongue: legacySkin.tongue,
             best: readLegacyBestScore(),
@@ -2643,6 +2687,7 @@ function initializeCharacterSlots() {
     if (!activeCharacterSlot()) activeCharacterSlotIndex = -1;
     storyProgress = readStoryProgress();
     state.best = readBestScore();
+    syncCharacterDifficulty();
 }
 
 function journeyStatus(slot) {
@@ -2670,7 +2715,7 @@ function renderCharacterSlots() {
         button.append(number);
 
         if (slot) {
-            button.setAttribute('aria-label', `Continuar com ${slot.name}. ${journeyStatus(slot)}. Recorde ${slot.best} pontos.`);
+            button.setAttribute('aria-label', `Continuar com ${slot.name}. Modo ${characterMode(slot).label}. ${journeyStatus(slot)}. Recorde ${slot.best} pontos.`);
             const portrait = document.createElement('span');
             portrait.className = 'save-slot__portrait';
             portrait.innerHTML = '<img src="assets/img/sapo-capa.png" alt="" draggable="false">';
@@ -2689,7 +2734,7 @@ function renderCharacterSlots() {
             const name = document.createElement('strong');
             name.textContent = slot.name;
             const status = document.createElement('small');
-            status.textContent = journeyStatus(slot);
+            status.textContent = `Modo ${characterMode(slot).label} · ${journeyStatus(slot)}`;
             const meta = document.createElement('span');
             meta.className = 'save-slot__meta';
             meta.innerHTML = `<i style="--swatch:${slot.frog}" aria-hidden="true"></i><i style="--swatch:${slot.tongue}" aria-hidden="true"></i><b>${formatScore(slot.best)} pts</b>`;
@@ -2769,6 +2814,7 @@ async function deletePendingCharacter() {
     }
     persistCharacterSlots();
     pendingDeleteSlotIndex = -1;
+    syncCharacterDifficulty();
     saveDeleteDialog.close('deleted');
     renderCharacterSlots();
     saveSlotsStatus.textContent = `${deletedSlot.name} foi apagado deste aparelho.`;
@@ -2783,6 +2829,7 @@ function beginCharacterCreation(slotIndex) {
     characterNameInput.removeAttribute('aria-invalid');
     characterNameError.textContent = '';
     characterPreviewName.textContent = 'Novo viajante';
+    characterCreatorForm.querySelector('input[name="character-mode"][value="fun"]').checked = true;
     frogColorInput.value = DEFAULT_SKIN.frog;
     tongueColorInput.value = DEFAULT_SKIN.tongue;
     applySkinColors(false);
@@ -2794,6 +2841,7 @@ async function activateCharacterSlot(slotIndex) {
     const slot = characterSlots[slotIndex];
     if (!slot) return;
     activeCharacterSlotIndex = slotIndex;
+    syncCharacterDifficulty(slot.difficulty);
     slot.lastPlayedAt = Date.now();
     persistCharacterSlots();
     storyProgress = normalizeStoryProgress(slot.progress);
@@ -2822,8 +2870,12 @@ function createCharacter(event) {
     }
 
     const now = Date.now();
+    const chosenMode = characterCreatorForm.querySelector('input[name="character-mode"]:checked')?.value;
+    const mode = Object.hasOwn(CHARACTER_MODES, chosenMode) ? chosenMode : 'fun';
     characterSlots[editingCharacterSlotIndex] = {
         name,
+        mode,
+        difficulty: CHARACTER_MODES[mode].defaultDifficulty,
         frog: frogColorInput.value,
         tongue: tongueColorInput.value,
         best: 0,
@@ -3086,6 +3138,7 @@ async function syncWorldInventory() {
     const tongueColor = slot?.tongue || tongueColorInput.value || DEFAULT_SKIN.tongue;
 
     worldInventoryName.textContent = slot?.name || 'Sapinho';
+    document.querySelector('#world-inventory-mode').textContent = `Modo ${characterMode(slot).label}`;
     worldInventoryBest.textContent = formatScore(slot?.best ?? state.best);
     worldInventoryRoute.textContent = `${storyProgress.completedPhases.filter(Boolean).length}/6 concluídas`;
     worldInventoryDuel.textContent = storyProgress.resistanceDuelWon
@@ -3170,6 +3223,7 @@ function showMenuScreen(screenName, focusFirst = true) {
     });
     menuBackButton.classList.toggle('is-hidden', screenName === 'main' || screenName === 'maps');
     mainMenuShell.classList.toggle('is-world-map', screenName === 'maps');
+    mainMenuShell.classList.toggle('is-character-creation', screenName === 'character');
     overlay.classList.toggle('is-world-map', screenName === 'maps');
     overlay.scrollTop = 0;
     mainMenuShell.scrollTop = 0;
@@ -3253,7 +3307,7 @@ function showResultOverlay() {
 }
 
 function startGameNow({ testArea = false, adminTest = false } = {}) {
-    state.difficulty = selectedDifficulty;
+    state.difficulty = syncCharacterDifficulty(selectedDifficulty);
     resetRun();
     state.isTestArea = testArea;
     state.isAdminEncounter = adminTest;
@@ -3279,7 +3333,7 @@ function startGameNow({ testArea = false, adminTest = false } = {}) {
 }
 
 function startFlightNow() {
-    state.difficulty = selectedDifficulty;
+    state.difficulty = syncCharacterDifficulty(selectedDifficulty);
     resetRun();
     state.isFlight = true;
     board.classList.add('is-flight');
@@ -3321,7 +3375,7 @@ function startFlightNow() {
 }
 
 function startResistanceDuelNow({ adminTest = false } = {}) {
-    state.difficulty = selectedDifficulty;
+    state.difficulty = syncCharacterDifficulty(selectedDifficulty);
     resetRun();
     state.isDuel = true;
     state.isAdminEncounter = adminTest;
@@ -5176,7 +5230,7 @@ function updateFlightActors(delta, speed) {
 }
 
 function flightMaximumConcurrentHazards(progress) {
-    const base = state.difficulty === 'hard' ? 5 : state.difficulty === 'easy' ? 3 : 4;
+    const base = state.difficulty === 'impossible' ? 7 : state.difficulty === 'hard' ? 5 : state.difficulty === 'easy' ? 3 : 4;
     return base + (progress >= 0.25 ? 1 : 0) + (progress >= 0.6 ? 1 : 0);
 }
 
@@ -5215,7 +5269,7 @@ function updateFlightStage(delta) {
 
     const speed = currentFlightSpeed();
     const progress = clamp(state.elapsedTime / FLIGHT_DURATION, 0, 1);
-    const difficultyScale = state.difficulty === 'easy' ? 1.14 : state.difficulty === 'hard' ? 0.9 : 1;
+    const difficultyScale = state.difficulty === 'impossible' ? 0.72 : state.difficulty === 'easy' ? 1.14 : state.difficulty === 'hard' ? 0.9 : 1;
     state.flightInsectCooldown -= delta;
     state.flightCloudCooldown -= delta;
     state.flightStormCooldown -= delta;
@@ -5243,7 +5297,7 @@ function updateFlightStage(delta) {
             spawnStormFlightCloud();
             state.flightStormCooldown = Math.max(2.6, (4.6 - progress * 1.1) * difficultyScale);
         } else if (state.flightInsectCooldown <= 0) {
-            spawnFlightInsectFormation(Math.min(capacity, progress > 0.4 ? 3 : 2));
+            spawnFlightInsectFormation(Math.min(capacity, state.difficulty === 'impossible' ? 4 : progress > 0.4 ? 3 : 2));
             state.flightInsectCooldown = Math.max(0.55, (1.12 - progress * 0.4) * difficultyScale);
         }
         state.flightNextSpawnAt = state.elapsedTime + Math.max(0.52, (1.04 - progress * 0.38) * difficultyScale);
@@ -5777,7 +5831,13 @@ adminCommandDialog?.addEventListener('close', () => {
 difficultyInputs.forEach((input) => {
     input.addEventListener('change', () => {
         if (!input.checked || !DIFFICULTIES[input.value]) return;
-        selectedDifficulty = input.value;
+        const requested = input.value;
+        syncCharacterDifficulty(requested);
+        const slot = activeCharacterSlot();
+        if (slot) {
+            slot.difficulty = selectedDifficulty;
+            persistCharacterSlots();
+        }
         updateWorldMapProximity();
     });
 });
