@@ -24,11 +24,9 @@ assert.ok(styles.includes('width: calc(var(--runner-size) * 1.35)'), 'O pássaro
 assert.ok(styles.includes('cenario-voo-vale-altitude-track-v3.png'), 'A fase aérea deve usar um panorama contínuo de alta altitude');
 assert.ok(styles.includes('cenario-voo-mar-nuvens-track-v1.png'), 'O chão da fase aérea deve ser substituído por um mar de nuvens');
 assert.ok(markup.includes('id="flight-atmosphere"'), 'A fase aérea precisa de uma camada ambiental independente');
-assert.ok(styles.includes('copa-arvores-vento-sprites-v1.png'), 'As copas distantes precisam de um sprite de vento');
-assert.ok(styles.includes('@keyframes flight-canopy-breeze'), 'As copas precisam balançar em um ciclo próprio');
 assert.ok(styles.includes('@keyframes flight-mist-drift'), 'A neblina precisa se deslocar continuamente');
-assert.ok(source.includes('state.sceneTravel * 0.76'), 'A camada de copas precisa usar paralaxe mais lenta que o cenário');
-assert.ok(styles.includes('body.performance-lite .flight-canopy--six'), 'Dispositivos modestos precisam reduzir as copas animadas');
+assert.ok(!markup.includes('flight-canopy'), 'As árvores animadas extras devem permanecer removidas');
+assert.ok(!styles.includes('flight-canopy-breeze'), 'O ciclo artificial das árvores deve permanecer removido');
 assert.match(styles, /\.game-board\.is-flight \.ground\s*{[\s\S]*?display: block;/, 'A faixa de nuvens deve permanecer visível durante o voo');
 assert.match(styles, /\.game-board\.is-flight \.scenery-panel::before\s*{\s*content: none;/, 'Os painéis espelhados não podem criar costuras na fase aérea');
 assert.match(styles, /\.game-board\.is-flight \.obstacle-layer::before\s*{\s*content: none;/, 'As faixas brancas de velocidade devem permanecer desligadas');
@@ -81,7 +79,6 @@ for (const asset of [
     new URL('../assets/img/passaro-voo-sprites-v1.png', import.meta.url),
     new URL('../assets/img/cenario-voo-vale-altitude-track-v3.png', import.meta.url),
     new URL('../assets/img/cenario-voo-mar-nuvens-track-v1.png', import.meta.url),
-    new URL('../assets/img/copa-arvores-vento-sprites-v1.png', import.meta.url),
     new URL('../assets/img/urubu-voo-sprites-v1.png', import.meta.url),
     new URL('../assets/img/mapa-montanha-pedreira-v1.png', import.meta.url),
     new URL('../assets/img/nuvem-pixel-flutuante-v1.png', import.meta.url),
@@ -93,4 +90,4 @@ for (const asset of [
     assert.ok(existsSync(asset), `Asset ausente: ${asset.pathname}`);
 }
 
-console.log('Flight ecosystem checks passed for animated canopy, drifting mist, continuous altitude scenery, compact player bird, enlarged vulture, species abilities, and storms in 4 landscape sizes.');
+console.log('Flight ecosystem checks passed for drifting mist, static forest scenery, compact player bird, enlarged vulture, species abilities, and storms in 4 landscape sizes.');

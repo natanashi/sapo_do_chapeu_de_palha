@@ -1122,7 +1122,6 @@ button { cursor: pointer; }
     pointer-events: none;
 }
 
-.flight-canopy-field,
 .flight-mist-track {
     position: absolute;
     left: 0;
@@ -1130,33 +1129,6 @@ button { cursor: pointer; }
     pointer-events: none;
     will-change: transform;
 }
-
-.flight-canopy-field {
-    z-index: 1;
-    inset-block: 0;
-    transform: translate3d(var(--environment-x, 0px), 0, 0);
-}
-
-.flight-canopy {
-    position: absolute;
-    bottom: clamp(76px, 13%, 126px);
-    display: block;
-    width: clamp(110px, 10vw, 164px);
-    aspect-ratio: 1;
-    background: url("../img/copa-arvores-vento-sprites-v1.png") 0 0 / 600% 100% no-repeat;
-    opacity: 0.52;
-    filter: saturate(0.72) brightness(0.94);
-    image-rendering: pixelated;
-    animation: flight-canopy-breeze 3.1s steps(1, end) infinite;
-    transform-origin: 50% 88%;
-}
-
-.flight-canopy--one { left: 8%; }
-.flight-canopy--two { bottom: clamp(68px, 11%, 108px); left: 24%; width: clamp(84px, 8vw, 132px); opacity: 0.43; animation-delay: -1.45s; animation-duration: 3.7s; }
-.flight-canopy--three { left: 41.333%; }
-.flight-canopy--four { bottom: clamp(68px, 11%, 108px); left: 57.333%; width: clamp(84px, 8vw, 132px); opacity: 0.43; animation-delay: -1.45s; animation-duration: 3.7s; }
-.flight-canopy--five { left: 74.666%; }
-.flight-canopy--six { bottom: clamp(68px, 11%, 108px); left: 90.666%; width: clamp(84px, 8vw, 132px); opacity: 0.43; animation-delay: -1.45s; animation-duration: 3.7s; }
 
 .flight-mist-track {
     z-index: 0;
@@ -3497,7 +3469,6 @@ body.reduce-game-motion .world-landmark,
 body.reduce-game-motion .world-rock-mountain,
 body.reduce-game-motion .obstacle--ground-beetle,
 body.reduce-game-motion .obstacle--leaping-beetle,
-body.reduce-game-motion .flight-canopy,
 body.reduce-game-motion .flight-mist-track { animation: none !important; }
 body.reduce-game-motion .scenery-layer,
 body.reduce-game-motion .game-overlay,
@@ -4005,15 +3976,6 @@ body.reduce-game-motion .resistance-duelist.faces-right .resistance-duelist__ton
 }
 
 @keyframes mounted-bird-flight {
-    0%, 15.99% { background-position: 0 0; }
-    16%, 32.99% { background-position: 20% 0; }
-    33%, 49.99% { background-position: 40% 0; }
-    50%, 65.99% { background-position: 60% 0; }
-    66%, 82.99% { background-position: 80% 0; }
-    83%, 100% { background-position: 100% 0; }
-}
-
-@keyframes flight-canopy-breeze {
     0%, 15.99% { background-position: 0 0; }
     16%, 32.99% { background-position: 20% 0; }
     33%, 49.99% { background-position: 40% 0; }
@@ -4689,10 +4651,6 @@ body.performance-lite .world-resistance-npc__sprite {
 body.performance-lite .resistance-duelist::before,
 body.performance-lite .resistance-duelist::after { display: none; }
 body.performance-lite .sky-clouds { opacity: 0.58; }
-body.performance-lite .flight-canopy { filter: none; }
-body.performance-lite .flight-canopy--two,
-body.performance-lite .flight-canopy--four,
-body.performance-lite .flight-canopy--six,
 body.performance-lite .flight-mist-track--far { display: none; }
 body.performance-lite .capture-flash i:nth-child(n + 5) { display: none; }
 
