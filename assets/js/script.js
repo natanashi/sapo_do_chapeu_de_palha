@@ -406,7 +406,6 @@ const state = {
     flightHazards: [],
     flightDecorations: [],
     flightInsectCooldown: 0,
-    flightRockCooldown: 0,
     flightCloudCooldown: 0,
     flightStormCooldown: 0,
     flightVultureCooldown: 0,
@@ -1715,7 +1714,6 @@ function resetRun() {
     state.flightHazards = [];
     state.flightDecorations = [];
     state.flightInsectCooldown = 0;
-    state.flightRockCooldown = 0;
     state.flightCloudCooldown = 0;
     state.flightStormCooldown = 0;
     state.flightVultureCooldown = 0;
@@ -3277,7 +3275,6 @@ function startFlightNow() {
     state.runnerY = Math.max(80, state.boardHeight * 0.42);
     state.velocityY = 0;
     state.flightInsectCooldown = 1.4;
-    state.flightRockCooldown = 2.8;
     state.flightCloudCooldown = 0.5;
     state.flightStormCooldown = 5.2;
     state.flightVultureCooldown = 7.4;
@@ -3488,7 +3485,6 @@ function stageAssets(kind, testArea = false) {
         'assets/img/cenario-voo-vale-altitude-track-v3.png',
         'assets/img/cenario-voo-mar-nuvens-track-v1.png',
         'assets/img/urubu-voo-sprites-v1.png',
-        'assets/img/pedras-musgo.png',
         'assets/img/nuvem-pixel-flutuante-v1.png',
         'assets/img/nuvem-tempestade-raio-v1.png',
         'assets/img/inseto-voando-sprites.png',
@@ -4276,7 +4272,7 @@ function endGame(hazard = 'obstacle') {
                 ? 'O urubu alinhou o mergulho e interceptou o pássaro. Mude de altura durante a mira e saia da trajetória antes da investida.'
                 : hazard === 'flight-insect'
                     ? 'Um inseto voador acertou o pássaro. Cada espécie usa uma trajetória diferente, então observe o movimento antes de atravessar.'
-                    : 'O pássaro encostou numa formação de pedra no chão. Ganhe altura antes de alcançar a próxima.';
+                    : 'O pássaro foi interceptado durante a travessia. Ajuste a altura e observe o movimento do próximo perigo.';
         playLabel.textContent = 'Tentar o voo novamente';
         resultMenuButton.textContent = 'Voltar ao mapa';
         showResultOverlay();
@@ -4786,31 +4782,6 @@ function spawnFlightVulture() {
     });
 }
 
-function spawnFlightRock() {
-    const height = clamp(state.boardHeight * (0.11 + Math.random() * 0.045), 54, 112);
-    const width = height * 1.5;
-    const y = state.boardHeight - height;
-    const element = document.createElement('img');
-    element.className = 'flight-hazard flight-rock is-grounded';
-    element.src = 'assets/img/pedras-musgo.png';
-    element.alt = '';
-    element.draggable = false;
-    element.style.width = `${width}px`;
-    element.style.height = `${height}px`;
-    obstacleLayer.append(element);
-    state.flightHazards.push({
-        kind: 'rock',
-        element,
-        x: flightSpawnX(width),
-        y,
-        renderedY: y,
-        width,
-        height,
-        speedScale: 1,
-        scored: false,
-    });
-}
-
 function spawnFriendlyFlightCloud() {
     const width = clamp(state.boardWidth * (0.11 + Math.random() * 0.07), 105, 210);
     const height = width * 0.5;
@@ -5020,7 +4991,6 @@ function updateFlightStage(delta) {
     const progress = clamp(state.elapsedTime / FLIGHT_DURATION, 0, 1);
     const difficultyScale = state.difficulty === 'easy' ? 1.14 : state.difficulty === 'hard' ? 0.9 : 1;
     state.flightInsectCooldown -= delta;
-    state.flightRockCooldown -= delta;
     state.flightCloudCooldown -= delta;
     state.flightStormCooldown -= delta;
     state.flightVultureCooldown -= delta;
@@ -5031,9 +5001,6 @@ function updateFlightStage(delta) {
         } else if (state.flightStormCooldown <= 0) {
             spawnStormFlightCloud();
             state.flightStormCooldown = Math.max(4.7, (6.4 - progress * 0.8) * difficultyScale);
-        } else if (state.flightRockCooldown <= 0) {
-            spawnFlightRock();
-            state.flightRockCooldown = (3.4 + Math.random() * 1.15) * difficultyScale;
         } else if (state.flightInsectCooldown <= 0) {
             spawnFlightInsect();
             state.flightInsectCooldown = Math.max(1.02, (1.72 - progress * 0.26) * difficultyScale);

@@ -19,6 +19,7 @@ assert.ok(source.includes("category: 'Voo speed run'"), 'A fase 3 precisa expor 
 assert.ok(source.includes('storyProgress.completedPhases[2] = true'), 'A vitória precisa persistir a fase 3');
 assert.ok(source.includes("else if (worldMapState.nearestLevel === 2) startFlightStage()"), 'O selo 3 precisa abrir a fase aérea');
 assert.ok(styles.includes('passaro-voo-sprites-v1.png'), 'O voo deve usar o pássaro solo, ampliado e estabilizado');
+assert.ok(styles.includes('width: calc(var(--runner-size) * 1.55)'), 'O pássaro deve ter presença maior na fase aérea');
 assert.ok(styles.includes('cenario-voo-vale-altitude-track-v3.png'), 'A fase aérea deve usar um panorama contínuo de alta altitude');
 assert.ok(styles.includes('cenario-voo-mar-nuvens-track-v1.png'), 'O chão da fase aérea deve ser substituído por um mar de nuvens');
 assert.match(styles, /\.game-board\.is-flight \.ground\s*{[\s\S]*?display: block;/, 'A faixa de nuvens deve permanecer visível durante o voo');
@@ -32,15 +33,16 @@ assert.ok(source.includes("ability: 'wide-wave'"), 'O besouro ondulante precisa 
 assert.ok(source.includes("ability: 'aimed-dive'"), 'A abelha precisa mirar antes do mergulho');
 assert.ok(source.includes('function spawnFlightVulture()'), 'A fase deve incluir o urubu como obstáculo aéreo');
 assert.ok(source.includes('state.flightVultureCooldown'), 'O urubu precisa ter intervalo próprio de surgimento');
-assert.ok(source.includes('function spawnFlightRock()'), 'A fase deve manter pedras somente nas extremidades');
-assert.ok(source.includes('const y = state.boardHeight - height;'), 'As pedras da fase aérea devem ficar somente no chão');
+assert.ok(!source.includes('function spawnFlightRock()'), 'A fase aérea não deve mais gerar pedras');
+assert.ok(!source.includes('state.flightRockCooldown'), 'O agendador de pedras deve ser removido por completo');
 assert.ok(!source.includes('is-ceiling'), 'A fase aérea não pode colocar pedras no céu');
 assert.ok(source.includes('function spawnFriendlyFlightCloud()'), 'A fase deve ter nuvens claras decorativas');
 assert.ok(source.includes('function spawnStormFlightCloud()'), 'A fase deve ter nuvens de tempestade');
-assert.ok(source.includes("return collision?.kind || ''"), 'A colisão precisa identificar inseto, pedra ou tempestade');
+assert.ok(source.includes("return collision?.kind || ''"), 'A colisão precisa identificar inseto, urubu ou tempestade');
 assert.ok(!source.includes('spawnFlightGate'), 'As colunas no estilo Flappy Bird não podem permanecer');
 assert.ok(!source.includes('flight-boundary'), 'Encostar na borda não pode matar o jogador');
-assert.ok(styles.includes('.flight-hazard'), 'As rochas individuais precisam de apresentação própria');
+assert.ok(styles.includes('.flight-hazard'), 'Os perigos aéreos precisam de apresentação própria');
+assert.ok(!styles.includes('.flight-rock'), 'O estilo das pedras aéreas deve ser removido');
 assert.ok(styles.includes('.flight-insect--golden'), 'O besouro dourado precisa aparecer na corrida aérea');
 assert.ok(styles.includes('.flight-insect--wave'), 'O besouro ondulante precisa aparecer na corrida aérea');
 assert.ok(styles.includes('.flight-insect--bee'), 'A abelha precisa aparecer na corrida aérea');
@@ -56,14 +58,14 @@ for (const { width, height } of [
     { width: 1600, height: 900 },
 ]) {
     const scale = Math.min(1, Math.max(0.48, height / 745));
-    const riderSize = 158 * scale * 1.35;
+    const riderSize = 158 * scale * 1.55;
     const maximumRunnerX = width - riderSize;
     assert.ok(maximumRunnerX > width * 0.72, `O voo horizontal ainda está limitado em ${width}x${height}`);
-    const largestHazard = Math.min(104, Math.max(42, height * 0.13 * 1.08));
-    assert.ok(height - largestHazard > riderSize * 1.7, `A rocha individual bloqueia a pista em ${width}x${height}`);
+    const largestHazard = Math.min(138, Math.max(92, riderSize * 0.62));
+    assert.ok(height - largestHazard > riderSize * 1.45, `O urubu bloqueia altura demais em ${width}x${height}`);
     const finalHardSpeed = (baseSpeed + speedGain) * 1.1 * Math.min(1.24, Math.max(0.82, width / 1100));
     const minimumSpacing = finalHardSpeed * 0.92;
-    assert.ok(minimumSpacing >= largestHazard * 2.2, `Pouco tempo de reação em ${width}x${height}`);
+    assert.ok(minimumSpacing >= 58 * 2.2, `Pouco tempo de reação em ${width}x${height}`);
 }
 
 for (const asset of [
@@ -72,7 +74,6 @@ for (const asset of [
     new URL('../assets/img/cenario-voo-mar-nuvens-track-v1.png', import.meta.url),
     new URL('../assets/img/urubu-voo-sprites-v1.png', import.meta.url),
     new URL('../assets/img/mapa-montanha-pedreira-v1.png', import.meta.url),
-    new URL('../assets/img/pedras-musgo.png', import.meta.url),
     new URL('../assets/img/nuvem-pixel-flutuante-v1.png', import.meta.url),
     new URL('../assets/img/nuvem-tempestade-raio-v1.png', import.meta.url),
     new URL('../assets/img/inseto-voando-sprites.png', import.meta.url),
@@ -82,4 +83,4 @@ for (const asset of [
     assert.ok(existsSync(asset), `Asset ausente: ${asset.pathname}`);
 }
 
-console.log('Flight ecosystem checks passed for continuous altitude scenery, species abilities, vultures, edge rocks, and storms in 4 landscape sizes.');
+console.log('Flight ecosystem checks passed for continuous altitude scenery, larger bird, species abilities, vultures, and storms in 4 landscape sizes.');
