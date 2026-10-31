@@ -12,10 +12,10 @@ Ao abrir o jogo, uma mensagem apresenta sua origem indie: a **Natanashi Studios*
 ## O que há no jogo
 
 - Quatro regiões inteiramente pela manhã: Vila do Sol, Campos do Orvalho, Floresta Antiga e Castelo da Manhã.
-- Jornada de 2 minutos e um mapa no topo que mostra a posição do jogador em toda a rota.
+- Primeira fase com duração máxima de 1 minuto e 40 segundos, incluindo a luta contra a chefã, e um mapa no topo que mostra a posição do jogador em toda a rota.
 - Mapa-múndi explorável 3×3 antes da partida: a câmera acompanha o mesmo sapinho da corrida por um gramado em perspectiva, com plantas, pedras, trilhas e um museu em pixel art. A profundidade muda conforme o sapo passa na frente ou atrás dos elementos, todos com colisão. Há seis selos de fase; as três primeiras fases são liberadas em sequência e as fases 4 a 6 aparecem como “Em construção · em breve”.
 - Fase 2 de luta livre contra Rubro, com deslocamento, pulo, língua, esquiva e inteligência de combate baseada na posição do jogador.
-- Fase 3 **Pedreira Musgosa**, uma corrida aérea de 70 segundos com controle livre do pássaro. A velocidade e a quantidade de perigos aumentam: bandos de insetos, gavião-carijó, urubus, tempestades e torres rochosas de alturas variadas. Redemoinhos chegam acompanhados de insetos e desviam o voo; os controles permitem compensar as rajadas. O limite de ameaças ativas chega a 5 no fácil, 6 no médio e 7 no difícil, além do vento.
+- Fase 3 **Pedreira Musgosa**, uma corrida aérea de 70 segundos com controle livre do pássaro. A velocidade e a quantidade de perigos aumentam: bandos de insetos, gavião-carijó, urubus, tempestades e torres rochosas de alturas variadas. Redemoinhos chegam acompanhados de insetos e desviam o voo; os controles permitem compensar as rajadas. O limite de ameaças ativas chega a 3 no fácil, 4 no médio, 5 no difícil e 9 no Impossível, além do vento. As dificuldades normais oferecem mais tempo de reação, enquanto o Impossível mantém a pressão extra.
 - Museu da Mata acessível dentro do mapa, com um pequeno documentário sobre os cinco bichos do bioma, seus comportamentos e como aparecem na fase.
 - Perfil offline com nome do jogador editável e salvo no aparelho; cadastro, login e sincronização estão marcados como recursos futuros.
 - Três diários de jornada no Modo História. Cada personagem tem nome, cores do corpo e da língua, recorde e progresso próprios, tudo salvo no aparelho; a exclusão pede confirmação antes de apagar.

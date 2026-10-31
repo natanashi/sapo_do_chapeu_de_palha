@@ -211,27 +211,27 @@ let settingsSavedTimer = 0;
 const DIFFICULTIES = {
     easy: {
         label: 'Fácil',
-        speedScale: 0.98,
-        spawnGapScale: 0.96,
-        minimumObstacleGap: 1.18,
-        minimumInsectGap: 1.85,
-        duelTempo: 0.96,
+        speedScale: 0.88,
+        spawnGapScale: 1.3,
+        minimumObstacleGap: 1.5,
+        minimumInsectGap: 3.1,
+        duelTempo: 0.8,
     },
     medium: {
         label: 'Médio',
-        speedScale: 1.08,
-        spawnGapScale: 0.82,
-        minimumObstacleGap: 1.05,
-        minimumInsectGap: 1.65,
-        duelTempo: 1.12,
+        speedScale: 1,
+        spawnGapScale: 1.05,
+        minimumObstacleGap: 1.3,
+        minimumInsectGap: 2.5,
+        duelTempo: 0.98,
     },
     hard: {
         label: 'Difícil',
-        speedScale: 1.2,
-        spawnGapScale: 0.68,
-        minimumObstacleGap: 0.94,
-        minimumInsectGap: 1.5,
-        duelTempo: 1.3,
+        speedScale: 1.12,
+        spawnGapScale: 0.86,
+        minimumObstacleGap: 1.1,
+        minimumInsectGap: 1.9,
+        duelTempo: 1.15,
     },
     impossible: {
         label: 'Impossível',
@@ -280,7 +280,7 @@ const PHASES = [
     },
     {
         name: 'Campos do Orvalho',
-        startsAt: 30,
+        startsAt: 23,
         background: 'assets/img/cenario-arvores-planaltos-transparente-v3.png',
         speedScale: 1.08,
         paceLabel: 'Ritmo acelerando',
@@ -290,7 +290,7 @@ const PHASES = [
     },
     {
         name: 'Floresta Antiga',
-        startsAt: 60,
+        startsAt: 46,
         background: 'assets/img/cenario-arvores-planaltos-transparente-v3.png',
         speedScale: 1.16,
         paceLabel: 'Corrida veloz',
@@ -300,7 +300,7 @@ const PHASES = [
     },
     {
         name: 'Castelo da Manhã',
-        startsAt: 85,
+        startsAt: 65,
         background: 'assets/img/cenario-arvores-planaltos-transparente-v3.png',
         speedScale: 1.24,
         paceLabel: 'Reta final em alta velocidade',
@@ -472,12 +472,12 @@ const ATTACK_COOLDOWN = 3000;
 const ATTACK_CAPTURE_CLOSE = 290;
 const ATTACK_RETRACT_AT = 320;
 const ATTACK_SWALLOW_AT = 485;
-const JOURNEY_DURATION = 120;
+const JOURNEY_DURATION = 100;
 const FLIGHT_DURATION = 70;
 const FLIGHT_VERTICAL_SPEED = 540;
 const FLIGHT_BASE_SPEED = 285;
 const FLIGHT_SPEED_GAIN = 270;
-const BOSS_START_TIME = 88;
+const BOSS_START_TIME = 68;
 const BOSS_MAX_HEALTH = 5;
 const BOSS_ATTACK_STAGE_MS = 3600;
 const BOSS_TIRED_STAGE_MS = 2800;
@@ -1351,7 +1351,7 @@ function updateBoss(currentTime) {
     } else if (boss.stage === 'attacking') {
         if (currentTime >= boss.nextSpawnAt) {
             spawnBossBee(currentTime);
-            const swarmGap = state.difficulty === 'impossible' ? 520 : state.difficulty === 'hard' ? 720 : state.difficulty === 'easy' ? 1150 : 900;
+            const swarmGap = state.difficulty === 'impossible' ? 520 : state.difficulty === 'hard' ? 1000 : state.difficulty === 'easy' ? 1800 : 1400;
             boss.nextSpawnAt = currentTime + swarmGap + Math.random() * 350;
         }
         if (currentTime >= boss.nextStageAt) {
@@ -1485,7 +1485,7 @@ function groundInsectLaneIsSafe() {
 
 function incomingObstacleBlocksInsects() {
     const waveStartX = threatSpawnX(Math.max(48, state.boardWidth * 0.05));
-    const crossingGap = currentWorldSpeed() * 0.52;
+    const crossingGap = currentWorldSpeed() * (state.difficulty === 'easy' ? 0.68 : state.difficulty === 'medium' ? 0.6 : 0.52);
     return state.obstacles.some((obstacle) => Math.abs(obstacle.x - waveStartX) < crossingGap);
 }
 
@@ -1506,9 +1506,10 @@ function spawnInsectWave() {
     const insectBox = measureActor(sample, `insect:${speciesKey}`);
     sample.remove();
 
-    const tripleWaveChance = 0.6 + pressure * 0.25;
+    const tripleWaveChance = (state.difficulty === 'easy' ? 0.15 : state.difficulty === 'medium' ? 0.35 : 0.5) + pressure * 0.2;
     const isImpossible = state.difficulty === 'impossible';
-    const pairedSpecialists = pressure > (isImpossible ? 0.15 : 0.3) && state.difficulty !== 'easy' && Math.random() < (isImpossible ? 0.7 : 0.45);
+    const pairedSpecialists = (isImpossible && pressure > 0.15 && Math.random() < 0.7)
+        || (state.difficulty === 'hard' && pressure > 0.45 && Math.random() < 0.32);
     const count = isBee || isWaveSpecies ? (pairedSpecialists ? 2 : 1) : (isImpossible ? 4 : Math.random() < tripleWaveChance ? 3 : 2);
     const useGroundLane = !isBee && !isWaveSpecies && Math.random() < 0.12 && groundInsectLaneIsSafe();
     const mouthY = runnerBox.top + runnerBox.height * 0.46;
@@ -4980,7 +4981,8 @@ function sampleFlightWind() {
         const strength = clamp(1 - Math.hypot(dx, dy), 0, 1);
         if (strength <= strongest.strength) continue;
         const gust = Math.sin(state.elapsedTime * 5.2) * 0.6 + Math.sin(state.elapsedTime * 2.1) * 0.4;
-        const scale = clamp(state.boardHeight / 600, 0.6, 1.15);
+        const windScale = state.difficulty === 'easy' ? 0.65 : state.difficulty === 'medium' ? 0.85 : 1;
+        const scale = clamp(state.boardHeight / 600, 0.6, 1.15) * windScale;
         strongest = { strength, x: (-dx * 150 - 35) * strength * scale, y: (gust * 185 - dy * 90) * strength * scale };
     }
     return strongest;
@@ -5230,7 +5232,7 @@ function updateFlightActors(delta, speed) {
 }
 
 function flightMaximumConcurrentHazards(progress) {
-    const base = state.difficulty === 'impossible' ? 7 : state.difficulty === 'hard' ? 5 : state.difficulty === 'easy' ? 3 : 4;
+    const base = state.difficulty === 'impossible' ? 7 : state.difficulty === 'hard' ? 3 : state.difficulty === 'easy' ? 1 : 2;
     return base + (progress >= 0.25 ? 1 : 0) + (progress >= 0.6 ? 1 : 0);
 }
 
@@ -5269,7 +5271,7 @@ function updateFlightStage(delta) {
 
     const speed = currentFlightSpeed();
     const progress = clamp(state.elapsedTime / FLIGHT_DURATION, 0, 1);
-    const difficultyScale = state.difficulty === 'impossible' ? 0.72 : state.difficulty === 'easy' ? 1.14 : state.difficulty === 'hard' ? 0.9 : 1;
+    const difficultyScale = state.difficulty === 'impossible' ? 0.72 : state.difficulty === 'easy' ? 1.5 : state.difficulty === 'hard' ? 1 : 1.2;
     state.flightInsectCooldown -= delta;
     state.flightCloudCooldown -= delta;
     state.flightStormCooldown -= delta;
@@ -5281,9 +5283,13 @@ function updateFlightStage(delta) {
         const capacity = flightHazardCapacity(progress);
         const hasLargePredator = state.flightHazards.some((hazard) => hazard.kind === 'hawk' || hazard.kind === 'vulture');
         const hasTornado = state.flightHazards.some((hazard) => hazard.kind === 'tornado');
-        if (state.flightTornadoCooldown <= 0 && !hasTornado && capacity >= 2) {
-            spawnFlightTornado();
-            state.flightTornadoCooldown = (10.2 - progress * 2.2) * difficultyScale;
+        const tornadoReady = state.flightTornadoCooldown <= 0 && !hasTornado && flightMaximumConcurrentHazards(progress) >= 2;
+        if (tornadoReady) {
+            // Reserve the escort slots instead of continually filling them with new hazards.
+            if (capacity >= 2) {
+                spawnFlightTornado();
+                state.flightTornadoCooldown = (10.2 - progress * 2.2) * difficultyScale;
+            }
         } else if (state.flightGroundSpireCooldown <= 0) {
             spawnFlightGroundSpire();
             state.flightGroundSpireCooldown = Math.max(2, (3.9 - progress * 1.25) * difficultyScale);
@@ -5297,7 +5303,8 @@ function updateFlightStage(delta) {
             spawnStormFlightCloud();
             state.flightStormCooldown = Math.max(2.6, (4.6 - progress * 1.1) * difficultyScale);
         } else if (state.flightInsectCooldown <= 0) {
-            spawnFlightInsectFormation(Math.min(capacity, state.difficulty === 'impossible' ? 4 : progress > 0.4 ? 3 : 2));
+            const formationSize = state.difficulty === 'impossible' ? 4 : state.difficulty === 'easy' ? 1 : state.difficulty === 'hard' && progress > 0.6 ? 3 : 2;
+            spawnFlightInsectFormation(Math.min(capacity, formationSize));
             state.flightInsectCooldown = Math.max(0.55, (1.12 - progress * 0.4) * difficultyScale);
         }
         state.flightNextSpawnAt = state.elapsedTime + Math.max(0.52, (1.04 - progress * 0.38) * difficultyScale);

@@ -70,7 +70,7 @@ for (const difficulty of ['easy', 'medium', 'hard', 'impossible']) {
             assert.ok(Number.isFinite(state.runnerX) && Number.isFinite(state.runnerY));
             assert.ok(state.runnerY >= 0 && state.runnerY <= height - state.runnerWidth);
         }
-        assert.ok(peak >= ({ easy: 4, medium: 5, hard: 6, impossible: 8 })[difficulty], 'A pressão precisa aumentar conforme a dificuldade');
+        assert.ok(peak >= ({ easy: 2, medium: 3, hard: 4, impossible: 8 })[difficulty], 'A pressão precisa aumentar conforme a dificuldade');
         assert.ok(windWithEnemies, 'Redemoinhos precisam chegar acompanhados de insetos');
         assert.ok([...spawns.keys()].some((key) => key.includes('flight-tornado')));
         summaries.push({ difficulty, viewport: `${width}x${height}`, peak, spawned: [...spawns.values()].reduce((a, b) => a + b, 0) });
