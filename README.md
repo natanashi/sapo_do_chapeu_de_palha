@@ -5,7 +5,7 @@
 > [!IMPORTANT]
 > Esta é uma **versão beta para navegador**. A versão oficial do jogo será lançada para **Steam** e **Play Store**.
 
-Jogo de ação em pixel art para navegador, com corrida, luta livre e voo, além de suporte a computador e celular. Esta beta permite testar a jogabilidade, os cenários, os inimigos e a progressão enquanto a versão oficial continua em desenvolvimento.
+Jogo de ação em pixel art para navegador, com corrida, luta livre, voo e exploração, além de suporte a computador e celular. Esta beta permite testar a jogabilidade, os cenários, os inimigos e a progressão enquanto a versão oficial continua em desenvolvimento.
 
 Ao abrir o jogo, uma mensagem apresenta sua origem indie: a **Natanashi Studios** é o codinome da pequena startup que desenvolve o projeto. IA é usada como apoio, mas código, personagens, cenários e animações passam por revisão e dedicação humana, apoiadas por uma prática de programação iniciada em 2018.
 
@@ -13,8 +13,9 @@ Ao abrir o jogo, uma mensagem apresenta sua origem indie: a **Natanashi Studios*
 
 - Quatro regiões inteiramente pela manhã: Vila do Sol, Campos do Orvalho, Floresta Antiga e Castelo da Manhã.
 - Primeira fase com duração máxima de 1 minuto e 40 segundos, incluindo a luta contra a chefã, e um mapa no topo que mostra a posição do jogador em toda a rota.
-- Mapa-múndi explorável 3×3 antes da partida: a câmera acompanha o mesmo sapinho da corrida por um gramado em perspectiva, com plantas, pedras, trilhas e um museu em pixel art. A profundidade muda conforme o sapo passa na frente ou atrás dos elementos, todos com colisão. Há seis selos de fase; as três primeiras fases são liberadas em sequência e as fases 4 a 6 aparecem como “Em construção · em breve”.
+- Mapa-múndi explorável 3×3 antes da partida: a câmera acompanha o mesmo sapinho da corrida por um gramado em perspectiva, com plantas, pedras, trilhas e um museu em pixel art. A profundidade muda conforme o sapo passa na frente ou atrás dos elementos, todos com colisão. Há seis selos de fase; as quatro primeiras fases são liberadas em sequência e as fases 5 e 6 aparecem como “Em construção · em breve”.
 - Fase 2 de luta livre contra Rubro, com deslocamento, pulo, língua, esquiva e inteligência de combate baseada na posição do jogador.
+- Fase 4 **Raízes Profundas**, uma exploração sem corrida automática nem limite de tempo. O mesmo sapinho entra por uma abertura na mata e desce por três galerias de plataformas, com tatuzinhos de musgo e mariposas da raiz. Três descansos recuperam a vida e servem de ponto de retorno durante a tentativa. No fundo, o **Tatuzão de Raiz** alterna investidas e ondas pelo chão, com avisos e momentos de carapaça aberta para atacar. Depois de vencê-lo, uma raiz elevatória leva o sapo de volta à superfície; só então a fase é concluída e salva. A aparência segue a identidade do CroakFall; a referência externa se limita à exploração e ao combate de plataforma.
 - Fase 3 **Pedreira Musgosa**, uma corrida aérea de 70 segundos com controle livre do pássaro. A velocidade e a quantidade de perigos aumentam: bandos de insetos, gavião-carijó, urubus, tempestades e torres rochosas de alturas variadas. Redemoinhos chegam acompanhados de insetos e desviam o voo; os controles permitem compensar as rajadas. O limite de ameaças ativas chega a 3 no fácil, 4 no médio, 5 no difícil e 9 no Impossível, além do vento. As dificuldades normais oferecem mais tempo de reação, enquanto o Impossível mantém a pressão extra.
 - Tornados da fase aérea sempre conectados à base do cenário, com alturas aleatórias médias, grandes ou próximas ao topo. A sucção lateral, a corrente ascendente e as rajadas influenciam o voo, com força ajustada à dificuldade e controles que permitem reagir. O apoio na base é mantido ao mudar o tamanho da tela, inclusive durante a pausa.
 - Museu da Mata acessível dentro do mapa, com um pequeno documentário sobre os cinco bichos do bioma, seus comportamentos e como aparecem na fase.
@@ -47,6 +48,7 @@ Ao abrir o jogo, uma mensagem apresenta sua origem indie: a **Natanashi Studios*
 
 - Movimento: use `A`/`D` ou `←`/`→` para recuar e avançar pelo cenário.
 - Computador: pressione `Espaço` ou `↑` para pular.
+- Em Raízes Profundas: explore para os dois lados, pule entre plataformas e use `↓` para agachar e alcançar os bichinhos no chão com a língua. A língua recarrega em três segundos; encostar em inimigos tira uma vida, com um intervalo de proteção após o golpe. O último descanso vale enquanto a tentativa estiver aberta; sair ao mapa inicia uma nova exploração.
 - Na Pedreira Musgosa: `Espaço` ou `↑` bate as asas; `A`/`D` ou `←`/`→` ajusta a posição horizontal do voo.
 - Língua: pressione `X` para capturar os besouros que voam da direita para a esquerda. Encostar neles encerra a corrida.
 - Pausa: pressione `P` ou use o botão **Pausar**.

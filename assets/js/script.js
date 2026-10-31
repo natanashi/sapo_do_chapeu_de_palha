@@ -154,6 +154,12 @@ const routeMapStops = [...document.querySelectorAll('[data-route-stop]')];
 const routeMapStopLabels = routeMapStops.map((stop) => stop.querySelector('span'));
 const sceneLayers = [document.querySelector('#scenery-a'), document.querySelector('#scenery-b')];
 const orientationGuard = document.querySelector('#orientation-guard');
+const caveCanvas = document.querySelector('#cave-canvas');
+const caveHud = document.querySelector('#cave-hud');
+const caveHealth = document.querySelector('#cave-health');
+const caveObjective = document.querySelector('#cave-objective');
+const caveMessage = document.querySelector('#cave-message');
+let preparedCaveArt = null;
 
 const jumpAudio = new Audio('assets/aud/pulo.mp3');
 const loseAudio = new Audio('assets/aud/risada_duende.mp3');
@@ -737,6 +743,7 @@ function configureJourneyLabels(flightMode = false) {
 }
 
 function updateScore() {
+    if (state.isCave) { renderCaveHud(state.cave?.status()); return; }
     const nextScore = formatScore(state.score);
     const nextBest = formatScore(state.best);
     const flightProgress = clamp(state.elapsedTime / FLIGHT_DURATION, 0, 1);
@@ -1022,6 +1029,7 @@ function renderRunnerPosition() {
 }
 
 function clearHorizontalInput() {
+    state.cave?.releaseInputs();
     state.moveLeft = false;
     state.moveRight = false;
     state.flightClimbing = false;
@@ -1144,6 +1152,13 @@ function resolvePhase() {
 }
 
 function clearActors() {
+    state.cave?.destroy();
+    state.cave = null;
+    state.isCave = false;
+    board.classList.remove('is-cave');
+    caveCanvas.hidden = true;
+    caveHud.hidden = true;
+    caveMessage.hidden = true;
     state.obstacles.forEach((obstacle) => obstacle.element.remove());
     state.insects.forEach((insect) => insect.element.remove());
     state.platforms.forEach((platform) => platform.element.remove());
@@ -1814,7 +1829,7 @@ const WORLD_LEVELS = [
     { name: 'Rota da Manhã', category: 'Corrida', x: 29, y: 80, unlocked: true, playable: true },
     { name: 'Bosque dos Cogumelos', category: 'Luta livre', x: 68, y: 82, unlocked: false, playable: false },
     { name: 'Pedreira Musgosa', category: 'Voo speed run', x: 84, y: 57, unlocked: false, playable: true },
-    { name: 'Clareira dos Ventos', category: 'Luta livre', x: 68, y: 27, unlocked: false, playable: false },
+    { name: 'Raízes Profundas', category: 'Exploração', x: 68, y: 27, unlocked: false, playable: true },
     { name: 'Vale das Folhas', category: 'Corrida', x: 37, y: 20, unlocked: false, playable: false },
     { name: 'Coração da Mata', category: 'Luta livre', x: 13, y: 46, unlocked: false, playable: false },
 ];
@@ -2251,6 +2266,7 @@ function activateWorldMapTarget() {
     if (storyMapButton.disabled || state.mode === 'loading') return;
     if (storyMapButton.dataset.action === 'museum') showMenuScreen('museum');
     else if (worldMapState.nearestLevel === 2) startFlightStage();
+    else if (worldMapState.nearestLevel === 3) startCaveStage();
     else startGame();
 }
 
@@ -3546,6 +3562,7 @@ async function runWorldMapLoading(prepareCharacter = null) {
 }
 
 function stageAssets(kind, testArea = false) {
+    if (kind === 'cave') return Object.values(CroakFallCave.assets);
     const common = [
         ...AMBIENT_ASSET_URLS,
         'assets/img/sapo-corrida-bipede-v3.png',
@@ -3586,10 +3603,11 @@ function runStageLoading({ kind = 'route', testArea = false } = {}, startAction)
 
     const isDuel = kind === 'duel';
     const isFlight = kind === 'flight';
+    const isCave = kind === 'cave';
     showSceneLoader({
-        kicker: isDuel ? 'Luta livre · Clareira inicial' : isFlight ? 'Voo speed run · Pedreira Musgosa' : testArea ? 'Área de testes · Chefã' : 'Corrida · Rota da Manhã',
-        title: isDuel ? 'Preparando o duelo' : isFlight ? 'Ajustando as asas' : 'Preparando a trilha',
-        tip: isFlight
+        kicker: isCave ? 'Fase 4 · Exploração · Raízes Profundas' : isDuel ? 'Luta livre · Clareira inicial' : isFlight ? 'Voo speed run · Pedreira Musgosa' : testArea ? 'Área de testes · Chefã' : 'Corrida · Rota da Manhã',
+        title: isCave ? 'Abrindo a passagem entre as raízes' : isDuel ? 'Preparando o duelo' : isFlight ? 'Ajustando as asas' : 'Preparando a trilha',
+        tip: isCave ? 'Sem pressa: procure os descansos, pule as investidas e use a língua quando houver uma abertura.' : isFlight
             ? FLIGHT_LOADING_TIPS[Math.floor(Math.random() * FLIGHT_LOADING_TIPS.length)]
             : STAGE_LOADING_TIPS[Math.floor(Math.random() * STAGE_LOADING_TIPS.length)],
     });
@@ -3604,6 +3622,7 @@ function runStageLoading({ kind = 'route', testArea = false } = {}, startAction)
     stageTransitionPromise = (async () => {
         await Promise.all([
             Promise.allSettled(assets.map(preloadImage)),
+            isCave ? prepareCaveArt() : Promise.resolve(),
             document.fonts?.ready || Promise.resolve(),
             waitForDelay(720),
         ]);
@@ -3614,6 +3633,13 @@ function runStageLoading({ kind = 'route', testArea = false } = {}, startAction)
         await waitForDelay(80);
         hideSceneLoader();
     })().catch(() => {
+        if (isCave && !preparedCaveArt && !stageStarted) {
+            state.mode = 'idle';
+            showMenuScreen('maps');
+            storyMapStatus.textContent = 'A caverna não terminou de carregar. Confira a conexão e tente entrar novamente.';
+            hideSceneLoader();
+            return;
+        }
         releaseWorldMapRender();
         beginStage();
         hideSceneLoader();
@@ -3633,6 +3659,133 @@ function startResistanceDuel(options = {}) {
 
 function startFlightStage() {
     return runStageLoading({ kind: 'flight' }, startFlightNow);
+}
+
+async function prepareCaveArt() {
+    const keys = { '--frog-run-sprite': 'run', '--frog-jump-sprite': 'jump', '--frog-attack-sprite': 'attack', '--frog-crouch-sprite': 'crouch', '--frog-crouch-attack-sprite': 'crouchAttack', tongue: 'tongue' };
+    const skin = {};
+    for (const [property, key] of Object.entries(keys)) {
+        const url = skinObjectUrls.get(property);
+        if (url) skin[key] = url;
+    }
+    preparedCaveArt = await CroakFallCave.prepare(skin);
+}
+
+function startCaveStage() {
+    return runStageLoading({ kind: 'cave' }, startCaveNow);
+}
+
+function startCaveNow() {
+    const art = preparedCaveArt;
+    if (!art) throw new Error('Os sprites da caverna ainda não foram carregados.');
+    state.difficulty = syncCharacterDifficulty(selectedDifficulty);
+    resetRun();
+    state.isCave = true;
+    board.classList.add('is-cave');
+    board.dataset.phase = '4';
+    caveCanvas.hidden = false;
+    caveHud.hidden = false;
+    state.cave = new CroakFallCave(caveCanvas, art, { difficulty: state.difficulty, onEvent: handleCaveEvent, reducedMotion: shouldReduceMotion() });
+    preparedCaveArt = null;
+    state.cave.resize(state.boardWidth, state.boardHeight);
+    state.mode = 'playing';
+    state.previousTime = performance.now();
+    routeMapStopLabels.forEach((label, i) => { label.textContent = ['Entrada', 'Raízes', 'Ninho', 'Volta'][i]; });
+    document.querySelector('.route-map').setAttribute('aria-label', 'Exploração: entrada, raízes, ninho e volta à superfície');
+    setRuntimeScene('stage');
+    playBackgroundMusic(true);
+    overlay.classList.remove('is-visible');
+    setPlayingControls(true);
+    pauseButton.textContent = 'Pausar';
+    pauseButton.setAttribute('aria-label', 'Pausar exploração');
+    phaseKicker.textContent = 'FASE 4 · EXPLORAÇÃO';
+    phaseName.textContent = 'Raízes Profundas';
+    phaseBanner.classList.add('is-visible');
+    window.setTimeout(() => phaseBanner.classList.remove('is-visible'), 2300);
+    updateScore();
+    board.focus({ preventScroll: true });
+    state.animationFrame = window.requestAnimationFrame(gameLoop);
+}
+
+function renderCaveHud(data) {
+    if (!data) return;
+    const put = (element, text) => { if (element.textContent !== text) element.textContent = text; };
+    put(scoreDisplay, formatScore(data.score));
+    put(bestScoreDisplay, formatScore(state.best));
+    put(phaseNumberDisplay, '4/6');
+    put(paceMultiplierDisplay, 'LIVRE');
+    put(regionNameDisplay, data.region);
+    put(routeTimeDisplay, `${formatTime(data.time)} · ${data.depth} m`);
+    put(caveHealth, `Vida ${Math.max(0, data.health)} / ${data.maxHealth}`);
+    put(caveObjective, data.objective);
+    put(caveMessage, data.message);
+    caveMessage.hidden = !data.message;
+    const progress = data.returning ? 85 + (1 - data.depth / 294) * 15 : Math.min(80, data.depth / 294 * 80);
+    const progressText = `${Math.round(progress)}%`;
+    if (journeyProgress.style.width !== progressText) journeyProgress.style.width = progressText;
+    const activeStop = data.returning ? 3 : data.depth < 80 ? 0 : data.depth < 210 ? 1 : 2;
+    routeMapStops.forEach((stop, i) => {
+        stop.classList.toggle('is-active', i === activeStop);
+        stop.classList.toggle('is-passed', i < activeStop);
+    });
+    const boss = data.boss;
+    bossHud.classList.toggle('is-visible', Boolean(boss));
+    bossHud.setAttribute('aria-hidden', String(!boss));
+    if (boss) {
+        put(bossHudLabel, boss.vulnerable ? 'Tatuzão · vulnerável' : 'Tatuzão de Raiz');
+        bossHealthFill.style.width = `${boss.health / boss.max * 100}%`;
+        put(bossHealthText, `${boss.health}/${boss.max}`);
+    }
+}
+
+function handleCaveEvent(event) {
+    if (event.type === 'status') {
+        state.score = event.score;
+        renderCaveHud(event);
+    } else if (event.type === 'defeat') finishCaveStage(false);
+    else if (event.type === 'complete') finishCaveStage(true);
+}
+
+function finishCaveStage(won) {
+    if (!state.cave || !['playing', 'loading'].includes(state.mode)) return;
+    state.mode = won ? 'completed' : 'ended';
+    window.cancelAnimationFrame(state.animationFrame);
+    pauseBackgroundMusic(true);
+    state.score = state.cave.score;
+    setPlayingControls(false);
+    if (state.score > state.best) { state.best = state.score; saveBestScore(state.best); }
+    if (won) {
+        storyProgress.completedPhases[3] = true;
+        saveStoryProgress();
+        syncResistanceNpc();
+    }
+    overlayKicker.textContent = 'Fase 4 · Raízes Profundas · Exploração';
+    overlayTitle.textContent = won ? 'De volta à luz' : 'Um descanso antes de continuar';
+    overlayMessage.textContent = won
+        ? 'O Tatuzão foi derrotado e o sapinho voltou à superfície. A próxima parte da mata está desbloqueada; a fase 5 ainda está em construção.'
+        : 'A energia acabou. Você pode voltar ao último descanso com a vida recuperada e tentar outro caminho ou observar os ataques com mais calma.';
+    if (won) showVictoryScore(state.score, `Raízes Profundas · ${formatTime(state.cave.time)} · guardião derrotado`);
+    else hideVictoryScore();
+    playLabel.textContent = won ? 'Explorar novamente' : 'Voltar ao descanso';
+    resultMenuButton.textContent = 'Voltar ao mapa';
+    showResultOverlay();
+    playButton.focus({ preventScroll: true });
+}
+
+function retryCaveStage() {
+    if (!state.cave) return startCaveStage();
+    if (state.mode === 'completed') return startCaveStage();
+    state.cave.respawn();
+    state.attackReadyAt = 0;
+    state.mode = 'playing';
+    state.previousTime = performance.now();
+    setRuntimeScene('stage');
+    overlay.classList.remove('is-visible');
+    setPlayingControls(true);
+    pauseButton.textContent = 'Pausar';
+    playBackgroundMusic();
+    board.focus({ preventScroll: true });
+    state.animationFrame = window.requestAnimationFrame(gameLoop);
 }
 
 function renderResistanceDuel(duel) {
@@ -4105,6 +4258,7 @@ function resumeGame() {
     setRuntimeScene('stage');
     playBackgroundMusic();
     state.previousTime = performance.now();
+    if (state.isCave) state.attackReadyAt = state.previousTime + Math.max(0, state.cave.attackReady - state.cave.time) * 1000;
     overlay.classList.remove('is-visible');
     setPlayingControls(true);
     pauseButton.textContent = 'Pausar';
@@ -4137,6 +4291,11 @@ function pauseGame() {
             ? 'O pássaro está planando. Continue quando estiver pronto para atravessar a próxima passagem.'
             : 'Continue quando estiver pronto. Sua corrida está guardada exatamente neste ponto.';
     playLabel.textContent = 'Continuar';
+    if (state.isCave) {
+        overlayKicker.textContent = 'Raízes Profundas';
+        overlayTitle.textContent = 'Exploração pausada';
+        overlayMessage.textContent = 'O sapinho fica aqui. Continue quando estiver pronto para explorar as galerias.';
+    }
     showResultOverlay();
     playButton.focus({ preventScroll: true });
 }
@@ -4168,6 +4327,7 @@ function setFlightClimbing(pressed) {
 
 function jump() {
     if (state.mode !== 'playing') return;
+    if (state.isCave) { state.cave.jump(); playSound(jumpAudio); return; }
     if (state.isFlight) {
         state.velocityY = Math.max(state.velocityY, FLIGHT_VERTICAL_SPEED * 0.72);
         pulseFlightWings();
@@ -4183,6 +4343,13 @@ function jump() {
 function attack() {
     if (state.mode !== 'playing' || state.isFlight) return;
     const now = performance.now();
+    if (state.isCave) {
+        if (state.cave.attack()) {
+            state.attackReadyAt = now + ATTACK_COOLDOWN;
+            updateTongueCooldown(now);
+        }
+        return;
+    }
     if (now < state.attackReadyAt) return;
 
     state.attackStartedAt = now;
@@ -4457,6 +4624,14 @@ function completeFlightStage() {
 }
 
 function returnFromResult() {
+    if (state.isCave) {
+        state.mode = 'idle';
+        mainMenuShell.classList.remove('is-hidden');
+        resultCard.classList.add('is-hidden');
+        overlay.classList.add('is-visible');
+        runWorldMapLoading();
+        return;
+    }
     if (state.isFlight) {
         state.mode = 'idle';
         state.isFlight = false;
@@ -5355,6 +5530,16 @@ function gameLoop(currentTime) {
     const delta = Math.min((currentTime - state.previousTime) / 1000, 0.032);
     state.previousTime = currentTime;
 
+    if (state.isCave) {
+        state.cave.update(delta, { left: state.moveLeft, right: state.moveRight, crouch: state.isCrouching });
+        state.elapsedTime = state.cave.time;
+        // Use simulation time: pausing cannot consume a cave attack cooldown.
+        state.attackReadyAt = currentTime + Math.max(0, state.cave.attackReady - state.cave.time) * 1000;
+        updateTongueCooldown(currentTime);
+        if (state.mode === 'playing') state.animationFrame = window.requestAnimationFrame(gameLoop);
+        return;
+    }
+
     if (state.isDuel) {
         const runCycle = Number(state.moveLeft || state.moveRight) ? 580 : 760;
         if (runCycle !== state.renderedRunCycle) {
@@ -5744,6 +5929,7 @@ function syncBoardSize(width, height) {
         if (hazard.kind === 'tornado') groundFlightTornado(hazard);
     });
     applyWorldScale(width, height);
+    state.cave?.resize(width, height);
     actorMetricCache.clear();
     state.runnerWidth = Math.max(1, runnerLayer.offsetWidth);
     state.obstacles.forEach((obstacle) => Object.assign(obstacle, measureActor(obstacle.element, `obstacle:${obstacle.type}`)));
@@ -5767,6 +5953,7 @@ function syncBoardSize(width, height) {
 
 playButton.addEventListener('click', () => {
     if (state.mode === 'paused') resumeGame();
+    else if (state.isCave) retryCaveStage();
     else if (state.isDuel) startResistanceDuel({ adminTest: state.isAdminEncounter });
     else if (state.isFlight) startFlightStage();
     else if (state.mode !== 'loading') startGame({ testArea: state.isTestArea, adminTest: state.isAdminEncounter });
@@ -5884,6 +6071,7 @@ worldLevelButtons.forEach((button, index) => {
         const distance = Math.hypot(worldMapState.x - level.x, (worldMapState.y - level.y) * 1.35);
         if (distance < WORLD_LEVEL_REACH && level.playable && level.unlocked && worldMapState.ready) {
             if (index === 2) startFlightStage();
+            else if (index === 3) startCaveStage();
             else startGame();
             return;
         }

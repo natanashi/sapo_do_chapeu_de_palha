@@ -3565,6 +3565,10 @@ body.reduce-game-motion .resistance-duelist.faces-right .resistance-duelist__ton
 .bestiary-sprite--ground { background-image: url("../img/besouro-terrestre-correndo-sprites.png"); background-size: 400% 100%; background-position: 0 0; }
 .bestiary-sprite--jumper { width: 62px; height: 62px; margin-inline: auto; background-image: url("../img/besouro-saltador-sprites.png"); background-size: 400% 200%; background-position: 0 0; }
 .bestiary-sprite--bee { background-image: url("../img/abelha-investida-sprites.png"); background-size: 400% 100%; background-position: 0 0; }
+.bestiary-sprite--cave-bug, .bestiary-sprite--cave-moth, .bestiary-sprite--cave-boss { width: 68px; height: 68px; background-image: url("../img/caverna-bichos-sprites-v1.png"); background-size: 400% 300%; }
+.bestiary-sprite--cave-bug { background-position: 0 0; }
+.bestiary-sprite--cave-moth { background-position: 0 50%; }
+.bestiary-sprite--cave-boss { background-position: 0 100%; }
 .bestiary-list--documentary li { min-height: 126px; grid-template-columns: 76px 1fr; align-items: start; padding: 10px; }
 .bestiary-list--documentary li > div { min-width: 0; }
 .bestiary-list--documentary strong { display: block; margin-bottom: 2px; color: #233d24; font-size: 0.82rem; }
@@ -4769,4 +4773,60 @@ body:not(.runtime-map) .world-resistance-npc__sprite {
 body.runtime-map .world-map-world,
 body.runtime-map .world-map-frog {
     will-change: transform;
+}
+.cave-canvas {
+    position: absolute;
+    z-index: 8;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    pointer-events: none;
+}
+.game-board.is-cave > :is(.scenery-layer, .flight-atmosphere, .sun-haze, .sky-clouds, .horizon-birds, .ground, .runner-layer, .platform-layer, .obstacle-layer, .collectible-layer, .boss-layer) { display: none; }
+.cave-hud:not([hidden]) {
+    position: absolute;
+    z-index: 13;
+    top: clamp(76px, 12%, 98px);
+    left: clamp(12px, 2.2vw, 28px);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    max-width: calc(100% - 106px);
+    padding: 6px 11px;
+    border: 2px solid #7f9166;
+    color: #ece9bf;
+    background: #203c30ed;
+    box-shadow: 3px 3px 0 #10251e;
+    font-family: var(--font-ui);
+    font-size: clamp(0.58rem, 1vw, 0.76rem);
+    pointer-events: none;
+}
+.cave-hud strong { color: #d8e9aa; white-space: nowrap; }
+.cave-message:not([hidden]) {
+    position: absolute;
+    z-index: 13;
+    bottom: 104px;
+    left: 50%;
+    width: max-content;
+    max-width: min(650px, 70%);
+    margin: 0;
+    padding: 8px 13px;
+    border: 2px solid #b8b68b;
+    color: #eee9bf;
+    background: #20382def;
+    box-shadow: 3px 3px 0 #142a20;
+    transform: translateX(-50%);
+    text-align: center;
+    font: clamp(0.6rem, 1vw, 0.8rem)/1.45 var(--font-ui);
+    pointer-events: none;
+}
+.game-board.is-cave .boss-hud { top: auto; bottom: 107px; }
+.game-board.is-cave:has(.boss-hud.is-visible) .cave-message { bottom: 152px; }
+@media (max-height: 500px) {
+    .cave-hud:not([hidden]) { top: 59px; padding: 3px 7px; font-size: 0.52rem; }
+    .cave-message:not([hidden]) { bottom: 73px; max-width: 64%; padding: 4px 8px; font-size: 0.55rem; }
+    .game-board.is-cave .boss-hud { bottom: 73px; }
+    .game-board.is-cave:has(.boss-hud.is-visible) .cave-message { bottom: 112px; }
 }

@@ -5,15 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#102d20">
     <meta name="color-scheme" content="only light">
-    <meta name="description" content="CroakFall é uma aventura indie em pixel art, com corrida, duelos e voo. Explore a mata, enfrente os inimigos e descubra novas fases. Versão beta para navegador.">
+    <meta name="description" content="CroakFall é uma aventura indie em pixel art, com corrida, duelos, voo e exploração subterrânea. Explore a mata, enfrente os inimigos e descubra novas fases. Versão beta para navegador.">
     <meta property="og:title" content="CroakFall — Beta">
-    <meta property="og:description" content="Uma aventura indie em pixel art da Natanashi Studios, com corrida, duelos e voo.">
+    <meta property="og:description" content="Uma aventura indie em pixel art da Natanashi Studios, com corrida, duelos, voo e exploração.">
     <meta property="og:type" content="website">
     <meta property="og:image" content="https://natanashi.github.io/sapo_do_chapeu_de_palha/assets/croakfall-cover-v1.png">
     <link rel="icon" type="image/png" href="assets/img/sapo-capa.png">
     <link rel="preload" as="image" href="assets/img/menu-floresta-amanhecer-v1.png">
-    <link rel="stylesheet" href="assets/css/style.css?v=153">
-    <script src="assets/js/script.js?v=153" defer></script>
+    <link rel="stylesheet" href="assets/css/style.css?v=154">
+    <script src="assets/js/cave-stage.js?v=154" defer></script>
+    <script src="assets/js/script.js?v=154" defer></script>
     <title>CroakFall — Beta</title>
 </head>
 <body class="is-app-loading has-indie-intro">
@@ -105,6 +106,13 @@
                     <span class="ground-panel"></span>
                 </div>
             </div>
+
+            <canvas id="cave-canvas" class="cave-canvas" aria-label="Raízes Profundas: exploração subterrânea" hidden></canvas>
+            <div class="cave-hud" id="cave-hud" hidden>
+                <strong id="cave-health">Vida 5 / 5</strong>
+                <span id="cave-objective">Desça pelas galerias</span>
+            </div>
+            <p class="cave-message" id="cave-message" role="status" aria-live="polite" hidden></p>
 
             <header class="game-hud">
                 <div class="game-title">
@@ -447,8 +455,8 @@
                                     <button class="world-level is-locked" type="button" data-world-level="2" aria-label="Fase 3, Pedreira Musgosa, categoria Voo speed run, bloqueada" style="--level-x: 84%; --level-y: 57%; --level-depth: 57;">
                                         <span><b>3</b></span><strong>Pedreira Musgosa</strong>
                                     </button>
-                                    <button class="world-level is-locked" type="button" data-world-level="3" aria-label="Fase 4, Clareira dos Ventos, categoria Luta livre, em construção" style="--level-x: 68%; --level-y: 27%; --level-depth: 27;">
-                                        <span><b>4</b></span><strong>Clareira dos Ventos</strong>
+                                    <button class="world-level is-locked" type="button" data-world-level="3" aria-label="Fase 4, Raízes Profundas, categoria Exploração, bloqueada" style="--level-x: 68%; --level-y: 27%; --level-depth: 27;">
+                                        <span><b>4</b></span><strong>Raízes Profundas</strong>
                                     </button>
                                     <button class="world-level is-locked" type="button" data-world-level="4" aria-label="Fase 5, Vale das Folhas, categoria Corrida, em construção" style="--level-x: 37%; --level-y: 20%; --level-depth: 20;">
                                         <span><b>5</b></span><strong>Vale das Folhas</strong>
@@ -521,7 +529,7 @@
                                         <label><input type="checkbox" data-admin-phase="0"><span><b>01</b> Rota da Manhã</span></label>
                                         <label><input type="checkbox" data-admin-phase="1"><span><b>02</b> Bosque dos Cogumelos</span></label>
                                         <label><input type="checkbox" data-admin-phase="2"><span><b>03</b> Pedreira Musgosa</span></label>
-                                        <label><input type="checkbox" data-admin-phase="3"><span><b>04</b> Clareira dos Ventos</span></label>
+                                        <label><input type="checkbox" data-admin-phase="3"><span><b>04</b> Raízes Profundas</span></label>
                                         <label><input type="checkbox" data-admin-phase="4"><span><b>05</b> Vale das Folhas</span></label>
                                         <label><input type="checkbox" data-admin-phase="5"><span><b>06</b> Coração da Mata</span></label>
                                     </fieldset>
@@ -659,6 +667,9 @@
                                 <li><span class="bestiary-sprite bestiary-sprite--ground"></span><div><strong>Besouro-terrestre</strong><small>Corredor do solo · obstáculo</small><p>Corre rente ao chão e não pode ser engolido. Aparece entre pedras e trechos livres, deixando uma janela segura para o salto.</p></div></li>
                                 <li><span class="bestiary-sprite bestiary-sprite--jumper"></span><div><strong>Besouro-saltador</strong><small>Caçador terrestre · obstáculo</small><p>Menor e mais rápido, aproxima-se antes de saltar na direção do sapinho. O movimento é anunciado pela curta preparação das pernas.</p></div></li>
                                 <li><span class="bestiary-sprite bestiary-sprite--bee"></span><div><strong>Abelha-investida</strong><small>Caçadora aérea · capturável</small><p>Chega em zigue-zague, mira por um instante e mergulha com o ferrão. Depois de iniciar a investida, não muda a trajetória.</p></div></li>
+                                <li><span class="bestiary-sprite bestiary-sprite--cave-bug"></span><div><strong>Tatuzinho de musgo</strong><small>Raízes Profundas · capturável</small><p>Patrulha as beiradas das galerias. Pule por cima ou agache para alcançá-lo com a língua. O musgo do casco ajuda a se esconder entre as raízes.</p></div></li>
+                                <li><span class="bestiary-sprite bestiary-sprite--cave-moth"></span><div><strong>Mariposa da raiz</strong><small>Raízes Profundas · capturável</small><p>Voa ao redor do próprio abrigo. Quando percebe o sapo, para por um instante antes de mergulhar na posição que viu. Mude de lugar ou use a língua.</p></div></li>
+                                <li><span class="bestiary-sprite bestiary-sprite--cave-boss"></span><div><strong>Tatuzão de Raiz</strong><small>Guardião das galerias · chefe</small><p>A carapaça protege o corpo durante a preparação e a investida. Pule a corrida e as ondas de terra; quando ele se cansar, a língua pode acertar a abertura. Ao vencê-lo, uma raiz desperta e permite voltar à superfície.</p></div></li>
                             </ul>
                         </section>
 
