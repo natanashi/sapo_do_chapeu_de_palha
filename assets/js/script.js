@@ -4947,22 +4947,39 @@ function spawnFlightInsectFormation(count = 2) {
     }
 }
 
+function groundFlightTornado(tornado) {
+    const height = state.boardHeight * tornado.heightRatio;
+    const width = height * 0.64;
+    if (tornado.height !== height || tornado.width !== width) {
+        tornado.height = height;
+        tornado.width = width;
+        tornado.element.style.width = `${width}px`;
+        tornado.element.style.height = `${height}px`;
+    }
+    tornado.y = state.boardHeight - height;
+    tornado.renderedY = tornado.y;
+    tornado.element.style.transform = `translate3d(${tornado.x.toFixed(2)}px, ${tornado.y.toFixed(2)}px, 0)`;
+}
+
 function spawnFlightTornado() {
-    const height = Math.min(state.boardHeight * 0.76, clamp(state.boardHeight * 0.62, 190, 410));
-    const width = height * 0.78;
-    const runnerBox = runnerBounds();
-    const y = clamp(runnerBox.top + runnerBox.height * 0.5 - height * 0.5, 20, Math.max(20, state.boardHeight - height - 20));
+    const sizeRoll = Math.random();
+    const profile = sizeRoll < 0.34
+        ? { name: 'medium', ratio: 0.45 + Math.random() * 0.15 }
+        : sizeRoll < 0.7
+            ? { name: 'large', ratio: 0.65 + Math.random() * 0.15 }
+            : { name: 'towering', ratio: 0.86 + Math.random() * 0.12 };
     const element = document.createElement('div');
     element.className = 'flight-hazard flight-tornado';
     element.setAttribute('aria-hidden', 'true');
-    element.style.width = `${width}px`;
-    element.style.height = `${height}px`;
-    obstacleLayer.append(element);
-    state.flightHazards.push({
-        kind: 'tornado', element, width, height,
-        x: flightSpawnX(width), y, renderedY: y,
+    const tornado = {
+        kind: 'tornado', element,
+        heightRatio: profile.ratio, sizeProfile: profile.name,
+        x: flightSpawnX(state.boardHeight * profile.ratio * 0.64),
         speedScale: 0.56, scored: false,
-    });
+    };
+    groundFlightTornado(tornado);
+    obstacleLayer.append(element);
+    state.flightHazards.push(tornado);
     // This encounter reserves room for its escorts before it is scheduled.
     spawnFlightInsectFormation(2);
     state.flightInsectCooldown = 0.85;
@@ -4978,12 +4995,18 @@ function sampleFlightWind() {
         if (hazard.kind !== 'tornado') continue;
         const dx = (centerX - hazard.x - hazard.width * 0.5) / (hazard.width * 0.72 + box.width * 0.2);
         const dy = (centerY - hazard.y - hazard.height * 0.5) / (hazard.height * 0.6 + box.height * 0.2);
-        const strength = clamp(1 - Math.hypot(dx, dy), 0, 1);
+        const strength = clamp(1 - Math.hypot(dx, dy * 0.8), 0, 1);
         if (strength <= strongest.strength) continue;
         const gust = Math.sin(state.elapsedTime * 5.2) * 0.6 + Math.sin(state.elapsedTime * 2.1) * 0.4;
         const windScale = state.difficulty === 'easy' ? 0.65 : state.difficulty === 'medium' ? 0.85 : 1;
         const scale = clamp(state.boardHeight / 600, 0.6, 1.15) * windScale;
-        strongest = { strength, x: (-dx * 150 - 35) * strength * scale, y: (gust * 185 - dy * 90) * strength * scale };
+        const swirl = Math.sin(state.elapsedTime * 8.4) * 40;
+        const lift = clamp(110 + gust * 220 + dy * 110, -230, 260);
+        strongest = {
+            strength,
+            x: (-dx * 290 - 55 + swirl) * strength * scale,
+            y: lift * strength * scale,
+        };
     }
     return strongest;
 }
@@ -5196,6 +5219,8 @@ function updateFlightActors(delta, speed) {
             hazard.renderedY = clamp(hazard.renderedY, 0, state.boardHeight - hazard.height);
             hazard.element.classList.toggle('is-locking', hazard.flightStage === 'locking' || hazard.flightStage === 'strike');
             hazard.element.style.transform = `translate3d(${hazard.x.toFixed(2)}px, ${hazard.renderedY.toFixed(2)}px, 0) rotate(${tilt.toFixed(1)}deg)`;
+        } else if (hazard.kind === 'tornado') {
+            groundFlightTornado(hazard);
         } else if (hazard.kind === 'storm') {
             const cycle = (state.elapsedTime - hazard.spawnedAt) % 2.4;
             const charging = cycle >= 0.82 && cycle < 1.25;
@@ -5265,7 +5290,7 @@ function updateFlightStage(delta) {
     if ((state.runnerY === 0 && state.velocityY < 0) || (state.runnerY === maximumY && state.velocityY > 0)) {
         state.velocityY = 0;
     }
-    const flightTilt = clamp(-state.velocityY / 24, -18, 18);
+    const flightTilt = clamp(-state.velocityY / 24 + wind.x * 0.055, -22, 22);
     runnerLayer.style.setProperty('--flight-tilt', `${flightTilt.toFixed(1)}deg`);
     renderRunnerPosition();
 
@@ -5715,6 +5740,9 @@ function syncBoardSize(width, height) {
     }
     state.boardWidth = width;
     state.boardHeight = height;
+    state.flightHazards.forEach((hazard) => {
+        if (hazard.kind === 'tornado') groundFlightTornado(hazard);
+    });
     applyWorldScale(width, height);
     actorMetricCache.clear();
     state.runnerWidth = Math.max(1, runnerLayer.offsetWidth);

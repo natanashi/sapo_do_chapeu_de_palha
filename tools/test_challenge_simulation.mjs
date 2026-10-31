@@ -63,6 +63,10 @@ for (const difficulty of ['easy', 'medium', 'hard', 'impossible']) {
             assert.ok(lethal.length <= r.flightMaximumConcurrentHazards(state.elapsedTime / 70));
             const tornado = state.flightHazards.find((h) => h.kind === 'tornado');
             if (tornado && lethal.some((h) => h.kind === 'insect')) windWithEnemies = true;
+            if (tornado) {
+                assert.ok(Math.abs(tornado.y + tornado.height - height) < 0.001, 'Tornados devem nascer na base, nunca flutuar');
+                assert.ok(tornado.height >= height * 0.45 && tornado.height <= height * 0.98, 'Tornados devem ter altura média, grande ou quase até o topo');
+            }
             for (const h of state.flightHazards.filter((h) => h.kind === 'ground-spire')) {
                 assert.ok(Math.abs(h.y + h.height - height) < 0.001, 'Torres devem permanecer ligadas à borda inferior');
                 assert.ok(height - h.height > state.runnerWidth * 1.3, 'Uma torre não pode fechar toda a passagem');
@@ -83,8 +87,34 @@ state.flightHazards.push({ kind: 'tornado', x: box.left + box.width / 2 - 100, y
 assert.equal(r.flightHazardHitsRunner(state.flightHazards[0]), false, 'O vento deve desestabilizar, nunca matar por contato');
 const wind = r.sampleFlightWind();
 assert.ok(wind.strength > 0.9 && Math.abs(wind.x) > 0, 'Entrar no centro precisa produzir força real');
+assert.ok(wind.y > 0, 'A corrente ascendente deve levantar o pássaro no centro');
 assert.ok(Math.abs(wind.y) < constant('FLIGHT_VERTICAL_SPEED') * (1 - wind.strength * 0.34), 'O jogador deve conseguir compensar o vento');
+for (let tick = 0; tick < 80; tick += 1) {
+    state.elapsedTime = tick / 20;
+    const gust = r.sampleFlightWind();
+    assert.ok(Math.abs(gust.y) < constant('FLIGHT_VERTICAL_SPEED') * (1 - gust.strength * 0.34), 'As rajadas devem permitir reação durante todo o ciclo');
+}
 state.flightHazards = [];
 assert.equal(r.sampleFlightWind().strength, 0, 'Sair do redemoinho precisa restaurar os controles');
+
+for (const [width, height] of [[640, 360], [1365, 745]]) {
+    const { context: runtimeApi, state: scene } = runtime('medium', width, height);
+    let previousHeight = 0;
+    for (const roll of [0.1, 0.5, 0.9]) {
+        scene.flightHazards = [];
+        const random = runtimeApi.Math.random;
+        runtimeApi.Math.random = () => roll;
+        runtimeApi.spawnFlightTornado();
+        runtimeApi.Math.random = random;
+        const tornado = scene.flightHazards.find(h => h.kind === 'tornado');
+        assert.ok(tornado.height > previousHeight, 'Os três tamanhos sorteados devem ser distintos');
+        assert.ok(Math.abs(tornado.y + tornado.height - height) < 0.001);
+        previousHeight = tornado.height;
+        scene.boardHeight = height * 0.7;
+        runtimeApi.groundFlightTornado(tornado);
+        assert.ok(Math.abs(tornado.y + tornado.height - scene.boardHeight) < 0.001, 'A base deve ser preservada ao redimensionar');
+        scene.boardHeight = height;
+    }
+}
 console.table(summaries);
-console.log('70-second flight simulations passed: concurrent encounters, wind escorts, grounded towers, countersteering, and no lingering wind.');
+console.log('70-second flight simulations passed: three grounded tornado sizes, resize anchoring, stronger lift, countersteering, concurrent encounters, and no lingering wind.');
